@@ -115,7 +115,7 @@ Thumbs.db
 
 # VENV #
 ########
-.venv/
+Carkinos/venv/
 
 # IPython Notebook #
 ####################
