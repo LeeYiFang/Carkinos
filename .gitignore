@@ -127,3 +127,4 @@ Thumbs.db
 # Python 3.x #
 ##############
 __pycache__
+venv/Carkinos/Lib/
