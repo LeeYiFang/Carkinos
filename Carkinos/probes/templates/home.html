@@ -1,4 +1,4 @@
-{# stores/templates/home.html #}
+{# probes/templates/home.html #}
 
 <!DOCTYPE html>
 <html>
@@ -25,19 +25,33 @@
     Designed and maintained by 
     Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine</p>
     <br />
+    {#<form action="{% url 'draw' %}" method="get">#}
     <label for="type">Step1：Choose type of keywords (gene name or platform identifier)</label>
     <br />
     <p>Gene:</p>
 	<input type="radio" name="type" >GenBank accession
-    <input type="radio" name="type" >GenBank symbol
+    <input type="radio" name="type" >Gene symbol
     <input type="radio" name="type" >Entrez Gene ID
     <br />
     <br />
     <p>Platform identifier:</p>
 	<input type="radio" name="type" checked>Probe ID
 	<br />
+    <br />
+    <label for="keyword">Step2：Input keywords</label>
+    <br />
+    <input type="text" name="keyword" >
+    <br />
+    <br />
+    
+    <label for="cellline">Step3：Enter the cell line name:</label>
+    <p>See All</p>
+    <input type="text" name="cellline" >
+    <br />
+    <br />
+    
 	<input type="submit" value="Submit">
-
+    {#</form>#}
 
 
 </body>
