@@ -2,13 +2,16 @@ from django.db import models
 
 # Create your models here.
 
-class ProbeID_GeneSymbol(models.Model):
+#Affy_U133A_probe_info
+class ProbeID(models.Model):
 
-    ProbeId = models.CharField(max_length=20)
-    GeneSymbol = models.CharField(max_length=20)
-
-    #def __str__(self):
-    #    return self.ProbeId
+    Probe_id = models.CharField(max_length=20)
+    Gene_symbol = models.CharField(max_length=20)
+    Entrez_id = models.IntegerField()
+    Gene_name = models.TextField(blank=True, default='')
+    
+    def __str__(self):
+        return self.Probe_id,self.Gene_symbol
 
 
 '''class MenuItem(models.Model):

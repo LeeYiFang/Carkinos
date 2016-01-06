@@ -2,8 +2,8 @@ from django.contrib import admin
 
 # Register your models here.
 
-from .models import ProbeID_GeneSymbol
+from .models import ProbeID
 
-@admin.register(ProbeID_GeneSymbol)
-class ProbeID_GeneSymbolAdmin(admin.ModelAdmin):
-    list_display = ('ProbeId', 'GeneSymbol',)
+@admin.register(ProbeID)
+class ProbeIDAdmin(admin.ModelAdmin):
+    list_display = ('Probe_id', 'Gene_symbol','Entrez_id','Gene_name')
