@@ -13,6 +13,8 @@ def home(request):
 def data(request):
     if 'cellline' in request.GET and request.GET['cellline']!='':
         cell = CellLine.objects.get(name=request.GET['cellline'])
+    if  'keyword' in request.GET and request.GET['keyword']!='':
+        gene = ProbeID.objects.get(Gene_symbol=request.GET['keyword'])
         return render_to_response('data.html',locals())
     else:
         return HttpResponse("<p>datas</p>")

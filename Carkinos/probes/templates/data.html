@@ -9,17 +9,35 @@
 </head>
 
 <body>
-
-
+<nav class="navbar navbar-default navbar-static-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="{% url 'home' %}">Carkinos</a>
+    </div>
+  </div>
+</nav>
+<table>
+    <tr>
+        <th>Cell Line name</th>
+        <th>Primary site</th>
+        <th>Primary histology</th>
+        <th>Probe_id</th>
+        <th>gene.Gene_symbol</th>
+        <th>gene.Entrez_id</th>
+        <th>gene.Gene_name</th>
+        
+    </tr>
     <tr>
         <td>{{cell.name}}</td>
         <td>{{cell.primary_site}}</td>
         <td>{{cell.primary_hist}}</td>
-    
+        <td>{{gene.Probe_id}}</td>
+        <td>{{gene.Gene_symbol}}</td>
+        <td>{{gene.Entrez_id}}</td>
+        <td>{{gene.Gene_name}}</td>
     </tr>
-
-
-
+ </table>   
+    
 
 </body>
 
