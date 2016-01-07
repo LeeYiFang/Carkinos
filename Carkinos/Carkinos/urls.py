@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.conf.urls import include,url
 from django.contrib import admin
-
+from probes.views import data
 
 urlpatterns = [
     url(r'^',include('probes.urls')),
+    url(r'^data/$',data,name='data'),
     url(r'^admin/', admin.site.urls),
 ]

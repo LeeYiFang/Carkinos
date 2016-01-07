@@ -16,7 +16,7 @@
     </div>
   </div>
 </nav>
-
+    
     <h1>Welcome to Carkinos!!</h1>
     <h3>Cancer cell line database of microarray</h3>
     <hr />
@@ -25,17 +25,17 @@
     Designed and maintained by 
     Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine</p>
     <br />
-    {#<form action="{% url 'draw' %}" method="get">#}
-    <label for="type">Step1：Choose type of keywords (gene name or platform identifier)</label>
+    <form action="{% url 'data' %}" method="get">
+    <label for="gtype">Step1：Choose type of keywords (gene name or platform identifier)</label>
     <br />
     <p>Gene:</p>
-	<input type="radio" name="type" >GenBank accession
-    <input type="radio" name="type" >Gene symbol
-    <input type="radio" name="type" >Entrez Gene ID
+	{#<input type="radio" name="gtype" value="">GenBank accession#}
+    <input type="radio" name="gtype" value="symbol">Gene symbol
+    <input type="radio" name="gtype" value="entrez">Entrez Gene ID
     <br />
     <br />
     <p>Platform identifier:</p>
-	<input type="radio" name="type" checked>Probe ID
+	<input type="radio" name="gtype" value="probeid" checked>Probe ID
 	<br />
     <br />
     <label for="keyword">Step2：Input keywords</label>
@@ -46,7 +46,7 @@
     
     <label for="cellline">Step3：Enter the cell line name:</label>
     <p>See All</p>
-    <input type="text" name="cellline" >
+    <input id="cellline" type="text" name="cellline" >
     <br />
     <br />
     
