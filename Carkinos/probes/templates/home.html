@@ -25,7 +25,7 @@
     Designed and maintained by 
     Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine</p>
     <br />
-    <form action="{% url 'data' %}" method="get">
+    <form action="{% url 'data' %}" method="get" target="_blank">
         <label for="gtype">Step1：Choose type of keywords (gene name or platform identifier)</label>
             <br />
             <p>Gene:</p>
@@ -46,7 +46,7 @@
             <br />
         
         <label for="cellline">Step3：Enter the cell line name:</label>
-            <p>See All</p>
+            <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
             <input id="cellline" type="text" name="cellline" >
             <br />
             <br />
@@ -58,6 +58,10 @@
             <input type="radio" name="platform" value="U133B">Affymetrix GeneChip HT-HG_U133B
             <br />
             <br />
+        
+        <label for="norm_method">Step5：Normalize method:(not done)</label>
+        <br />
+        <br />
         <input type="submit" value="Submit">
     </form>
 

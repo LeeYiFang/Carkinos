@@ -17,9 +17,10 @@ Including another URLconf
 from django.conf.urls import include,url
 from django.contrib import admin
 from probes.views import data
-
+from probes.views import cell_lines
 urlpatterns = [
     url(r'^',include('probes.urls')),
     url(r'^data/$',data,name='data'),
+    url(r'^cell_lines/$',cell_lines,name='cell_lines'),
     url(r'^admin/', admin.site.urls),
 ]

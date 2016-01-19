@@ -1,0 +1,49 @@
+{# probes/templates/cell_line.html #}
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Carkinos</title>
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <style>
+        table, th ,td
+        {
+            border: 1px solid black;
+        }
+    
+    </style>
+
+</head>
+
+
+<body>
+<nav class="navbar navbar-default navbar-static-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="{% url 'home' %}">Carkinos</a>
+    </div>
+  </div>
+</nav>
+    
+<h2>Sanger_Cell_Line_Project_Affymetrix's CellLines</h2>  
+<table>
+   <tr>
+        <th>Cell Line name</th>
+        <th>Primary site</th>
+        <th>Primary histology</th>
+        
+    </tr>
+    {%for l in lines%}
+    <tr>       
+        <td>{{l.name}}</td>
+        <td>{{l.primary_site}}</td>
+        <td>{{l.primary_hist}}</td>                
+    </tr>
+    {%endfor%}
+ </table>   
+    
+
+</body>
+
+</html>
