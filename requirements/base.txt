@@ -1,0 +1,24 @@
+# Django
+# https://www.djangoproject.com/
+Django >= 1.9, < 2.0
+
+# Compresses linked and inline JavaScript or CSS into a single cached file.
+# https://django-compressor.readthedocs.org/en/latest/
+django-compressor==1.6
+
+# The best way to have DRY Django forms.
+# http://django-crispy-forms.readthedocs.org/en/latest/
+django-crispy-forms >= 1.5, < 1.6
+
+# Django-environ allows you to utilize 12factor inspired environment variables
+# to configure your Django application.
+# http://django-environ.readthedocs.org
+django-environ >= 0.4, < 0.5
+
+# A django-compressor filter to compile Sass files using libsass.
+# https://github.com/torchbox/django-libsass
+django-libsass >= 0.6, < 0.7
+
+# Better Python shell
+# http://ipython.org/
+ipython >= 4.0, < 4.1
