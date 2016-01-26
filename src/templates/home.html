@@ -12,42 +12,50 @@
     Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine</p>
     <br />
     <form action="{% url 'data' %}" method="get" target="_blank">
-        <label for="gtype">Step1：Choose type of keywords (gene name or platform identifier)</label>
-            <br />
-            <p>Gene:</p>
-            {#<input type="radio" name="gtype" value="">GenBank accession#}
+        <h3>Step1 - Choose type of keywords (gene name or platform identifier):</h3>
+        <h4>Gene:</h4>
+        <label class="radio-inline">
             <input type="radio" name="gtype" value="symbol">Gene symbol
+        </label>
+        <label class="radio-inline">
             <input type="radio" name="gtype" value="entrez">Entrez Gene ID
-            <br />
-            <br />
-            <p>Platform identifier:</p>
+        </label>
+        <!--
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="entrez">GenBank accession
+        </label>
+        -->
+        <h4>Platform identifier:</h4>
+        <label class="radio-inline">
             <input type="radio" name="gtype" value="probeid" checked>Probe ID
-            <br />
-            <br />
-        <label for="keyword">Step2：Input keywords</label>
-            <p>For more than one keywords, please seperate with space</p>
-            <p>Example(probe id):1007_s_at 1053_at</p>
-            <input id="keyword" type="text" name="keyword" >
-            <br />
-            <br />
+        </label>
 
-        <label for="cellline">Step3：Enter the cell line name:</label>
-            <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
-            <input id="cellline" type="text" name="cellline" >
-            <br />
-            <br />
+        <h3>Step2 - Input keywords:</h3>
+        <p>For more than one keywords, please seperate with space</p>
+        <p>Example(probe id):1007_s_at 1053_at</p>
+        <input id="keyword" type="text" name="keyword">
 
-        <label for="platform">Step4：Select the platform:</label>
-            <br />
-            <input type="radio" name="platform" value="U133A" checked>Affymetrix GeneChip HT-HG_U133A
-            <br />
-            <input type="radio" name="platform" value="U133B">Affymetrix GeneChip HT-HG_U133B
-            <br />
-            <br />
 
-        <label for="norm_method">Step5：Normalize method:(not done)</label>
-        <br />
-        <br />
-        <input type="submit" value="Submit">
+        <h3>Step3 - Enter the cell line name:</h3>
+        <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
+        <input id="cellline" type="text" name="cellline" >
+
+        <h3>Step4 - Select the platform:</h3>
+        <div class="radio">
+            <label>
+                <input type="radio" name="platform" value="U133A" checked>
+                Affymetrix GeneChip HT-HG_U133A
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="platform" value="U133B">
+                Affymetrix GeneChip HT-HG_U133B
+            </label>
+        </div>
+
+        <h3>Step5 - Normalize method:</h3>
+        <p>(Not done)</p>
+        <button class="btn btn-default" type="submit">Submit</button>
     </form>
 {% endblock content %}
