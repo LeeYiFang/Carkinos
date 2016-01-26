@@ -124,7 +124,11 @@ Thumbs.db
 ####################
 .ipynb_checkpoints
 
+
 # Python 3.x #
 ##############
 __pycache__
-venv/Carkinos/Lib/
+venv/
+
+# Sqlite3
+sqlite3.{def,dll,exe}
