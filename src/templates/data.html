@@ -1,62 +1,31 @@
-{# probes/templates/data.html #}
+{% extends 'base.html' %}
 
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Carkinos</title>
-<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <style>
-        table, th ,td
-        {
-            border: 1px solid black;
-        }
-    
-    </style>
+{% block title %}Search Results{% endblock title %}
 
-</head>
+{% block content %}
+    <table class="table table-striped">
+        <tr>
+            <th>Cell Line name</th>
+            <th>Primary site</th>
+            <th>Primary histology</th>
+            <th>Probe_id</th>
+            <th>Gene_symbol</th>
+            <th>Entrez_id</th>
+            <th>Gene_name</th>
+        </tr>
+        {% for c in cell %}
+            {% for p in gene %}
+                <tr>
+                    <td>{{ c.name }}</td>
+                    <td>{{ c.primary_site }}</td>
+                    <td>{{ c.primary_hist }}</td>
+                    <td>{{ p.Probe_id }}</td>
+                    <td>{{ p.Gene_symbol }}</td>
+                    <td>{{ p.Entrez_id }}</td>
+                    <td>{{ p.Gene_name }}</td>
+                </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+{% endblock content %}
 
-
-<body>
-<nav class="navbar navbar-default navbar-static-top" role="navigation">
-  <div class="container">
-    <div class="navbar-header">
-      <a class="navbar-brand" href="{% url 'home' %}">Carkinos</a>
-    </div>
-  </div>
-</nav>
-    
-    
-<table>
-    <tr>
-        <th>Cell Line name</th>
-        <th>Primary site</th>
-        <th>Primary histology</th>
-        <th>Probe_id</th>
-        <th>Gene_symbol</th>
-        <th>Entrez_id</th>
-        <th>Gene_name</th>
-        
-    </tr>
-    {%for c in cell%}
-    {%for p in gene%}
-    <tr>
-        
-        <td>{{c.name}}</td>
-        <td>{{c.primary_site}}</td>
-        <td>{{c.primary_hist}}</td>        
-        <td>{{p.Probe_id}}</td>
-        <td>{{p.Gene_symbol}}</td>
-        <td>{{p.Entrez_id}}</td>
-        <td>{{p.Gene_name}}</td>
-        
-        
-    </tr>
-    {%endfor%}
-    {%endfor%}
- </table>   
-    
-
-</body>
-
-</html>

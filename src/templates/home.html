@@ -1,28 +1,14 @@
-{# probes/templates/home.html #}
+{% extends 'base.html' %}
 
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Carkinos</title>
-<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-</head>
+{% block title %}Home{% endblock title %}
 
-<body>
-<nav class="navbar navbar-default navbar-static-top" role="navigation">
-  <div class="container">
-    <div class="navbar-header">
-      <a class="navbar-brand" href="{% url 'home' %}">Carkinos</a>
-    </div>
-  </div>
-</nav>
-    
+{% block content %}
     <h1>Welcome to Carkinos!!</h1>
     <h3>Cancer cell line database of microarray</h3>
     <hr />
-    <p>This is a database for cell line information, 
+    <p>This is a database for cell line information,
     especially Microarray information of Cancer cell line.<br />
-    Designed and maintained by 
+    Designed and maintained by
     Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine</p>
     <br />
     <form action="{% url 'data' %}" method="get" target="_blank">
@@ -44,13 +30,13 @@
             <input id="keyword" type="text" name="keyword" >
             <br />
             <br />
-        
+
         <label for="cellline">Step3：Enter the cell line name:</label>
             <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
             <input id="cellline" type="text" name="cellline" >
             <br />
             <br />
-        
+
         <label for="platform">Step4：Select the platform:</label>
             <br />
             <input type="radio" name="platform" value="U133A" checked>Affymetrix GeneChip HT-HG_U133A
@@ -58,13 +44,10 @@
             <input type="radio" name="platform" value="U133B">Affymetrix GeneChip HT-HG_U133B
             <br />
             <br />
-        
+
         <label for="norm_method">Step5：Normalize method:(not done)</label>
         <br />
         <br />
         <input type="submit" value="Submit">
     </form>
-
-
-</body>
-</html>
+{% endblock content %}
