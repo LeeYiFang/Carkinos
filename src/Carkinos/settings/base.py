@@ -10,11 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.9/ref/settings/
 """
 
-import os
+from os.path import join, exists, dirname, abspath
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)
+# Build paths inside the project like this: join(BASE_DIR, ...)
+BASE_DIR = dirname(dirname(dirname(
+    abspath(__file__)
 )))
 
 # Use 12factor inspired environment variables or from a file
@@ -24,8 +24,8 @@ env = environ.Env()
 
 # Ideally move env file should be outside the git repo
 # i.e. BASE_DIR.parent.parent
-env_file = os.path.join(os.path.dirname(__file__), 'local.env')
-if os.path.exists(env_file):
+env_file = join(dirname(__file__), 'local.env')
+if exists(env_file):
     environ.Env.read_env(str(env_file))
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -46,15 +46,25 @@ DATABASES = {
 
 # Application definition
 
-INSTALLED_APPS = [
-    'probes',
+DJANGO_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-]
+)
+
+THIRD_PARTY_APPS = (
+    'crispy_forms',
+    'compressor',
+)
+
+LOCAL_APPS = (
+    'probes',
+)
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
@@ -72,7 +82,10 @@ ROOT_URLCONF = 'Carkinos.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            join(BASE_DIR, 'templates'),
+            # More template dirs here
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -80,6 +93,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
             ],
         },
     },
@@ -124,3 +140,28 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATIC_ROOT = join(BASE_DIR, 'assets')
+
+STATICFILES_DIRS = [join(BASE_DIR, 'static')]
+
+# List of finder classes that know how to find static files in
+# various locations.
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+)
+
+# Third-party app and custom setting.
+
+LIBSASS_SOURCEMAPS = True
+
+COMPRESS_PRECOMPILERS = (
+    ('text/x-scss', 'django_libsass.SassCompiler'),
+)
+
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
+
+WERKZEUG_DEBUG = env.bool('WERKZEUG_DEBUG', default=True)
+

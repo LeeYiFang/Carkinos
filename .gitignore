@@ -132,3 +132,12 @@ venv/
 
 # Sqlite3
 sqlite3.{def,dll,exe}
+
+# Django stuff
+*.pot
+*.log
+assets/
+local.db
+
+# PyCharm
+.idea/
