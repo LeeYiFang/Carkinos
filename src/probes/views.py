@@ -36,14 +36,18 @@ def data(request):
         })
 
     elif 'gtype' in request.GET and request.GET['gtype'] == 'symbol':
-        for w in words:
-            gene += ProbeID.objects.filter(Gene_symbol=w)
-        return render_to_response('data.html', locals())
+        gene = ProbeID.objects.filter(Gene_symbol__in=words)
+        return render_to_response('data.html', {
+            'gene': gene,
+            'cell': cell,
+        })
 
     elif 'gtype' in request.GET and request.GET['gtype'] == 'entrez':
-        for w in words:
-            gene += ProbeID.objects.filter(Entrez_id=w)
-        return render_to_response('data.html', locals())
+        gene = ProbeID.objects.filter(Entrez_id=words)
+        return render_to_response('data.html', {
+            'gene': gene,
+            'cell': cell,
+        })
     else:
         return HttpResponse(
             "<p>keyword type not match with your keyword input</p>"

@@ -33,8 +33,9 @@
         <h3>Step2 - Input keywords:</h3>
         <p>For more than one keywords, please seperate with space</p>
         <p>Example(probe id):1007_s_at 1053_at</p>
-        <input id="keyword" type="text" name="keyword">
-
+        <textarea id="keyword" name="keyword" style="width:300px;height:100px;" required="required" placeholder="Enter keyword"/></textarea>
+        
+        
 
         <h3>Step3 - Enter the cell line name:</h3>
         <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
@@ -54,6 +55,13 @@
             </label>
         </div>
 
+        
+        <div class="radio">
+            <label>
+                <input type="radio" name="platform" value="PLUS2">
+                Affymetrix GeneChip U133 Plus 2.0
+            </label>
+        </div>
         <h3>Step5 - Normalize method:</h3>
         <p>(Not done)</p>
         <button class="btn btn-default" type="submit">Submit</button>
