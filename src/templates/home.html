@@ -11,7 +11,7 @@
     Designed and maintained by
     Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine</p>
     <br />
-    <form action="{% url 'data' %}" method="get" target="_blank">
+    <form action="{% url 'data' %}" method="post" target="_blank">{% csrf_token %}
         <h3>Step1 - Choose type of keywords (gene name or platform identifier):</h3>
         <h4>Gene:</h4>
         <label class="radio-inline">
@@ -33,14 +33,33 @@
         <h3>Step2 - Input keywords:</h3>
         <p>For more than one keywords, please seperate with space</p>
         <p>Example(probe id):1007_s_at 1053_at</p>
-        <textarea id="keyword" name="keyword" style="width:300px;height:100px;" required="required" placeholder="Enter keyword"/></textarea>
-        
+        <style type="text/css">  
+                    .help {display: none}
+                    
+        </style> 
+        <div class="form-group">
+                 
+                <label for="keyword">Keyword:</label>
+                <textarea class="form-control" rows="5" id="keyword" name="keyword"
+                style="width:300px;height:100px;" required="required" 
+                placeholder="Enter keyword"/></textarea> 
+                <span class="help" style="color:red;">*Please fill in this part</span>  
+        </div>
         
 
         <h3>Step3 - Enter the cell line name:</h3>
         <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
         <input id="cellline" type="text" name="cellline" >
-
+        
+        <!--a try to do primary site list-->
+        
+        <div>
+        <p>Please select dataset(s)</p>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" checked >Sanger cell line project</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="roth" checked>Roth normal dataset</label>
+        </div>
+        <div id="checking"></div>
+        
         <h3>Step4 - Select the platform:</h3>
         <div class="radio">
             <label>
@@ -64,6 +83,39 @@
         </div>
         <h3>Step5 - Normalize method:</h3>
         <p>(Not done)</p>
-        <button class="btn btn-default" type="submit">Submit</button>
+        <button class="btn btn-default" type="submit" id="submit">Submit</button>
     </form>
 {% endblock content %}
+{% block scripts %}
+<script>
+$("#submit").click(function() {  
+  if ($("#keyword").val() == "") 
+  {
+    $("span.help").show(); 
+    
+  }
+  if($("input[name='dataset']:checked").length == 0) 
+  {
+        alert("Please at least choose one choice in Step 3.");
+        //how to stay in this page and don't let the data.html out?
+  }
+}); 
+</script>
+<!--<script>
+$("input[name='dataset']").checked(function(){
+alert($("input[name='dataset']:checked").length);
+});
+</script> -->
+<script>
+var countChecked = function() {
+  var n = $( "input[name='dataset']:checked" ).length;
+  
+  $( "#checking" ).text( n + (n === 1 ? " is" : " are") + " checked!" );
+  
+};
+countChecked();
+ 
+$( "input[type=checkbox]" ).on( "click", countChecked );
+ 
+</script>
+{% endblock %}
