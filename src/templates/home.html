@@ -59,6 +59,15 @@
         <label class="checkbox-inline"><input type="checkbox" name="dataset" id="roth" checked>Roth normal dataset</label>
         </div>
         <div id="checking"></div>
+        <div>
+            <select multiple="multiple">
+                {% for s in keys1 %}
+                    <option value="{{ s }}">{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        
         
         <h3>Step4 - Select the platform:</h3>
         <div class="radio">
@@ -72,21 +81,26 @@
                 <input type="radio" name="platform" value="U133B">
                 Affymetrix GeneChip HT-HG_U133B
             </label>
-        </div>
-
-        
+        </div>       
         <div class="radio">
             <label>
                 <input type="radio" name="platform" value="PLUS2">
                 Affymetrix GeneChip U133 Plus 2.0
             </label>
         </div>
+        
+        
         <h3>Step5 - Normalize method:</h3>
         <p>(Not done)</p>
         <button class="btn btn-default" type="submit" id="submit">Submit</button>
+        
     </form>
 {% endblock content %}
 {% block scripts %}
+<script src="static/css/multiple-select.js"></script>
+<script>
+    $('select').multipleSelect();
+</script>
 <script>
 $("#submit").click(function() {  
   if ($("#keyword").val() == "") 
