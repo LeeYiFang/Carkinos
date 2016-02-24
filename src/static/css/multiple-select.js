@@ -720,10 +720,10 @@
         minimumCountSelected: 3,
         ellipsis: false,
         multiple: false,
-        multipleWidth: 80,
+        multipleWidth: 300,
         single: false,
         filter: false,
-        width: undefined,
+        width: 300,  //undefined
         dropWidth: undefined,
         maxHeight: 250,
         container: null,

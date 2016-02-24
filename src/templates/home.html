@@ -61,9 +61,15 @@
         <div id="checking"></div>
         <div>
             <select multiple="multiple">
-                {% for s in keys1 %}
-                    <option value="{{ s }}">{{ s }}</option>
-                {% endfor %}
+                <div id="optgroup1">
+                    <optgroup label="Sanger cell line project">
+                        {% for s in keys1 %}
+                            <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                </div>
+                <div id="optgroup2">
+                    <optgroup label="Roth normal dataset">
+                </div>
             </select>
         </div>
         
@@ -99,7 +105,10 @@
 {% block scripts %}
 <script src="static/css/multiple-select.js"></script>
 <script>
-    $('select').multipleSelect();
+        $("select").multipleSelect({
+            filter: true,
+            multiple: true
+        });
 </script>
 <script>
 $("#submit").click(function() {  
@@ -115,11 +124,7 @@ $("#submit").click(function() {
   }
 }); 
 </script>
-<!--<script>
-$("input[name='dataset']").checked(function(){
-alert($("input[name='dataset']:checked").length);
-});
-</script> -->
+<!--counting how many checked options-->
 <script>
 var countChecked = function() {
   var n = $( "input[name='dataset']:checked" ).length;
@@ -131,5 +136,18 @@ countChecked();
  
 $( "input[type=checkbox]" ).on( "click", countChecked );
  
+</script>
+<!--have problems here-->
+<script>
+$("#sanger").click(function(){
+    if($("#sanger").prop(checked))
+    {
+        $("#optgroup1").show();
+    }
+    else
+    {
+        $("#optgroup1").hide();
+    }
+});
 </script>
 {% endblock %}
