@@ -35,7 +35,6 @@
         <p>Example(probe id):1007_s_at 1053_at</p>
         <style type="text/css">  
                     .help {display: none}
-                    
         </style> 
         <div class="form-group">
                  
@@ -43,7 +42,7 @@
                 <textarea class="form-control" rows="5" id="keyword" name="keyword"
                 style="width:300px;height:100px;" required="required" 
                 placeholder="Enter keyword"/></textarea> 
-                <span class="help" style="color:red;">*Please fill in this part</span>  
+                <span class="help" style="color:red;" name="needed1">*Please fill in this part</span>  
         </div>
         
 
@@ -55,23 +54,48 @@
         
         <div>
         <p>Please select dataset(s)</p>
-        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" checked >Sanger cell line project</label>
-        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="roth" checked>Roth normal dataset</label>
+        <span class="help" style="color:red;" name="needed2"><br />*Please check at least one</span>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger">Sanger cell line project</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="roth">Roth normal dataset</label>
+        
+        
         </div>
         <div id="checking"></div>
-        <div>
-            <select multiple="multiple">
-                <div id="optgroup1">
-                    <optgroup label="Sanger cell line project">
+        
+        <div class="panel panel-default">
+          <!-- Default panel contents -->
+          <div class="panel-heading">Sanger Cell Line Project:</div>
+          <div class="panel-body">
+            <p>please select the primary site you want</p>
+            <select multiple="multiple" id="SelectFeatures">
+                    <optgroup label="Sanger cell line project" id="optgroup1">
                         {% for s in keys1 %}
                             <option value="{{ s }}">{{ s }}</option>
                         {% endfor %}
-                </div>
-                <div id="optgroup2">
-                    <optgroup label="Roth normal dataset">
-                </div>
+                    </optgroup>
+                     
             </select>
+          </div>
+          <div id="test"></div>
+          <!-- Table -->
+            <table class="table table-striped">
+                <tr>
+                    <th>Cell Line name</th>
+                    <th>Primary site</th>
+                    <th>Primary histology</th>
+                    <th>dataset</th>
+                </tr>
+                {% for l in set0 %}
+                    <tr name="{{l.cell_line_id.primary_site}}" class="class1">
+                        <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.primary_site }}</td>
+                        <td>{{ l.cell_line_id.primary_hist }}</td>
+                        <td>Sanger project</td>
+                    </tr>
+                {% endfor %}
+            </table>
         </div>
+        
         
         
         
@@ -97,7 +121,18 @@
         
         
         <h3>Step5 - Normalize method:</h3>
-        <p>(Not done)</p>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="method_a" checked>
+                Method A
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="method_b">
+                Method B
+            </label>
+        </div>
         <button class="btn btn-default" type="submit" id="submit">Submit</button>
         
     </form>
@@ -114,40 +149,47 @@
 $("#submit").click(function() {  
   if ($("#keyword").val() == "") 
   {
-    $("span.help").show(); 
+    $("span[name='needed1']").show(); 
     
   }
-  if($("input[name='dataset']:checked").length == 0) 
+  if($( "input[name='dataset']:checked" ).length==0)
   {
-        alert("Please at least choose one choice in Step 3.");
-        //how to stay in this page and don't let the data.html out?
+    $("span[name='needed2']").show();
   }
 }); 
 </script>
-<!--counting how many checked options-->
 <script>
-var countChecked = function() {
-  var n = $( "input[name='dataset']:checked" ).length;
+$(document).ready(function () {
+    $("div[class='panel panel-default']").hide();
+    $("tr[class='class1']").hide();
+    $("input:checkbox").change(function(){
+        if ($("#sanger").is(':checked')) {
+            $("div[class='panel panel-default']").show();
+            //alert('sanger checked');
+        }
+        else
+        {           
+            $("div[class='panel panel-default']").hide();
+            //alert('sanger hide');
+        }
+        
+    });
+    
+    $( "select" ).change(function () {
+    var str = "The primary site you selected: ";
+    $("tr[class='class1']").hide();
+    $( "select option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[name='"+indata+"']").show();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test" ).text( str );
+  }).change();
   
-  $( "#checking" ).text( n + (n === 1 ? " is" : " are") + " checked!" );
-  
-};
-countChecked();
- 
-$( "input[type=checkbox]" ).on( "click", countChecked );
- 
+}); 
 </script>
-<!--have problems here-->
+
 <script>
-$("#sanger").click(function(){
-    if($("#sanger").prop(checked))
-    {
-        $("#optgroup1").show();
-    }
-    else
-    {
-        $("#optgroup1").hide();
-    }
-});
+
 </script>
 {% endblock %}

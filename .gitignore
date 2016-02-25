@@ -141,3 +141,9 @@ local.db
 
 # PyCharm
 .idea/
+*.csv
+*.xls
+*.tsv
+*.sqlite3
+*.sqlite3
+src/db.sqlite3

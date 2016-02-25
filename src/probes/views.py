@@ -1,13 +1,13 @@
 from django.shortcuts import render,render_to_response
 from django.http import HttpResponse, Http404
 from django.views.decorators.http import require_GET
-from .models import CellLine, ProbeID, Sample
+from .models import CellLine, ProbeID, Sample, Platform
 from django.template import RequestContext
 
 
 def home(request):
     # return render(request, 'home.html')
-    
+    #loading this part is very slow, how to fix it?
     known_cell_lines = {}
     set0 = Sample.objects.filter(dataset_id__in='1')
     for s in set0:
@@ -15,7 +15,9 @@ def home(request):
         try:
             test=known_cell_lines[cl]
         except KeyError:
-            if cl!='nan':
+            if cl=='nan':
+                known_cell_lines[cl]='NAN' 
+            else :
                 known_cell_lines[cl]=cl
     keys1=known_cell_lines.keys()
     return render_to_response('home.html', RequestContext(request,locals()))
@@ -32,31 +34,38 @@ def data(request):
     if 'cellline' in request.POST and request.POST['cellline'] != '':
         cell = CellLine.objects.filter(name__in=request.POST['cellline'].split())
     else:
-        return HttpResponse("<p>where is the cell line?</p>")
+        #return render_to_response('home.html', RequestContext(request,locals()))
+        return HttpResponse("<p>where is the cell line? please check Step3 again.</p>")
     if 'keyword' in request.POST and request.POST['keyword'] != '':
         words = request.POST['keyword']
         words = words.split()
         # return HttpResponse(words)
     else:
         return HttpResponse("<p>where is your keyword?</p>")
-
+        
+    if(request.POST['platform']=='U133A'):
+        p_id='1'
+    elif(request.POST['platform']=='U133B'):
+        p_id='2'
+    else:
+        p_id='3'
     gene = []
     if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
-        gene = ProbeID.objects.filter(Probe_id__in=words)
+        gene = ProbeID.objects.filter(platform__in=p_id).filter(Probe_id__in=words)
         return render_to_response('data.html', RequestContext(request,{
             'gene': gene,
             'cell': cell,
         }))
 
     elif 'gtype' in request.POST and request.POST['gtype'] == 'symbol':
-        gene = ProbeID.objects.filter(Gene_symbol__in=words)
+        gene = ProbeID.objects.filter(platform__in=p_id).filter(Gene_symbol__in=words)
         return render_to_response('data.html', RequestContext(request,{
             'gene': gene,
             'cell': cell,
         }))
 
     elif 'gtype' in request.POST and request.POST['gtype'] == 'entrez':
-        gene = ProbeID.objects.filter(Entrez_id=words)
+        gene = ProbeID.objects.filter(platform__in=p_id).filter(Entrez_id=words)
         return render_to_response('data.html', RequestContext(request,{
             'gene': gene,
             'cell': cell,
