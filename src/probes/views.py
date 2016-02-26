@@ -8,8 +8,11 @@ from django.template import RequestContext
 def home(request):
     # return render(request, 'home.html')
     #loading this part is very slow, how to fix it?
-    known_cell_lines = {}
     set0 = Sample.objects.filter(dataset_id__in='1')
+    #keys1=set0.values('cell_line_id__primary_site').distinct()
+    known_cell_lines = {}
+    
+    #set0.cell_line_id.primary_site.distinct()
     for s in set0:
         cl=s.cell_line_id.primary_site
         try:
@@ -43,12 +46,12 @@ def data(request):
     else:
         return HttpResponse("<p>where is your keyword?</p>")
         
-    if(request.POST['platform']=='U133A'):
+    if(request.POST['dataset']!='' and request.POST['dataset']=='sanger'):
         p_id='1'
-    elif(request.POST['platform']=='U133B'):
-        p_id='2'
-    else:
+    elif(request.POST['dataset']!='' and request.POST['dataset']=='nci'):
         p_id='3'
+    #else:
+    #    p_id='2'
     gene = []
     if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
         gene = ProbeID.objects.filter(platform__in=p_id).filter(Probe_id__in=words)

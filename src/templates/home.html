@@ -55,19 +55,19 @@
         <div>
         <p>Please select dataset(s)</p>
         <span class="help" style="color:red;" name="needed2"><br />*Please check at least one</span>
-        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger">Sanger cell line project</label>
-        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="roth">Roth normal dataset</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" value="sanger">Sanger cell line project</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci" value="nci">NCI60</label>
         
         
         </div>
         <div id="checking"></div>
         
-        <div class="panel panel-default">
+        <div class="panel panel-default" name="sanger_table">
           <!-- Default panel contents -->
           <div class="panel-heading">Sanger Cell Line Project:</div>
           <div class="panel-body">
             <p>please select the primary site you want</p>
-            <select multiple="multiple" id="SelectFeatures">
+            <select multiple="multiple" id="select1" name="select1">
                     <optgroup label="Sanger cell line project" id="optgroup1">
                         {% for s in keys1 %}
                             <option value="{{ s }}">{{ s }}</option>
@@ -95,11 +95,26 @@
                 {% endfor %}
             </table>
         </div>
+        <div class="panel panel-default" name="nci_table">
+          <!-- Default panel contents -->
+          <div class="panel-heading">NCI-60:</div>
+          <div class="panel-body">
+            <p>please select the primary site you want</p>
+            <select multiple="multiple" id="select2" name=="select2">
+                    <optgroup label="nci60" id="optgroup2">
+                        <!--{% for s in keys1 %}
+                            <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}-->
+                    </optgroup>
+                     
+            </select>
+          </div>
+         
+        </div>
         
         
         
-        
-        <h3>Step4 - Select the platform:</h3>
+        <!--<h3>Step4 - Select the platform:</h3>
         <div class="radio">
             <label>
                 <input type="radio" name="platform" value="U133A" checked>
@@ -118,9 +133,9 @@
                 Affymetrix GeneChip U133 Plus 2.0
             </label>
         </div>
+        -->
         
-        
-        <h3>Step5 - Normalize method:</h3>
+        <h3>Step4 - Normalize method:</h3>
         <div class="radio">
             <label>
                 <input type="radio" name="normalize" value="method_a" checked>
@@ -164,18 +179,23 @@ $(document).ready(function () {
     $("tr[class='class1']").hide();
     $("input:checkbox").change(function(){
         if ($("#sanger").is(':checked')) {
-            $("div[class='panel panel-default']").show();
-            //alert('sanger checked');
+            $("div[name='sanger_table']").show();
         }
         else
         {           
-            $("div[class='panel panel-default']").hide();
-            //alert('sanger hide');
+            $("div[name='sanger_table']").hide();
+        }
+        if ($("#nci").is(':checked')) {
+            $("div[name='nci_table']").show();
+        }
+        else
+        {           
+            $("div[name='nci_table']").hide();
         }
         
     });
     
-    $( "select" ).change(function () {
+    $( "select[name='select1']" ).change(function () {
     var str = "The primary site you selected: ";
     $("tr[class='class1']").hide();
     $( "select option:selected" ).each(function() {
@@ -186,6 +206,7 @@ $(document).ready(function () {
     $( "#test" ).text( str );
   }).change();
   
+ 
 }); 
 </script>
 
