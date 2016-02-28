@@ -6,24 +6,32 @@ from django.template import RequestContext
 
 
 def home(request):
-    # return render(request, 'home.html')
-    #loading this part is very slow, how to fix it?
-    set0 = Sample.objects.filter(dataset_id__in='1')
-    #keys1=set0.values('cell_line_id__primary_site').distinct()
-    known_cell_lines = {}
-    
-    #set0.cell_line_id.primary_site.distinct()
-    for s in set0:
-        cl=s.cell_line_id.primary_site
-        try:
-            test=known_cell_lines[cl]
-        except KeyError:
-            if cl=='nan':
-                known_cell_lines[cl]='NAN' 
-            else :
-                known_cell_lines[cl]=cl
-    keys1=known_cell_lines.keys()
-    return render_to_response('home.html', RequestContext(request,locals()))
+    # Pre-fetch the cell line field for all samples.
+    # Reduce N query in to 1. N = number of samples
+    samples = Sample.objects.filter(
+        dataset_id__name__in=['Sanger Cell Line Project']
+    ).select_related('cell_line_id')
+
+    # Get all distinct primary sites from selected samples
+    primary_sites = sorted(
+        samples.values_list('cell_line_id__primary_site', flat=True).distinct()
+    )
+    # # set0.values('cell_line_id__primary_site').distinct()
+    # for sample in samples:
+    #     cl = sample.cell_line_id.primary_site
+    #     try:
+    #         test = known_cell_lines[cl]
+    #     except KeyError:
+    #         if cl == 'nan':
+    #             known_cell_lines[cl] = 'NAN'
+    #         else:
+    #             known_cell_lines[cl] = cl
+    # keys1 = known_cell_lines.keys()
+
+    return render(request, 'home.html', {
+        'samples': samples,
+        'primary_sites': primary_sites,
+    })
 
 
 def cell_lines(request):
