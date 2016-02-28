@@ -69,7 +69,7 @@
             <p>please select the primary site you want</p>
             <select multiple="multiple" id="select1" name="select1">
                     <optgroup label="Sanger cell line project" id="optgroup1">
-                        {% for s in keys1 %}
+                        {% for s in primary_sites %}
                             <option value="{{ s }}">{{ s }}</option>
                         {% endfor %}
                     </optgroup>
@@ -79,20 +79,25 @@
           <div id="test"></div>
           <!-- Table -->
             <table class="table table-striped">
+                <thead>
                 <tr>
                     <th>Cell Line name</th>
                     <th>Primary site</th>
                     <th>Primary histology</th>
                     <th>dataset</th>
                 </tr>
-                {% for l in set0 %}
-                    <tr name="{{l.cell_line_id.primary_site}}" class="class1">
+                </thead>
+                <tbody>
+                {% for l in samples %}
+                    {# Add display:none to increase HTML DOM loading #}
+                    <tr name="{{l.cell_line_id.primary_site}}" class="class1" style="display:none">
                         <td>{{ l.cell_line_id.name }}</td>
                         <td>{{ l.cell_line_id.primary_site }}</td>
                         <td>{{ l.cell_line_id.primary_hist }}</td>
                         <td>Sanger project</td>
                     </tr>
                 {% endfor %}
+                </tbody>
             </table>
         </div>
         <div class="panel panel-default" name="nci_table">
@@ -102,7 +107,7 @@
             <p>please select the primary site you want</p>
             <select multiple="multiple" id="select2" name=="select2">
                     <optgroup label="nci60" id="optgroup2">
-                        <!--{% for s in keys1 %}
+                        <!--{% for s in primary_sites %}
                             <option value="{{ s }}">{{ s }}</option>
                         {% endfor %}-->
                     </optgroup>
