@@ -147,3 +147,4 @@ local.db
 *.sqlite3
 *.sqlite3
 src/db.sqlite3
+src/probes/migrations/0006_auto_20160302_2025.py

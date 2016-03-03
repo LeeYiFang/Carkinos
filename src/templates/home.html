@@ -48,15 +48,17 @@
 
         <h3>Step3 - Enter the cell line name:</h3>
         <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
-        <input id="cellline" type="text" name="cellline" >
+        <!--<input id="cellline" type="text" name="cellline" >-->
         
         <!--a try to do primary site list-->
         
         <div>
-        <p>Please select dataset(s)</p>
-        <span class="help" style="color:red;" name="needed2"><br />*Please check at least one</span>
-        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" value="sanger">Sanger cell line project</label>
-        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci" value="nci">NCI60</label>
+        <p>First choose the dataset, then select the primary site you want for each dataset.</p>
+        <p>Please select dataset(s):</p>        
+        <span class="help" style="color:red;" name="needed2">*Please check at least one dataset and primary site<br /></span>
+        
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" value="Sanger Cell Line Project">Sanger cell line project</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci" value="NCI60">NCI60</label>
         
         
         </div>
@@ -67,7 +69,7 @@
           <div class="panel-heading">Sanger Cell Line Project:</div>
           <div class="panel-body">
             <p>please select the primary site you want</p>
-            <select multiple="multiple" id="select1" name="select1">
+            <select multiple="multiple" id="select_sanger" name="select_sanger">
                     <optgroup label="Sanger cell line project" id="optgroup1">
                         {% for s in primary_sites %}
                             <option value="{{ s }}">{{ s }}</option>
@@ -105,16 +107,38 @@
           <div class="panel-heading">NCI-60:</div>
           <div class="panel-body">
             <p>please select the primary site you want</p>
-            <select multiple="multiple" id="select2" name=="select2">
+            <select multiple="multiple" id="select_nci" name="select_nci">
                     <optgroup label="nci60" id="optgroup2">
-                        <!--{% for s in primary_sites %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}-->
+                            {% for ncip in nciprimary_sites %}
+                            <option value="{{ ncip }}">{{ ncip }}</option>
+                            {% endfor %}
                     </optgroup>
                      
             </select>
           </div>
-         
+          <div id="test_nci"></div>
+          <!-- Table -->
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Cell Line name</th>
+                    <th>Primary site</th>
+                    <th>Primary histology</th>
+                    <th>dataset</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for l in ncisamples %}
+                    {# Add display:none to increase HTML DOM loading #}
+                    <tr name="{{l.cell_line_id.primary_site}}" class="class2" style="display:none">
+                        <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.primary_site }}</td>
+                        <td>{{ l.cell_line_id.primary_hist }}</td>
+                        <td>NCI60</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
         
         
@@ -184,10 +208,11 @@ $(document).ready(function () {
     $("tr[class='class1']").hide();
     $("input:checkbox").change(function(){
         if ($("#sanger").is(':checked')) {
+            
             $("div[name='sanger_table']").show();
         }
         else
-        {           
+        {   
             $("div[name='sanger_table']").hide();
         }
         if ($("#nci").is(':checked')) {
@@ -200,17 +225,27 @@ $(document).ready(function () {
         
     });
     
-    $( "select[name='select1']" ).change(function () {
+    $( "select[name='select_sanger']" ).change(function () {
     var str = "The primary site you selected: ";
     $("tr[class='class1']").hide();
-    $( "select option:selected" ).each(function() {
+    $( "select[name='select_sanger'] option:selected" ).each(function() {
       var indata=$( this ).text();
-      $("tr[name='"+indata+"']").show();
+      $("tr[class='class1'][name='"+indata+"']").show();
       str += $( this ).text() + " ,";
     });
     $( "#test" ).text( str );
   }).change();
-  
+ 
+   $( "select[name='select_nci']" ).change(function () {
+    var str = "The primary site you selected: ";
+    $("tr[class='class2']").hide();
+    $( "select[name='select_nci'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class2'][name='"+indata+"']").show();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test_nci" ).text( str );
+  }).change(); 
  
 }); 
 </script>
