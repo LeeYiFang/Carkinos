@@ -43,6 +43,7 @@ def data(request):
     ncicell=[]
     ps_id='0'
     pn_id='0'
+    SANGER, NCI = [], []
     if 'dataset' in request.POST and request.POST['dataset'] != '':
         datas=request.POST.getlist('dataset')
         if 'Sanger Cell Line Project' in datas:
