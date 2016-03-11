@@ -723,7 +723,7 @@
         multipleWidth: 300,
         single: false,
         filter: false,
-        width: 300,  //undefined
+        width: undefined ,  //undefined
         dropWidth: undefined,
         maxHeight: 250,
         container: null,

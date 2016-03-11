@@ -57,9 +57,9 @@
         <p>Please select dataset(s):</p>        
         <span class="help" style="color:red;" name="needed2">*Please check at least one dataset and primary site<br /></span>
         
-        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" value="Sanger Cell Line Project">Sanger cell line project</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
         <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci" value="NCI60">NCI60</label>
-        
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="gse" value="GSE36133">GSE36133</label>
         
         </div>
         <div id="checking"></div>
@@ -96,7 +96,7 @@
                         <td>{{ l.cell_line_id.name }}</td>
                         <td>{{ l.cell_line_id.primary_site }}</td>
                         <td>{{ l.cell_line_id.primary_hist }}</td>
-                        <td>Sanger project</td>
+                        <td>Sanger Cell Line Project</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -141,7 +141,44 @@
             </table>
         </div>
         
-        
+        <div class="panel panel-default" name="gse_table">
+          <!-- Default panel contents -->
+          <div class="panel-heading">GSE36133:</div>
+          <div class="panel-body">
+            <p>please select the primary site you want</p>
+            <select multiple="multiple" id="select_nci" name="select_gse">
+                    <optgroup label="gse36133" id="optgroup3">
+                            {% for cc in CCprimary_sites %}
+                            <option value="{{ cc }}">{{ cc }}</option>
+                            {% endfor %}
+                    </optgroup>
+                     
+            </select>
+          </div>
+          <div id="test_gse"></div>
+          <!-- Table -->
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Cell Line name</th>
+                    <th>Primary site</th>
+                    <th>Primary histology</th>
+                    <th>dataset</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for l in CCsamples %}
+                    {# Add display:none to increase HTML DOM loading #}
+                    <tr name="{{l.cell_line_id.primary_site}}" class="class3" style="display:none">
+                        <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.primary_site }}</td>
+                        <td>{{ l.cell_line_id.primary_hist }}</td>
+                        <td>GSE36133</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
         
         <!--<h3>Step4 - Select the platform:</h3>
         <div class="radio">
@@ -167,14 +204,20 @@
         <h3>Step4 - Normalize method:</h3>
         <div class="radio">
             <label>
-                <input type="radio" name="normalize" value="method_a" checked>
-                Method A
+                <input type="radio" name="normalize" value="CV" checked>
+                CV
             </label>
         </div>
         <div class="radio">
             <label>
-                <input type="radio" name="normalize" value="method_b">
-                Method B
+                <input type="radio" name="normalize" value="GAPDH">
+                GAPDH
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="ACTB">
+                ACTB(beta-actin)
             </label>
         </div>
         <button class="btn btn-default" type="submit" id="submit">Submit</button>
@@ -222,6 +265,14 @@ $(document).ready(function () {
         {           
             $("div[name='nci_table']").hide();
         }
+        if ($("#gse").is(':checked')) {
+            
+            $("div[name='gse_table']").show();
+        }
+        else
+        {   
+            $("div[name='gse_table']").hide();
+        }
         
     });
     
@@ -245,7 +296,18 @@ $(document).ready(function () {
       str += $( this ).text() + " ,";
     });
     $( "#test_nci" ).text( str );
-  }).change(); 
+  }).change();
+
+  $( "select[name='select_gse']" ).change(function () {
+    var str = "The primary site you selected: ";
+    $("tr[class='class3']").hide();
+    $( "select[name='select_gse'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class3'][name='"+indata+"']").show();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test_gse" ).text( str );
+  }).change();   
  
 }); 
 </script>

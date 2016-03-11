@@ -6,6 +6,7 @@
     <table class="table table-striped">
     <thead>
         <tr>
+            <th>Dataset</th>
             <th>Cell Line name</th>
             <th>Primary site</th>
             <th>Primary histology</th>
@@ -21,6 +22,7 @@
         {% for c in cell %}
             {% for p in gene %}
                 <tr>
+                    <td>{{ c.dataset_id.name }}</td>
                     <td>{{ c.cell_line_id.name }}</td>
                     <td>{{ c.cell_line_id.primary_site }}</td>
                     <td>{{ c.cell_line_id.primary_hist }}</td>
@@ -34,6 +36,21 @@
         {% for c in ncicell %}
             {% for p in ncigene %}
                 <tr>
+                    <td>{{ c.dataset_id.name }}</td>
+                    <td>{{ c.cell_line_id.name }}</td>
+                    <td>{{ c.cell_line_id.primary_site }}</td>
+                    <td>{{ c.cell_line_id.primary_hist }}</td>
+                    <td>{{ p.Probe_id }}</td>
+                    <td>{{ p.Gene_symbol }}</td>
+                    <td>{{ p.Entrez_id }}</td>
+                    <td>{{ p.Gene_name }}</td>
+                </tr>
+            {% endfor %}
+        {% endfor %}       
+        {% for c in CCcell %}
+            {% for p in ncigene %}
+                <tr>
+                    <td>{{ c.dataset_id.name }}</td>
                     <td>{{ c.cell_line_id.name }}</td>
                     <td>{{ c.cell_line_id.primary_site }}</td>
                     <td>{{ c.cell_line_id.primary_hist }}</td>
@@ -45,6 +62,12 @@
             {% endfor %}
         {% endfor %}
     </table>
+
     </tbody>
+
+    <p>
+    {{raw_test.0.0}}
+    </p>
+
 {% endblock content %}
 
