@@ -4,6 +4,7 @@
 
 {% block content %}
     <table class="table table-striped">
+    <thead>
         <tr>
             <th>Dataset</th>
             <th>Cell Line name</th>
@@ -16,6 +17,8 @@
             <th>value</th>
             <th>normalized</th>
         </tr>
+    </thead>
+    <tbody>
         {% for c in cell %}
             {% for p in gene %}
                 <tr>
@@ -59,8 +62,12 @@
             {% endfor %}
         {% endfor %}
     </table>
+
+    </tbody>
+
     <p>
     {{raw_test.0.0}}
     </p>
+
 {% endblock content %}
 
