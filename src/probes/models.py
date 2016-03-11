@@ -1,7 +1,7 @@
 from django.db import models
 from decimal import Decimal
 
-#alread put in all three platform data
+#add:new dataset
 class Dataset(models.Model):
     
     name=models.CharField(max_length=50)
@@ -11,7 +11,7 @@ class Dataset(models.Model):
         return '%s of %s' % (self.name, self.data_path)
         
 
-#alread put in all three platform data      
+     
 class Platform(models.Model):
 
     name=models.CharField(max_length=50)
@@ -21,7 +21,7 @@ class Platform(models.Model):
         return '%s of %s' % (self.name, self.description)
         
         
-#offset=0 is initial (not fill in!!)      
+      
 #need to update with new datasets  
 class Sample(models.Model):
     
@@ -48,7 +48,7 @@ class CellLine(models.Model):
         return '%s of %s of %s' % (self.name, self.primary_site, self.primary_hist)
 
 
-#offset=0 is initial (not fill in now!!)
+
 #alread put in all three platform data
 class ProbeID(models.Model):
 
