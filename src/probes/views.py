@@ -64,6 +64,7 @@ def data(request):
             SANGER=request.POST.getlist('select_sanger')
             samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project']).select_related('cell_line_id')
             cell=samples.filter(cell_line_id__primary_site__in=SANGER)
+            offset=cell.values_list('offset',flat=True)
             ps_id='1'
         if 'NCI60' in datas:
             NCI=request.POST.getlist('select_nci')
@@ -96,8 +97,8 @@ def data(request):
     #Sfirst=Dataset.objects.first()
     #dset_val_pth=Path(dset_path,Sfirst.data_path)
     dset_val=np.load(dset_val_pth.as_posix(),mmap_mode='r')
-    raw_test=dset_val[np.ix_([22282],[797])]
-
+    #raw_test=dset_val[np.ix_([1,2,3],[1,2])]
+    
     
     gene = []
     ncigene = []
@@ -105,6 +106,8 @@ def data(request):
     if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
         #gene = ProbeID.objects.filter(platform__in=p_id).filter()
         gene = ProbeID.objects.filter(platform__in=ps_id).filter(Probe_id__in=words)
+        probe_offset=gene.values_list('offset',flat=True)
+        raw_test=dset_val[np.ix_(probe_offset,offset)]
         ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Probe_id__in=words)
         #CCgene = ProbeID.objects.filter(platform__in=pc_id).filter(Probe_id__in=words)
         #print(CCgene)
