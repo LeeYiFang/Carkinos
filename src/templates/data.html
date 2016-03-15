@@ -19,22 +19,21 @@
         </tr>
     </thead>
 
-    <tbody>
-        {% for c in cell %}
-            {% for p in gene %}
-                <tr>
-                    <td>{{ c.dataset_id.name }}</td>
-                    <td>{{ c.cell_line_id.name }}</td>
-                    <td>{{ c.cell_line_id.primary_site }}</td>
-                    <td>{{ c.cell_line_id.primary_hist }}</td>
-                    <td>{{ p.Probe_id }}</td>
-                    <td>{{ p.Gene_symbol }}</td>
-                    <td>{{ p.Entrez_id }}</td>
-                    <td>{{ p.Gene_name }}</td>
-                    <td>{{ raw_data.{{forloop.counter0}}.{{forloop.parentloop}} }}</td>
-                </tr>
-            {% endfor %}
-        {% endfor %}
+	<tbody>
+		{% for c, p, val in cell_probe_val_pairs %}
+		<tr>
+			<td>{{ c.dataset_id.name }}</td>
+			<td>{{ c.cell_line_id.name }}</td>
+			<td>{{ c.cell_line_id.primary_site }}</td>
+			<td>{{ c.cell_line_id.primary_hist }}</td>
+			<td>{{ p.Probe_id }}</td>
+			<td>{{ p.Gene_symbol }}</td>
+			<td>{{ p.Entrez_id }}</td>
+			<td>{{ p.Gene_name }}</td>
+			<td>{{ val }}
+		</tr>
+		{% endfor %}
+
         {% for c in ncicell %}
             {% for p in ncigene %}
                 <tr>

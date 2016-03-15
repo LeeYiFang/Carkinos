@@ -111,12 +111,20 @@ def data(request):
         ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Probe_id__in=words)
         #CCgene = ProbeID.objects.filter(platform__in=pc_id).filter(Probe_id__in=words)
         #print(CCgene)
+
+        # Make a generator to generate all (cell, probe, val) pairs
+        cell_probe_val_pairs = (
+            (c, p, raw_test[probe_ix, cell_ix])
+            for probe_ix, p in enumerate(gene)
+            for cell_ix, c in enumerate(cell)
+        )
         return render_to_response('data.html', RequestContext(request,{
             'gene': gene,
             'cell': cell,
             'ncigene': ncigene,
             'ncicell': ncicell,
             'raw_test': raw_test,
+            'cell_probe_val_pairs': cell_probe_val_pairs,
             'CCgene': CCgene,
             'CCcell': CCcell,
         }))
