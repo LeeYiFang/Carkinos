@@ -79,6 +79,11 @@
             </select>
           </div>
           <div id="test"></div>
+          <br />
+          <p>If you don't want to see all the cell line you selected, press "Hide All" to hide them<br />
+          Press "Show" to see them again</p>
+          <input type="button" class="btn btn-default" value="Hide All" id="hide_sanger">
+          <input type="button" class="btn btn-default" value="Show" id="show_sanger">
           <!-- Table -->
             <table class="table table-striped">
                 <thead>
@@ -117,6 +122,11 @@
             </select>
           </div>
           <div id="test_nci"></div>
+          <br />
+          <p>If you don't want to see all the cell line you selected, press "Hide All" to hide them<br />
+          Press "Show" to see them again</p>
+          <input type="button" class="btn btn-default" value="Hide All" id="hide_nci">
+          <input type="button" class="btn btn-default" value="Show" id="show_nci">
           <!-- Table -->
             <table class="table table-striped">
                 <thead>
@@ -156,6 +166,11 @@
             </select>
           </div>
           <div id="test_gse"></div>
+          <br />
+          <p>If you don't want to see all the cell line you selected, press "Hide All" to hide them<br />
+          Press "Show" to see them again</p>
+          <input type="button" class="btn btn-default" value="Hide All" id="hide_gse">
+          <input type="button" class="btn btn-default" value="Show" id="show_gse">
           <!-- Table -->
             <table class="table table-striped">
                 <thead>
@@ -226,6 +241,7 @@
 {% endblock content %}
 {% block scripts %}
 <script src="static/css/multiple-select.js"></script>
+
 <script>
         $("select").multipleSelect({
             filter: true,
@@ -243,6 +259,35 @@ $("#submit").click(function() {
   {
     $("span[name='needed2']").show();
   }
+}); 
+</script>
+<script>
+$("#hide_sanger").click(function() {    
+    $("tr[class='class1']").hide(); 
+}); 
+$("#show_sanger").click(function() {    
+    $( "select[name='select_sanger'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class1'][name='"+indata+"']").show();
+    }); 
+}); 
+$("#hide_nci").click(function() {    
+    $("tr[class='class2']").hide(); 
+}); 
+$("#show_nci").click(function() {    
+    $( "select[name='select_nci'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class2'][name='"+indata+"']").show();
+    }); 
+}); 
+$("#hide_gse").click(function() {    
+    $("tr[class='class3']").hide(); 
+}); 
+$("#show_gse").click(function() {    
+    $( "select[name='select_gse'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class3'][name='"+indata+"']").show();
+    }); 
 }); 
 </script>
 <script>
@@ -312,7 +357,6 @@ $(document).ready(function () {
 }); 
 </script>
 
-<script>
 
-</script>
+
 {% endblock %}

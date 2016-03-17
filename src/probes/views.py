@@ -44,7 +44,7 @@ def home(request):
 
 
 def cell_lines(request):
-    lines = CellLine.objects.all()
+    lines = Sample.objects.select_related('cell_line_id','dataset_id')
     return render_to_response('cell_line.html', RequestContext(request, locals()))
 
 
@@ -57,24 +57,25 @@ def data(request):
     CCcell=[]
     ps_id='0'
     pn_id='0'
-    pc_id='0'
     if 'dataset' in request.POST and request.POST['dataset'] != '':
         datas=request.POST.getlist('dataset')
         if 'Sanger Cell Line Project' in datas:
             SANGER=request.POST.getlist('select_sanger')
-            samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project']).select_related('cell_line_id')
-            cell=samples.filter(cell_line_id__primary_site__in=SANGER)
+            samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])      
+            cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__primary_site__in=SANGER)
             offset=cell.values_list('offset',flat=True)
             ps_id='1'
         if 'NCI60' in datas:
             NCI=request.POST.getlist('select_nci')
-            ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id')
+            ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id')
             ncicell=ncisamples.filter(cell_line_id__primary_site__in=NCI)
+            ncioffset=ncicell.values_list('offset',flat=True)
             pn_id='3'
         if 'GSE36133' in datas:
             GSE=request.POST.getlist('select_gse')
-            CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id')
+            CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id')
             CCcell=CCsamples.filter(cell_line_id__primary_site__in=GSE)
+            CCoffset=CCcell.values_list('offset',flat=True)
             pn_id='3'
         if len(SANGER)==0 and len(NCI)==0 and len(GSE)==0:
             return HttpResponse("<p>please select primary sites.</p>" )
@@ -86,76 +87,156 @@ def data(request):
         words = words.split()
     else:
         return HttpResponse("<p>where is your keyword?</p>")
-        
-    #if('dataset' in request.POST and request.POST['dataset']=='Sanger Cell Line Project'):
-    #    p_id='1'
-    #elif('dataset' in request.POST and request.POST['dataset']=='NCI60'):
-    #    p_id='3'
-    #else:
-    #    return HttpResponse("<p>where is your cell line?</p>")
-    dset_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
-    #Sfirst=Dataset.objects.first()
-    #dset_val_pth=Path(dset_path,Sfirst.data_path)
-    dset_val=np.load(dset_val_pth.as_posix(),mmap_mode='r')
-    #raw_test=dset_val[np.ix_([1,2,3],[1,2])]
-    
+      
+    #open files
+    sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
+    nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
+    gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
+    sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
+    nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
+    gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
     
     gene = []
     ncigene = []
     CCgene = []
+    context={}
     if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
-        #gene = ProbeID.objects.filter(platform__in=p_id).filter()
         gene = ProbeID.objects.filter(platform__in=ps_id).filter(Probe_id__in=words)
         probe_offset=gene.values_list('offset',flat=True)
-        raw_test=dset_val[np.ix_(probe_offset,offset)]
+        
         ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Probe_id__in=words)
-        #CCgene = ProbeID.objects.filter(platform__in=pc_id).filter(Probe_id__in=words)
-        #print(CCgene)
-
+        nciprobe_offset=ncigene.values_list('offset',flat=True)
+        #nci60 and ccle use same probe set(ncigene) and nicprobe
+        
         # Make a generator to generate all (cell, probe, val) pairs
-        cell_probe_val_pairs = (
-            (c, p, raw_test[probe_ix, cell_ix])
-            for probe_ix, p in enumerate(gene)
-            for cell_ix, c in enumerate(cell)
-        )
-        return render_to_response('data.html', RequestContext(request,{
-            'gene': gene,
-            'cell': cell,
-            'ncigene': ncigene,
-            'ncicell': ncicell,
-            'raw_test': raw_test,
-            'cell_probe_val_pairs': cell_probe_val_pairs,
-            'CCgene': CCgene,
-            'CCcell': CCcell,
-        }))
+        if(len(gene)!=0 and len(cell)!=0):
+            raw_test=sanger_val[np.ix_(probe_offset,offset)]
+            cell_probe_val_pairs = (
+                (c, p, raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(gene)
+                for cell_ix, c in enumerate(cell)
+            )
+            
+        else:
+            cell_probe_val_pairs =()
+            
+        if(len(ncigene)!=0 and len(ncicell)!=0):
+            nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
+            nci_cell_probe_val_pairs = (
+                (c, p, nci_raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(ncigene)
+                for cell_ix, c in enumerate(ncicell)
+            )
+            
+        else:
+            nci_cell_probe_val_pairs =()
+            
+        if(len(ncigene)!=0 and len(CCcell)!=0):
+            CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
+            CC_cell_probe_val_pairs = (
+                (c, p, CC_raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(ncigene)
+                for cell_ix, c in enumerate(CCcell)
+            )
+            
+        else:
+            CC_cell_probe_val_pairs =()
+        context['cell_probe_val_pairs']=cell_probe_val_pairs
+        context['nci_cell_probe_val_pairs']=nci_cell_probe_val_pairs
+        context['CC_cell_probe_val_pairs']=CC_cell_probe_val_pairs
+        return render_to_response('data.html', RequestContext(request,context))
 
     elif 'gtype' in request.POST and request.POST['gtype'] == 'symbol':
         gene = ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=words)
+        probe_offset=gene.values_list('offset',flat=True)
+        
         ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=words)
-        #CCgene = ProbeID.objects.filter(platform__in=pc_id).filter(Gene_symbol__in=words)
-        return render_to_response('data.html', RequestContext(request,{
-            'gene': gene,
-            'cell': cell,
-            'ncigene': ncigene,
-            'ncicell': ncicell,
-            'raw_test': raw_test,
-            'CCgene': CCgene,
-            'CCcell': CCcell,
-        }))
+        nciprobe_offset=ncigene.values_list('offset',flat=True)
+        #nci60 and ccle use same probe set(ncigene) and nicprobe
+        
+        # Make a generator to generate all (cell, probe, val) pairs
+        if(len(gene)!=0 and len(cell)!=0):
+            raw_test=sanger_val[np.ix_(probe_offset,offset)]
+            cell_probe_val_pairs = (
+                (c, p, raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(gene)
+                for cell_ix, c in enumerate(cell)
+            )
+            
+        else:
+            cell_probe_val_pairs =()
+            
+        if(len(ncigene)!=0 and len(ncicell)!=0):
+            nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
+            nci_cell_probe_val_pairs = (
+                (c, p, nci_raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(ncigene)
+                for cell_ix, c in enumerate(ncicell)
+            )
+            
+        else:
+            nci_cell_probe_val_pairs =()
+            
+        if(len(ncigene)!=0 and len(CCcell)!=0):
+            CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
+            CC_cell_probe_val_pairs = (
+                (c, p, CC_raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(ncigene)
+                for cell_ix, c in enumerate(CCcell)
+            )
+            
+        else:
+            CC_cell_probe_val_pairs =()
+        context['cell_probe_val_pairs']=cell_probe_val_pairs
+        context['nci_cell_probe_val_pairs']=nci_cell_probe_val_pairs
+        context['CC_cell_probe_val_pairs']=CC_cell_probe_val_pairs
+        return render_to_response('data.html', RequestContext(request,context))
 
     elif 'gtype' in request.POST and request.POST['gtype'] == 'entrez':
         gene = ProbeID.objects.filter(platform__in=ps_id).filter(Entrez_id=words)
+        probe_offset=gene.values_list('offset',flat=True)
+        
         ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Entrez_id__in=words)
-        #CCgene = ProbeID.objects.filter(platform__in=pc_id).filter(Entrez_id=words)
-        return render_to_response('data.html', RequestContext(request,{
-            'gene': gene,
-            'cell': cell,
-            'ncigene': ncigene,
-            'ncicell': ncicell,
-            'raw_test': raw_test,
-            'CCgene': CCgene,
-            'CCcell': CCcell,
-        }))
+        nciprobe_offset=ncigene.values_list('offset',flat=True)
+        #nci60 and ccle use same probe set(ncigene) and nicprobe
+        
+        # Make a generator to generate all (cell, probe, val) pairs
+        if(len(gene)!=0 and len(cell)!=0):
+            raw_test=sanger_val[np.ix_(probe_offset,offset)]
+            cell_probe_val_pairs = (
+                (c, p, raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(gene)
+                for cell_ix, c in enumerate(cell)
+            )
+            
+        else:
+            cell_probe_val_pairs =()
+            
+        if(len(ncigene)!=0 and len(ncicell)!=0):
+            nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
+            nci_cell_probe_val_pairs = (
+                (c, p, nci_raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(ncigene)
+                for cell_ix, c in enumerate(ncicell)
+            )
+            
+        else:
+            nci_cell_probe_val_pairs =()
+            
+        if(len(ncigene)!=0 and len(CCcell)!=0):
+            CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
+            CC_cell_probe_val_pairs = (
+                (c, p, CC_raw_test[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(ncigene)
+                for cell_ix, c in enumerate(CCcell)
+            )
+            
+        else:
+            CC_cell_probe_val_pairs =()
+        context['cell_probe_val_pairs']=cell_probe_val_pairs
+        context['nci_cell_probe_val_pairs']=nci_cell_probe_val_pairs
+        context['CC_cell_probe_val_pairs']=CC_cell_probe_val_pairs
+        return render_to_response('data.html', RequestContext(request,context))
     else:
         return HttpResponse(
             "<p>keyword type not match with your keyword input</p>"
