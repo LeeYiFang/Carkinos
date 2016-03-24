@@ -46,41 +46,72 @@ def home(request):
 def cell_lines(request):
     lines = Sample.objects.select_related('cell_line_id','dataset_id')
     return render_to_response('cell_line.html', RequestContext(request, locals()))
-
+    
 
 def data(request):
     SANGER=[]
+    sanger_flag=0
     NCI=[]
+    nci_flag=0
     GSE=[]
+    gse_flag=0
     cell=[]
     ncicell=[]
     CCcell=[]
     ps_id='0'
     pn_id='0'
-    if 'dataset' in request.POST and request.POST['dataset'] != '':
-        datas=request.POST.getlist('dataset')
-        if 'Sanger Cell Line Project' in datas:
-            SANGER=request.POST.getlist('select_sanger')
-            samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])      
-            cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__primary_site__in=SANGER)
-            offset=cell.values_list('offset',flat=True)
-            ps_id='1'
-        if 'NCI60' in datas:
-            NCI=request.POST.getlist('select_nci')
-            ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id')
-            ncicell=ncisamples.filter(cell_line_id__primary_site__in=NCI)
-            ncioffset=ncicell.values_list('offset',flat=True)
-            pn_id='3'
-        if 'GSE36133' in datas:
-            GSE=request.POST.getlist('select_gse')
-            CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id')
-            CCcell=CCsamples.filter(cell_line_id__primary_site__in=GSE)
-            CCoffset=CCcell.values_list('offset',flat=True)
-            pn_id='3'
-        if len(SANGER)==0 and len(NCI)==0 and len(GSE)==0:
-            return HttpResponse("<p>please select primary sites.</p>" )
+    if request.POST['cell_line_method'] == 'text':
+        c = request.POST['cellline']
+        c = c.split()
+        print(c)
+        sanger_flag=1
+        samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])      
+        cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__name__in=c)
+        print(cell)
+        offset=cell.values_list('offset',flat=True)
+        ps_id='1'
+        
+        nci_flag=1
+        ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id')
+        ncicell=ncisamples.filter(cell_line_id__name__in=c)
+        ncioffset=ncicell.values_list('offset',flat=True)
+        pn_id='3'
+        
+        gse_flag=1
+        CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id')
+        CCcell=CCsamples.filter(cell_line_id__name__in=c)
+        CCoffset=CCcell.values_list('offset',flat=True)
+        pn_id='3'
     else:
-        return HttpResponse("<p>please check Step3 again.</p>" )
+        if 'dataset' in request.POST and request.POST['dataset'] != '':
+            datas=request.POST.getlist('dataset')
+            if 'Sanger Cell Line Project' in datas:
+                sanger_flag=1
+                SANGER=request.POST.getlist('select_sanger')
+                samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])      
+                cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__primary_site__in=SANGER)
+                offset=cell.values_list('offset',flat=True)
+                ps_id='1'
+            if 'NCI60' in datas:
+                nci_flag=1
+                NCI=request.POST.getlist('select_nci')
+                ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id')
+                ncicell=ncisamples.filter(cell_line_id__primary_site__in=NCI)
+                ncioffset=ncicell.values_list('offset',flat=True)
+                pn_id='3'
+            if 'GSE36133' in datas:
+                gse_flag=1
+                GSE=request.POST.getlist('select_gse')
+                CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id')
+                CCcell=CCsamples.filter(cell_line_id__primary_site__in=GSE)
+                CCoffset=CCcell.values_list('offset',flat=True)
+                pn_id='3'
+            if len(SANGER)==0 and len(NCI)==0 and len(GSE)==0:
+                return HttpResponse("<p>please select primary sites.</p>" )
+        else:
+            return HttpResponse("<p>please check Step3 again.</p>" )
+        
+    
     
     if 'keyword' in request.POST and request.POST['keyword'] != '':
         words = request.POST['keyword']
@@ -100,6 +131,41 @@ def data(request):
     ncigene = []
     CCgene = []
     context={}
+    
+    #need to modify by correct number
+    if request.POST['normalize'] == 'GAPDH' or request.POST['normalize'] == 'ACTB':
+        CV_flag=0
+        norm_name=[request.POST['normalize']]
+        if sanger_flag==1:
+            sanger_g=ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=norm_name)
+            sanger_probe_offset=sanger_g.values_list('offset',flat=True)
+            temp=sanger_val[np.ix_(sanger_probe_offset,offset)]
+            norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
+        else:
+            norm=1.0  #if / should = 1   
+        if nci_flag==1:
+            nci_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
+            nci_probe_offset=nci_g.values_list('offset',flat=True)
+            temp=nci_val[np.ix_(nci_probe_offset,ncioffset)]
+            nci_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
+            #nci_norm=np.round(nci_norm, decimals=4)
+        else:
+            nci_norm=1.0  #if / should = 1
+        if gse_flag==1:
+            CC_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
+            CC_probe_offset=CC_g.values_list('offset',flat=True)
+            temp=gse_val[np.ix_(CC_probe_offset,CCoffset)]
+            CC_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
+            #CC_norm=np.around(CC_norm, decimals=1)
+        else:
+            CC_norm=1.0  #if / should = 1             
+    else:
+        norm=10
+        nci_norm=10
+        CC_norm=10
+        
+            
+    #dealing with probes    
     if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
         gene = ProbeID.objects.filter(platform__in=ps_id).filter(Probe_id__in=words)
         probe_offset=gene.values_list('offset',flat=True)
@@ -111,8 +177,10 @@ def data(request):
         # Make a generator to generate all (cell, probe, val) pairs
         if(len(gene)!=0 and len(cell)!=0):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
+            normalize=np.divide(raw_test,norm)#dimension different!!!!
+            #normalize=np.around(normalize, decimals=1)
             cell_probe_val_pairs = (
-                (c, p, raw_test[probe_ix, cell_ix])                        
+                (c, p, raw_test[probe_ix, cell_ix],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
                 for cell_ix, c in enumerate(cell)
             )
@@ -122,8 +190,9 @@ def data(request):
             
         if(len(ncigene)!=0 and len(ncicell)!=0):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
+            nci_normalize=np.divide(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
-                (c, p, nci_raw_test[probe_ix, cell_ix])                        
+                (c, p, nci_raw_test[probe_ix, cell_ix],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(ncicell)
             )
@@ -133,8 +202,9 @@ def data(request):
             
         if(len(ncigene)!=0 and len(CCcell)!=0):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
+            CC_normalize=np.divide(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
-                (c, p, CC_raw_test[probe_ix, cell_ix])                        
+                (c, p, CC_raw_test[probe_ix, cell_ix],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(CCcell)
             )
@@ -157,8 +227,9 @@ def data(request):
         # Make a generator to generate all (cell, probe, val) pairs
         if(len(gene)!=0 and len(cell)!=0):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
+            normalize=np.divide(raw_test,norm)
             cell_probe_val_pairs = (
-                (c, p, raw_test[probe_ix, cell_ix])                        
+                (c, p, raw_test[probe_ix, cell_ix],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
                 for cell_ix, c in enumerate(cell)
             )
@@ -168,8 +239,9 @@ def data(request):
             
         if(len(ncigene)!=0 and len(ncicell)!=0):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
+            nci_normalize=np.divide(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
-                (c, p, nci_raw_test[probe_ix, cell_ix])                        
+                (c, p, nci_raw_test[probe_ix, cell_ix],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(ncicell)
             )
@@ -179,8 +251,9 @@ def data(request):
             
         if(len(ncigene)!=0 and len(CCcell)!=0):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
+            CC_normalize=np.divide(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
-                (c, p, CC_raw_test[probe_ix, cell_ix])                        
+                (c, p, CC_raw_test[probe_ix, cell_ix],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(CCcell)
             )
@@ -203,8 +276,9 @@ def data(request):
         # Make a generator to generate all (cell, probe, val) pairs
         if(len(gene)!=0 and len(cell)!=0):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
+            normalize=np.divide(raw_test,norm)
             cell_probe_val_pairs = (
-                (c, p, raw_test[probe_ix, cell_ix])                        
+                (c, p, raw_test[probe_ix, cell_ix],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
                 for cell_ix, c in enumerate(cell)
             )
@@ -214,8 +288,9 @@ def data(request):
             
         if(len(ncigene)!=0 and len(ncicell)!=0):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
+            nci_normalize=np.divide(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
-                (c, p, nci_raw_test[probe_ix, cell_ix])                        
+                (c, p, nci_raw_test[probe_ix, cell_ix],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(ncicell)
             )
@@ -225,8 +300,9 @@ def data(request):
             
         if(len(ncigene)!=0 and len(CCcell)!=0):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
+            CC_normalize=np.divide(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
-                (c, p, CC_raw_test[probe_ix, cell_ix])                        
+                (c, p, CC_raw_test[probe_ix, cell_ix],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(CCcell)
             )

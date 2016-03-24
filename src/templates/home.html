@@ -48,10 +48,26 @@
 
         <h3>Step3 - Enter the cell line name:</h3>
         <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
-        <!--<input id="cellline" type="text" name="cellline" >-->
-        
+        <div class="radio">
+            <label>
+                <input type="radio" name="cell_line_method" value="text" id="text" checked>
+                Select by input cell line name
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="cell_line_method" value="select" id="select" >
+                Select by dataset and primary sites
+            </label>
+        </div>
+        <div id="t_cellline">
+        <p>For more than one cell lines, please seperate with space</p>
+        <textarea class="form-control" rows="5" id="cellline" 
+        style="width:300px;height:100px;"
+        type="text" name="cellline" required="required" placeholder="Enter cell line name"/></textarea> 
+        </div>
         <!--a try to do primary site list-->
-        
+        <div id="multiple_select">
         <div>
         <p>First choose the dataset, then select the primary site you want for each dataset.</p>
         <p>Please select dataset(s):</p>        
@@ -194,7 +210,7 @@
                 </tbody>
             </table>
         </div>
-        
+        </div>
         <!--<h3>Step4 - Select the platform:</h3>
         <div class="radio">
             <label>
@@ -219,13 +235,13 @@
         <h3>Step4 - Normalize method:</h3>
         <div class="radio">
             <label>
-                <input type="radio" name="normalize" value="CV" checked>
+                <input type="radio" name="normalize" value="CV" >
                 CV
             </label>
         </div>
         <div class="radio">
             <label>
-                <input type="radio" name="normalize" value="GAPDH">
+                <input type="radio" name="normalize" value="GAPDH" checked>
                 GAPDH
             </label>
         </div>
@@ -262,6 +278,7 @@ $("#submit").click(function() {
 }); 
 </script>
 <script>
+
 $("#hide_sanger").click(function() {    
     $("tr[class='class1']").hide(); 
 }); 
@@ -293,7 +310,22 @@ $("#show_gse").click(function() {
 <script>
 $(document).ready(function () {
     $("div[class='panel panel-default']").hide();
+    $("div[id='t_cellline']").show();
+    $("div[id='multiple_select']").hide();
     $("tr[class='class1']").hide();
+    
+    $("input[name='cell_line_method']").change(function(){
+        if ($("#text").is(':checked')) {
+                
+                $("div[id='multiple_select']").hide();
+                $("div[id='t_cellline']").show();
+            }
+        if ($("#select").is(':checked'))
+        {   
+                $("div[id='multiple_select']").show();
+                $("div[id='t_cellline']").hide();
+        }
+    });
     $("input:checkbox").change(function(){
         if ($("#sanger").is(':checked')) {
             

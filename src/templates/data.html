@@ -3,17 +3,26 @@
 {% block title %}Search Results{% endblock title %}
 {% block extra_css %}
 
-<link href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.11/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+<!--<link href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />-->
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/buttons/1.1.1/css/buttons.dataTables.min.css">
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/select/1.1.0/css/select.dataTables.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.css"/>
-
+<!--<style>
+tfoot input {
+        width: 100%;
+        padding: 3px;
+        box-sizing: border-box;
+    }
+</style>-->
 {% endblock extra_css %}
 
 {% block content %}
+    <p>You can search by column at the end of this page.</p>
     <table id="example" class="display">
     <thead>
         <tr>
+            <th>No.</th>
             <th>Dataset</th>
             <th>Cell Line name</th>
             <th>Primary site</th>
@@ -26,10 +35,26 @@
             <th>normalized</th>
         </tr>
     </thead>
+    <tfoot>
+        <tr>
+            <th>No.</th>
+            <th>Dataset</th>
+            <th>Cell Line name</th>
+            <th>Primary site</th>
+            <th>Primary histology</th>
+            <th>Probe_id</th>
+            <th>Gene_symbol</th>
+            <th>Entrez_id</th>
+            <th>Gene_name</th>
+            <th>value</th>
+            <th>normalized</th>
+        </tr>
+    </tfoot>
 
 	<tbody>
-		{% for c, p, val in cell_probe_val_pairs %}
+		{% for c, p, val, norm in cell_probe_val_pairs %}
 		<tr>
+            <td></td>
 			<td>{{ c.dataset_id.name }}</td>
 			<td>{{ c.cell_line_id.name }}</td>
 			<td>{{ c.cell_line_id.primary_site }}</td>
@@ -38,13 +63,14 @@
 			<td>{{ p.Gene_symbol }}</td>
 			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
-			<td>{{ val }}</td>
-            <td></td>
+			<td>{{ val|floatformat:4 }}</td>
+            <td>{{norm|floatformat:4}}</td>
 		</tr>
 		{% endfor %}
 
-        {% for c, p, val in nci_cell_probe_val_pairs %}
+        {% for c, p, val, norm in nci_cell_probe_val_pairs %}
 		<tr>
+            <td></td>
 			<td>{{ c.dataset_id.name }}</td>
 			<td>{{ c.cell_line_id.name }}</td>
 			<td>{{ c.cell_line_id.primary_site }}</td>
@@ -53,12 +79,13 @@
 			<td>{{ p.Gene_symbol }}</td>
 			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
-			<td>{{ val }}</td>
-            <td></td>
+			<td>{{ val|floatformat:4 }}</td>
+            <td>{{norm|floatformat:4}}</td>
 		</tr>
 		{% endfor %}   
-        {% for c, p, val in CC_cell_probe_val_pairs %}
+        {% for c, p, val, norm in CC_cell_probe_val_pairs %}
 		<tr>
+            <td></td>
 			<td>{{ c.dataset_id.name }}</td>
 			<td>{{ c.cell_line_id.name }}</td>
 			<td>{{ c.cell_line_id.primary_site }}</td>
@@ -67,8 +94,8 @@
 			<td>{{ p.Gene_symbol }}</td>
 			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
-			<td>{{ val }}</td>
-            <td></td>
+			<td>{{ val|floatformat:4 }}</td>
+            <td>{{norm|floatformat:4}}</td>
 		</tr>
 		{% endfor %}
     </tbody>
@@ -89,11 +116,50 @@ $(document).ready(function() {
 <script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.js"></script>
+<!--<script type="text/javascript" 
+src="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.js">
+</script>-->
 <script>
  $(document).ready(function() {
- $('table[id="example"]').DataTable();
+ //$('table[id="example"]').DataTable();
+ var t = $('table[id="example"]').DataTable( {
+        "columnDefs": [ {
+            "searchable": false,
+            "orderable": false,
+            "targets": 0
+        } ],
+        "order": [[ 1, 'asc' ]]
+    } );
+ 
+    t.on( 'order.dt search.dt', function () {
+        t.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+            cell.innerHTML = i+1;
+        } );
+    } ).draw();
+     // Setup - add a text input to each footer cell
+    /* $('#example tfoot th').each( function () {
+        var title = $(this).text();
+        $(this).html( '<input type="text" placeholder="'+title+'" />' );
+    } );
+    t.columns().every( function () {
+        var that = this;
+ 
+        $( 'input', this.footer() ).on( 'keyup change', function () {
+            if ( that.search() !== this.value ) {
+                that
+                    .search( this.value )
+                    .draw();
+            }
+        } );
+    } );*/
+    
+    
  } );
 </script>
 {% endblock %}
+
+   
+ 
+    
+    
 
