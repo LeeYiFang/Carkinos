@@ -62,10 +62,13 @@
         </div>
         <div id="t_cellline">
         <p>For more than one cell lines, please seperate with space</p>
+        <span class="help" style="color:red;" name="needed3">*Please enter at least one cell line <br /></span>
         <textarea class="form-control" rows="5" id="cellline" 
         style="width:300px;height:100px;"
-        type="text" name="cellline" required="required" placeholder="Enter cell line name"/></textarea> 
+        type="text" name="cellline" placeholder="Enter cell line name"/></textarea> 
         </div>
+        
+        
         <!--a try to do primary site list-->
         <div id="multiple_select">
         <div>
@@ -269,6 +272,11 @@ $("#submit").click(function() {
   if ($("#keyword").val() == "") 
   {
     $("span[name='needed1']").show(); 
+    
+  }
+  if ($("input[name='cell_line_method']").val() == "") 
+  {
+    $("span[name='needed3']").show(); 
     
   }
   if($( "input[name='dataset']:checked" ).length==0)

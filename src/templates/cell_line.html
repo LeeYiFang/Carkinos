@@ -4,9 +4,10 @@
 {% block extra_css %}
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.11/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+<!--<link href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />-->
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/buttons/1.1.1/css/buttons.dataTables.min.css">
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/select/1.1.0/css/select.dataTables.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.css"/>
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.css"/>-->
 
 {% endblock extra_css %}
 {% block content %}
@@ -23,13 +24,18 @@
 
                 </tr>
             </thead>
+            
             <tbody>
-                {% for l in lines %}
+                {% for l,data in val_pairs %}
                     <tr>
-                        <td>{{ l.cell_line_id.name }}</td>
-                        <td>{{ l.cell_line_id.primary_site }}</td>
-                        <td>{{ l.cell_line_id.primary_hist }}</td>
-                        <td>{{ l.dataset_id.name }}</td>
+                        <td>{{ l.name }}</td>
+                        <td>{{ l.primary_site }}</td>
+                        <td>{{ l.primary_hist }}</td>
+                        <td>
+                        {% for c in data %}
+                            {{ c }}<br />
+                        {% endfor %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -48,6 +54,7 @@ $(document).ready(function() {
 <script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
+
 
 <script>
  $(document).ready(function() {

@@ -44,7 +44,14 @@ def home(request):
 
 
 def cell_lines(request):
-    lines = Sample.objects.select_related('cell_line_id','dataset_id')
+    #lines = Sample.objects.select_related('cell_line_id','dataset_id')
+    lines=CellLine.objects.all().distinct()
+    
+    val_pairs = (
+                (l, l.fcell_line_id.prefetch_related('dataset_id__name').values_list('dataset_id__name',flat=True).distinct())                        
+                for l in lines
+            )
+   
     return render_to_response('cell_line.html', RequestContext(request, locals()))
     
 
@@ -61,13 +68,13 @@ def data(request):
     ps_id='0'
     pn_id='0'
     if request.POST['cell_line_method'] == 'text':
+        if request.POST['cellline'] =='':
+            return HttpResponse("<p>please make sure to enter cell line name in Step3.</p>" )
         c = request.POST['cellline']
         c = c.split()
-        print(c)
         sanger_flag=1
         samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])      
         cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__name__in=c)
-        print(cell)
         offset=cell.values_list('offset',flat=True)
         ps_id='1'
         
