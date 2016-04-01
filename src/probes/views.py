@@ -44,15 +44,18 @@ def home(request):
 
 
 def cell_lines(request):
+    samples = Sample.objects.all().select_related('cell_line_id','dataset_id')
+    
     #lines = Sample.objects.select_related('cell_line_id','dataset_id')
     lines=CellLine.objects.all().distinct()
+    #dataset_name=lines.values_list('fcell_line_id__dataset_id__name')
     
     val_pairs = (
                 (l, l.fcell_line_id.prefetch_related('dataset_id__name').values_list('dataset_id__name',flat=True).distinct())                        
                 for l in lines
             )
-   
-    return render_to_response('cell_line.html', RequestContext(request, locals()))
+    context['val_pairs']=val_pairs
+    return render_to_response('cell_line.html', RequestContext(request, context))
     
 
 def data(request):
@@ -139,37 +142,34 @@ def data(request):
     CCgene = []
     context={}
     
-    #need to modify by correct number
-    if request.POST['normalize'] == 'GAPDH' or request.POST['normalize'] == 'ACTB':
-        CV_flag=0
-        norm_name=[request.POST['normalize']]
-        if sanger_flag==1:
-            sanger_g=ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=norm_name)
-            sanger_probe_offset=sanger_g.values_list('offset',flat=True)
-            temp=sanger_val[np.ix_(sanger_probe_offset,offset)]
-            norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
-        else:
-            norm=1.0  #if / should = 1   
-        if nci_flag==1:
-            nci_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
-            nci_probe_offset=nci_g.values_list('offset',flat=True)
-            temp=nci_val[np.ix_(nci_probe_offset,ncioffset)]
-            nci_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
-            #nci_norm=np.round(nci_norm, decimals=4)
-        else:
-            nci_norm=1.0  #if / should = 1
-        if gse_flag==1:
-            CC_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
-            CC_probe_offset=CC_g.values_list('offset',flat=True)
-            temp=gse_val[np.ix_(CC_probe_offset,CCoffset)]
-            CC_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
-            #CC_norm=np.around(CC_norm, decimals=1)
-        else:
-            CC_norm=1.0  #if / should = 1             
+    norm_name=[request.POST['normalize']]
+    if sanger_flag==1:
+        #if request.POST['normalize']!='NTRK3-AS1':
+        sanger_g=ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=norm_name)
+        sanger_probe_offset=sanger_g.values_list('offset',flat=True)
+        temp=sanger_val[np.ix_(sanger_probe_offset,offset)]
+        norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
+        #else:
+        #    norm=0.0
     else:
-        norm=10
-        nci_norm=10
-        CC_norm=10
+        norm=0.0  #if / should = 1   
+    if nci_flag==1:
+        nci_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
+        nci_probe_offset=nci_g.values_list('offset',flat=True)
+        temp=nci_val[np.ix_(nci_probe_offset,ncioffset)]
+        nci_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
+        #print(nci_norm)   
+    else:
+        nci_norm=0.0  #if / should = 1
+    if gse_flag==1:
+        CC_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
+        CC_probe_offset=CC_g.values_list('offset',flat=True)
+        temp=gse_val[np.ix_(CC_probe_offset,CCoffset)]
+        CC_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
+        #print(CC_norm)
+    else:
+        CC_norm=0.0  #if / should = 1             
+
         
             
     #dealing with probes    
@@ -184,7 +184,7 @@ def data(request):
         # Make a generator to generate all (cell, probe, val) pairs
         if(len(gene)!=0 and len(cell)!=0):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
-            normalize=np.divide(raw_test,norm)#dimension different!!!!
+            normalize=np.subtract(raw_test,norm)#dimension different!!!!
             #normalize=np.around(normalize, decimals=1)
             cell_probe_val_pairs = (
                 (c, p, raw_test[probe_ix, cell_ix],normalize[probe_ix, cell_ix])                        
@@ -197,7 +197,7 @@ def data(request):
             
         if(len(ncigene)!=0 and len(ncicell)!=0):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
-            nci_normalize=np.divide(nci_raw_test,nci_norm)
+            nci_normalize=np.subtract(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
                 (c, p, nci_raw_test[probe_ix, cell_ix],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
@@ -209,7 +209,7 @@ def data(request):
             
         if(len(ncigene)!=0 and len(CCcell)!=0):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
-            CC_normalize=np.divide(CC_raw_test,CC_norm)
+            CC_normalize=np.subtract(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
                 (c, p, CC_raw_test[probe_ix, cell_ix],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
@@ -234,7 +234,7 @@ def data(request):
         # Make a generator to generate all (cell, probe, val) pairs
         if(len(gene)!=0 and len(cell)!=0):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
-            normalize=np.divide(raw_test,norm)
+            normalize=np.subtract(raw_test,norm)
             cell_probe_val_pairs = (
                 (c, p, raw_test[probe_ix, cell_ix],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
@@ -246,7 +246,7 @@ def data(request):
             
         if(len(ncigene)!=0 and len(ncicell)!=0):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
-            nci_normalize=np.divide(nci_raw_test,nci_norm)
+            nci_normalize=np.subtract(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
                 (c, p, nci_raw_test[probe_ix, cell_ix],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
@@ -258,7 +258,7 @@ def data(request):
             
         if(len(ncigene)!=0 and len(CCcell)!=0):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
-            CC_normalize=np.divide(CC_raw_test,CC_norm)
+            CC_normalize=np.subtract(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
                 (c, p, CC_raw_test[probe_ix, cell_ix],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
@@ -283,7 +283,7 @@ def data(request):
         # Make a generator to generate all (cell, probe, val) pairs
         if(len(gene)!=0 and len(cell)!=0):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
-            normalize=np.divide(raw_test,norm)
+            normalize=np.subtract(raw_test,norm)
             cell_probe_val_pairs = (
                 (c, p, raw_test[probe_ix, cell_ix],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
@@ -295,7 +295,7 @@ def data(request):
             
         if(len(ncigene)!=0 and len(ncicell)!=0):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
-            nci_normalize=np.divide(nci_raw_test,nci_norm)
+            nci_normalize=np.subtract(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
                 (c, p, nci_raw_test[probe_ix, cell_ix],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
@@ -307,7 +307,7 @@ def data(request):
             
         if(len(ncigene)!=0 and len(CCcell)!=0):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
-            CC_normalize=np.divide(CC_raw_test,CC_norm)
+            CC_normalize=np.subtract(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
                 (c, p, CC_raw_test[probe_ix, cell_ix],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
