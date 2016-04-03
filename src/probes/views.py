@@ -44,16 +44,36 @@ def home(request):
 
 
 def cell_lines(request):
-    samples = Sample.objects.all().select_related('cell_line_id','dataset_id')
-    
-    #lines = Sample.objects.select_related('cell_line_id','dataset_id')
-    lines=CellLine.objects.all().distinct()
-    #dataset_name=lines.values_list('fcell_line_id__dataset_id__name')
-    
+    #samples = Sample.objects.all().select_related('cell_line_id','dataset_id')    
+    #lines=CellLine.objects.all().distinct()
+    #val_pairs = (
+    #            (l, l.fcell_line_id.prefetch_related('dataset_id__name').values_list('dataset_id__name',flat=True).distinct())                        
+    #            for l in lines
+    #        )
+    #context['val_pairs']=val_pairs
+    cell_line_dict={}
+    context={}
+    nr_samples=[]
+    samples=Sample.objects.all().select_related('cell_line_id','dataset_id')
+    for ss in samples:
+        name=ss.cell_line_id.name
+        primary_site=ss.cell_line_id.primary_site
+        primary_hist=ss.cell_line_id.primary_hist
+        comb=name+"/"+primary_site+"/"+primary_hist
+        dataset=ss.dataset_id.name
+        try: 
+            sets=cell_line_dict[comb]
+            if (dataset not in sets):
+                cell_line_dict[comb]=dataset+"/"+sets
+        except KeyError:
+            cell_line_dict[comb]=dataset
+            nr_samples.append(ss)
+            
+            
     val_pairs = (
-                (l, l.fcell_line_id.prefetch_related('dataset_id__name').values_list('dataset_id__name',flat=True).distinct())                        
-                for l in lines
-            )
+                (ss,cell_line_dict[ss.cell_line_id.name+"/"+ss.cell_line_id.primary_site+"/"+ss.cell_line_id.primary_hist])                        
+                for ss in nr_samples
+            )                   
     context['val_pairs']=val_pairs
     return render_to_response('cell_line.html', RequestContext(request, context))
     

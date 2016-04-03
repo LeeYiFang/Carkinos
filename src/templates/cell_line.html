@@ -28,14 +28,15 @@
             <tbody>
                 {% for l,data in val_pairs %}
                     <tr>
-                        <td>{{ l.name }}</td>
-                        <td>{{ l.primary_site }}</td>
-                        <td>{{ l.primary_hist }}</td>
-                        <td>
+                        <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.primary_site }}</td>
+                        <td>{{ l.cell_line_id.primary_hist }}</td>
+                        <!--<td>
                         {% for c in data %}
                             {{ c }}<br />
                         {% endfor %}
-                        </td>
+                        </td>-->
+                        <td>{{data}}</td>
                     </tr>
                 {% endfor %}
             </tbody>
