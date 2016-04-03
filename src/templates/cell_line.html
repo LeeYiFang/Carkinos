@@ -26,16 +26,12 @@
             </thead>
             
             <tbody>
-                {% for l,data in val_pairs %}
+                {% for cl in cell_lines_with_datasets %}
                     <tr>
-                        <td>{{ l.name }}</td>
-                        <td>{{ l.primary_site }}</td>
-                        <td>{{ l.primary_hist }}</td>
-                        <td>
-                        {% for c in data %}
-                            {{ c }}<br />
-                        {% endfor %}
-                        </td>
+                        <td>{{ cl.name }}</td>
+                        <td>{{ cl.primary_site }}</td>
+                        <td>{{ cl.primary_hist }}</td>
+                        <td>{{ cl.dataset_names|join:"<br>" }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
