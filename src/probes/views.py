@@ -44,19 +44,11 @@ def home(request):
 
 
 def cell_lines(request):
-    samples = Sample.objects.all().select_related('cell_line_id','dataset_id')
-    
-    #lines = Sample.objects.select_related('cell_line_id','dataset_id')
-    lines=CellLine.objects.all().distinct()
-    #dataset_name=lines.values_list('fcell_line_id__dataset_id__name')
-    
-    val_pairs = (
-                (l, l.fcell_line_id.prefetch_related('dataset_id__name').values_list('dataset_id__name',flat=True).distinct())                        
-                for l in lines
-            )
-    context['val_pairs']=val_pairs
-    return render_to_response('cell_line.html', RequestContext(request, context))
-    
+    cell_lines_w_dset = CellLine.by_datasets.collapsed()
+    return render(request, 'cell_line.html', {
+        'cell_lines_with_datasets': cell_lines_w_dset
+    })
+
 
 def data(request):
     SANGER=[]
