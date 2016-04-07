@@ -274,7 +274,7 @@ $("#submit").click(function() {
     $("span[name='needed1']").show(); 
     
   }
-  if ($("input[name='cell_line_method']").val() == "") 
+  if ($("#cellline").val() == "") 
   {
     $("span[name='needed3']").show(); 
     
@@ -321,17 +321,19 @@ $(document).ready(function () {
     $("div[id='t_cellline']").show();
     $("div[id='multiple_select']").hide();
     $("tr[class='class1']").hide();
-    
+    $("#cellline").attr('required', '');
     $("input[name='cell_line_method']").change(function(){
         if ($("#text").is(':checked')) {
                 
                 $("div[id='multiple_select']").hide();
                 $("div[id='t_cellline']").show();
+                $("#cellline").attr('required', '');
             }
         if ($("#select").is(':checked'))
         {   
                 $("div[id='multiple_select']").show();
                 $("div[id='t_cellline']").hide();
+                $("#cellline").removeAttr('required');
         }
     });
     $("input:checkbox").change(function(){
