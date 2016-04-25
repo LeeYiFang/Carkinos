@@ -99,8 +99,8 @@ tfoot input {
 		{% endfor %}
     </tbody>
     </table>
-
-    
+    <!--<button>Export</button>-->
+    <div class="bottom"></div>
 
 
 {% endblock content %}
@@ -115,13 +115,19 @@ $(document).ready(function() {
 <script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.flash.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
 <!--<script type="text/javascript" 
 src="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.js">
 </script>-->
+
 <script>
  $(document).ready(function() {
  //$('table[id="example"]').DataTable();
+
  var t = $('table[id="example"]').DataTable( {
+        
         "columnDefs": [ {
             "searchable": false,
             "orderable": false,
@@ -135,26 +141,36 @@ src="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1
             cell.innerHTML = i+1;
         } );
     } ).draw();
-     // Setup - add a text input to each footer cell
-    /* $('#example tfoot th').each( function () {
-        var title = $(this).text();
-        $(this).html( '<input type="text" placeholder="'+title+'" />' );
+    $('table[id="example"]').DataTable({
+        destroy: true,
+        dom: 'lfrtBip',
+        buttons: [
+            'excel'
+        ]
     } );
-    t.columns().every( function () {
-        var that = this;
- 
-        $( 'input', this.footer() ).on( 'keyup change', function () {
-            if ( that.search() !== this.value ) {
-                that
-                    .search( this.value )
-                    .draw();
-            }
-        } );
-    } );*/
-    
-    
+        
  } );
 </script>
+<!--
+<script src="/static/css/jquery.table2excel.js"></script>
+
+<script>
+$("button").click(function(){
+
+  $('table[id="example"]').table2excel({
+
+    // exclude CSS class
+
+    exclude: ".noExl",
+
+    name: "Worksheet Name",
+
+    filename: "SomeFile.xls" //do not include extension
+
+  });
+
+});
+</script>-->
 {% endblock %}
 
    
