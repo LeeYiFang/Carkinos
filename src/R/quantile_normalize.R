@@ -1,13 +1,13 @@
 # Install the affy package by
 #   source("http://bioconductor.org/biocLite.R")
 #   biocLite("affy")
-library(affy)
+#library(affy)
 
 # To download the raw data as TAR file
 #   curl -o GSE32474_RAW.tar "http://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE32474&format=file"
 # Extract under folder GSE32474_RAW
 #   tar -C GSE32474_RAW -xf GSE32474_RAW.tar
-
+library(affy)
 raw_affy <- ReadAffy(
     celfile.path = "Dataset/GSE32474_RAW",
     compress = TRUE,

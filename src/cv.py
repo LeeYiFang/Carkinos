@@ -29,6 +29,10 @@ u133a.SYMBOL.fillna('', inplace=True)
 ugene=list(pd.unique(u133a.SYMBOL))
 ugene.remove('')
 #ugene has all the gene symbols in U133A and U133PlUS2
+#a_uni=list(pd.unique(u133a.SYMBOL))
+#two_uni=list(pd.unique(plus2.SYMBOL))
+#ugene=list(set(a_uni).intersection(two_uni))
+#ugene.remove('')
 
 #sanger=798,nci60=174,gse=917
 sanger_offset=Sample.objects.filter(dataset_id=1).values_list('offset',flat=True)
