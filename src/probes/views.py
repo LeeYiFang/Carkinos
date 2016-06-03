@@ -6,9 +6,90 @@ from django.template import RequestContext
 import pandas as pd
 import numpy as np
 from pathlib import Path
+import sklearn
+from sklearn.decomposition import PCA
+import pylab
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
+def welcome(request):
+    return render_to_response('welcome.html',locals())
 
-def home(request):
+def help_similar_assessment(request):
+    return render_to_response('help_similar_assessment.html',RequestContext(request))
+
+def similar_assessment(request):    
+    return render_to_response('similar_assessment.html',RequestContext(request))
+
+def pca(request):
+    
+    if 'dataset' in request.POST:
+        datas=request.POST.getlist('dataset')
+    else:
+        return render_to_response('help_similar_assessment.html',RequestContext(request))
+    if 'cellline' in request.POST:
+        ncell = request.POST['cellline']
+        ncell = ncell.split()
+    else:
+        return render_to_response('help_similar_assessment.html',RequestContext(request))
+    
+    cell=CellLine.objects.filter(name__in=ncell)
+    sanger_propotion=0
+    sanger_cellline=[]
+    sanger_cell=[]
+    context={}
+    n=3  #the dimension for pca
+    if(request.POST['data_platform'] == 'U133A'):
+        if 'Sanger Cell Line Project' in datas:  
+                        
+            sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
+            sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
+            sanger_val=sanger_val[~np.isnan(sanger_val).any(axis=1)]
+            sanger_val=np.matrix(sanger_val)
+            tsanger_val=np.transpose(sanger_val)
+            pca= PCA(n_components=n)
+            Xsanger = pca.fit_transform(tsanger_val)
+            tsanger=pca.explained_variance_ratio_
+            sanger_propotion=sum(tsanger[0:n-1])
+            Xsangerx=list(Xsanger[:,0])
+            Xsangery=list(Xsanger[:,1])
+            Xsangerz=list(Xsanger[:,2])
+            
+            sanger_cell=[]
+            samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])  
+            ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
+            cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))
+            sanger_cellline=cell   
+            
+            temp=0
+            for k in sanger_cellline:
+                #print(k.name)
+                scell=ss.filter(cell_line_id__name=k.name)
+                #print(scell)
+                offset=list(scell.values_list('offset',flat=True))
+                sanger_cell.append([k,[]])
+                for i in offset:
+                    for j in range(0,798):
+                        if i!=j:
+                            sanger_cell[temp][1].append([cell_line_name[j],np.linalg.norm(Xsanger[j]-Xsanger[i])])
+                            #sanger_cell[temp][1].append([cell_line_name[j],0])
+                temp=temp+1
+            #print(sanger_cell[0][1])
+    else:
+        context={}
+        
+    return render_to_response('pca.html',RequestContext(request,
+    {
+    'sanger_cell':sanger_cell,
+    'sanger_propotion':sanger_propotion,
+    'Xsangerx':Xsangerx,
+    'Xsangery':Xsangery,
+    'Xsangerz':Xsangerz,
+    }))
+
+    
+
+def cellline_microarray(request):
     # Pre-fetch the cell line field for all samples.
     # Reduce N query in to 1. N = number of samples
     samples = Sample.objects.filter(
@@ -32,7 +113,7 @@ def home(request):
     )
     
 
-    return render(request, 'home.html', {
+    return render(request, 'cellline_microarray.html', {
         'samples': samples,
         'primary_sites': primary_sites,
         'ncisamples': ncisamples,

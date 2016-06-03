@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Similarity Assessment{% endblock title %}
+
+{% block content %}
+
+<h1>Similarity Assessment</h1>
+    <p></p>
+    <form action="{% url 'pca' %}" method="post" target="_blank">{% csrf_token %}
+    
+    <h3>Step1 - Enter the cell line name:</h3>
+    <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
+    <div id="t_cellline">
+        <p>For more than one cell lines, please separate with space or new line</p>
+        <span class="help" style="color:red;" name="needed">*Please enter at least one cell line <br /></span>
+        <textarea class="form-control" rows="5" id="cellline" 
+        style="width:300px;height:100px;" required="required"
+        type="text" name="cellline" placeholder="Enter cell line name"/></textarea> 
+    </div>
+    
+    
+    <h3>Step2 - Select Data set(s):</h3>
+    <p>The normalization is base on array platform, so you can only select the data set(s) under the same platform</p>
+    <div id="select_dataset">
+    <div class="radio">
+            <label>
+                <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
+                Affymatrix U133A platform
+            </label>
+    </div>
+    <div id="select_a">
+        <p>please select the data set(s) you want to compare:</p>
+        <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
+    </div>
+    
+    <div class="radio">
+            <label>
+                <input type="radio" name="data_platform" value="PLUS2" id="PLUS2-id" >
+                Affymatrix U133plus2 platform
+            </label>
+    </div>
+    
+    <div id="select_plus2">
+        <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
+        <p>please select the data set(s) you want to compare:</p>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci" value="NCI60">NCI60</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="gse" value="GSE36133">GSE36133</label>
+        
+
+    </div>
+    </br>
+    <button class="btn btn-default" type="submit" id="submit">Submit</button>
+    
+    </form>
+{% endblock content %}
+
+{% block scripts %}
+
+<script>
+$("span[name='needed']").hide();
+$("span[name='needed2']").hide();
+//$("div[id='select_a']").hide();
+$("div[id='select_plus2']").hide();
+$("#submit").click(function() {  
+  
+  if ($("#cellline").val() == "") 
+  {
+    $("span[name='needed']").show(); 
+    
+  }
+  if($( "input[name='dataset']:checked" ).length==0)
+  {
+    $("span[name='needed2']").show();
+  }
+}); 
+</script>
+<script>
+$("input[name='data_platform']").change(function(){
+        if ($("#U133A-id").is(':checked')) {
+                
+                $("div[id='select_a']").show();
+                $("div[id='select_plus2']").hide();
+                //$("#cellline").attr('required', '');
+            }
+        if ($("#PLUS2-id").is(':checked'))
+        {   
+                $("div[id='select_a']").hide();
+                $("div[id='select_plus2']").show();
+                //$("#cellline").removeAttr('required');
+        }
+    });
+</script>
+{% endblock %}

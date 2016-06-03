@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}Cell Line Microarray Data{% endblock title %}
+
+{% block content %}
+    <h1>Cell Line Microarray Data</h1>
+    <p></p>
+    <form action="{% url 'data' %}" method="post" target="_blank">{% csrf_token %}
+        <h3>Step1 - Choose type of keywords (gene name or platform identifier):</h3>
+        <h4>Gene:</h4>
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="symbol">Gene symbol
+        </label>
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="entrez">Entrez Gene ID
+        </label>
+        <!--
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="entrez">GenBank accession
+        </label>
+        -->
+        <h4>Platform identifier:</h4>
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="probeid" checked>Probe ID
+        </label>
+
+        <h3>Step2 - Input keywords:</h3>
+        <p>For more than one keywords, please separate with space or new line</p><!--grammar problem,need fix later-->
+        <p>Example(probe id):1007_s_at 1053_at</p>
+        <p>Suggestion:if you want to search all cell lines in Step3,<br />
+        instead of searching your keywords at once,<br />
+        separate in several searches will be quicker.
+        </p>
+        <style type="text/css">  
+                    .help {display: none}
+        </style> 
+        <div class="form-group">
+                 
+                <label for="keyword">Keyword:</label>
+                <textarea class="form-control" rows="5" id="keyword" name="keyword"
+                style="width:300px;height:100px;" required="required" 
+                placeholder="Enter keyword"/></textarea> 
+                <span class="help" style="color:red;" name="needed1">*Please fill in this part</span>  
+        </div>
+        
+
+        <h3>Step3 - Enter the cell line name:</h3>
+        <p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
+        <div class="radio">
+            <label>
+                <input type="radio" name="cell_line_method" value="text" id="text" checked>
+                Select by input cell line name
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="cell_line_method" value="select" id="select" >
+                Select by dataset and primary sites
+            </label>
+        </div>
+        <div id="t_cellline">
+        <p>For more than one cell lines, please separate with space or new line</p>
+        <span class="help" style="color:red;" name="needed3">*Please enter at least one cell line <br /></span>
+        <textarea class="form-control" rows="5" id="cellline" 
+        style="width:300px;height:100px;"
+        type="text" name="cellline" placeholder="Enter cell line name"/></textarea> 
+        </div>
+        
+        
+        <!--a try to do primary site list-->
+        <div id="multiple_select">
+        <div>
+        <p>First choose the dataset, then select the primary site you want for each dataset.</p>
+        <p>Please select dataset(s):</p>        
+        <span class="help" style="color:red;" name="needed2">*Please check at least one dataset and primary site<br /></span>
+        
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci" value="NCI60">NCI60</label>
+        <label class="checkbox-inline"><input type="checkbox" name="dataset" id="gse" value="GSE36133">GSE36133</label>
+        
+        </div>
+        <div id="checking"></div>
+        
+        <div class="panel panel-default" name="sanger_table">
+          <!-- Default panel contents -->
+          <div class="panel-heading">Sanger Cell Line Project:</div>
+          <div class="panel-body">
+            <p>please select the primary site you want</p>
+            <select multiple="multiple" id="select_sanger" name="select_sanger">
+                    <optgroup label="Sanger cell line project" id="optgroup1">
+                        {% for s in primary_sites %}
+                            <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                    </optgroup>
+                     
+            </select>
+          </div>
+          <div id="test"></div>
+          <br />
+          <p>If you don't want to see all the cell line you selected, press "Hide All" to hide them<br />
+          Press "Show" to see them again</p>
+          <input type="button" class="btn btn-default" value="Hide All" id="hide_sanger">
+          <input type="button" class="btn btn-default" value="Show" id="show_sanger">
+          <!-- Table -->
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Cell Line name</th>
+                    <th>Primary site</th>
+                    <th>Primary histology</th>
+                    <th>dataset</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for l in samples %}
+                    {# Add display:none to increase HTML DOM loading #}
+                    <tr name="{{l.cell_line_id.primary_site}}" class="class1" style="display:none">
+                        <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.primary_site }}</td>
+                        <td>{{ l.cell_line_id.primary_hist }}</td>
+                        <td>Sanger Cell Line Project</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="panel panel-default" name="nci_table">
+          <!-- Default panel contents -->
+          <div class="panel-heading">NCI-60:</div>
+          <div class="panel-body">
+            <p>please select the primary site you want</p>
+            <select multiple="multiple" id="select_nci" name="select_nci">
+                    <optgroup label="nci60" id="optgroup2">
+                            {% for ncip in nciprimary_sites %}
+                            <option value="{{ ncip }}">{{ ncip }}</option>
+                            {% endfor %}
+                    </optgroup>
+                     
+            </select>
+          </div>
+          <div id="test_nci"></div>
+          <br />
+          <p>If you don't want to see all the cell line you selected, press "Hide All" to hide them<br />
+          Press "Show" to see them again</p>
+          <input type="button" class="btn btn-default" value="Hide All" id="hide_nci">
+          <input type="button" class="btn btn-default" value="Show" id="show_nci">
+          <!-- Table -->
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Cell Line name</th>
+                    <th>Primary site</th>
+                    <th>Primary histology</th>
+                    <th>dataset</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for l in ncisamples %}
+                    {# Add display:none to increase HTML DOM loading #}
+                    <tr name="{{l.cell_line_id.primary_site}}" class="class2" style="display:none">
+                        <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.primary_site }}</td>
+                        <td>{{ l.cell_line_id.primary_hist }}</td>
+                        <td>NCI60</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="panel panel-default" name="gse_table">
+          <!-- Default panel contents -->
+          <div class="panel-heading">GSE36133:</div>
+          <div class="panel-body">
+            <p>please select the primary site you want</p>
+            <select multiple="multiple" id="select_nci" name="select_gse">
+                    <optgroup label="gse36133" id="optgroup3">
+                            {% for cc in CCprimary_sites %}
+                            <option value="{{ cc }}">{{ cc }}</option>
+                            {% endfor %}
+                    </optgroup>
+                     
+            </select>
+          </div>
+          <div id="test_gse"></div>
+          <br />
+          <p>If you don't want to see all the cell line you selected, press "Hide All" to hide them<br />
+          Press "Show" to see them again</p>
+          <input type="button" class="btn btn-default" value="Hide All" id="hide_gse">
+          <input type="button" class="btn btn-default" value="Show" id="show_gse">
+          <!-- Table -->
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Cell Line name</th>
+                    <th>Primary site</th>
+                    <th>Primary histology</th>
+                    <th>dataset</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for l in CCsamples %}
+                    {# Add display:none to increase HTML DOM loading #}
+                    <tr name="{{l.cell_line_id.primary_site}}" class="class3" style="display:none">
+                        <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.primary_site }}</td>
+                        <td>{{ l.cell_line_id.primary_hist }}</td>
+                        <td>GSE36133</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        </div>
+        <!--<h3>Step4 - Select the platform:</h3>
+        <div class="radio">
+            <label>
+                <input type="radio" name="platform" value="U133A" checked>
+                Affymetrix GeneChip HT-HG_U133A
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="platform" value="U133B">
+                Affymetrix GeneChip HT-HG_U133B
+            </label>
+        </div>       
+        <div class="radio">
+            <label>
+                <input type="radio" name="platform" value="PLUS2">
+                Affymetrix GeneChip U133 Plus 2.0
+            </label>
+        </div>
+        -->
+        
+        <h3>Step4 - Normalize method:</h3>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="RPL41" >
+                CV: minimum coefficient of variance(gene:RPL41)
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="GAPDH" checked>
+                GAPDH
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="ACTB">
+                ACTB(beta-actin)
+            </label>
+        </div>
+        <button class="btn btn-default" type="submit" id="submit">Submit</button>
+        
+    </form>
+{% endblock content %}
+{% block scripts %}
+<script src="static/css/multiple-select.js"></script>
+
+<script>
+        $("select").multipleSelect({
+            filter: true,
+            multiple: true
+        });
+</script>
+<script>
+$("#submit").click(function() {  
+  if ($("#keyword").val() == "") 
+  {
+    $("span[name='needed1']").show(); 
+    
+  }
+  if ($("#cellline").val() == "") 
+  {
+    $("span[name='needed3']").show(); 
+    
+  }
+  if($( "input[name='dataset']:checked" ).length==0)
+  {
+    $("span[name='needed2']").show();
+  }
+}); 
+</script>
+<script>
+
+$("#hide_sanger").click(function() {    
+    $("tr[class='class1']").hide(); 
+}); 
+$("#show_sanger").click(function() {    
+    $( "select[name='select_sanger'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class1'][name='"+indata+"']").show();
+    }); 
+}); 
+$("#hide_nci").click(function() {    
+    $("tr[class='class2']").hide(); 
+}); 
+$("#show_nci").click(function() {    
+    $( "select[name='select_nci'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class2'][name='"+indata+"']").show();
+    }); 
+}); 
+$("#hide_gse").click(function() {    
+    $("tr[class='class3']").hide(); 
+}); 
+$("#show_gse").click(function() {    
+    $( "select[name='select_gse'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class3'][name='"+indata+"']").show();
+    }); 
+}); 
+</script>
+<script>
+$(document).ready(function () {
+    $("div[class='panel panel-default']").hide();
+    $("div[id='t_cellline']").show();
+    $("div[id='multiple_select']").hide();
+    $("tr[class='class1']").hide();
+    $("#cellline").attr('required', '');
+    $("input[name='cell_line_method']").change(function(){
+        if ($("#text").is(':checked')) {
+                
+                $("div[id='multiple_select']").hide();
+                $("div[id='t_cellline']").show();
+                $("#cellline").attr('required', '');
+            }
+        if ($("#select").is(':checked'))
+        {   
+                $("div[id='multiple_select']").show();
+                $("div[id='t_cellline']").hide();
+                $("#cellline").removeAttr('required');
+        }
+    });
+    $("input:checkbox").change(function(){
+        if ($("#sanger").is(':checked')) {
+            
+            $("div[name='sanger_table']").show();
+        }
+        else
+        {   
+            $("div[name='sanger_table']").hide();
+        }
+        if ($("#nci").is(':checked')) {
+            $("div[name='nci_table']").show();
+        }
+        else
+        {           
+            $("div[name='nci_table']").hide();
+        }
+        if ($("#gse").is(':checked')) {
+            
+            $("div[name='gse_table']").show();
+        }
+        else
+        {   
+            $("div[name='gse_table']").hide();
+        }
+        
+    });
+    
+    $( "select[name='select_sanger']" ).change(function () {
+    var str = "The primary site you selected: ";
+    $("tr[class='class1']").hide();
+    $( "select[name='select_sanger'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class1'][name='"+indata+"']").show();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test" ).text( str );
+  }).change();
+ 
+   $( "select[name='select_nci']" ).change(function () {
+    var str = "The primary site you selected: ";
+    $("tr[class='class2']").hide();
+    $( "select[name='select_nci'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class2'][name='"+indata+"']").show();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test_nci" ).text( str );
+  }).change();
+
+  $( "select[name='select_gse']" ).change(function () {
+    var str = "The primary site you selected: ";
+    $("tr[class='class3']").hide();
+    $( "select[name='select_gse'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class3'][name='"+indata+"']").show();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test_gse" ).text( str );
+  }).change();   
+ 
+}); 
+</script>
+
+
+
+{% endblock %}
