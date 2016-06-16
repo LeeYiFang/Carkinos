@@ -34,31 +34,42 @@ def pca(request):
         return render_to_response('help_similar_assessment.html',RequestContext(request))
     
     cell=CellLine.objects.filter(name__in=ncell)
-    sanger_propotion=0
+    propotion=0
     sanger_cellline=[]
-    sanger_cell=[]
+    output_cell=[]
     context={}
+    colorX=[]
+    colorY=[]
+    colorZ=[]
+    selected_name=[]
+    all_name=[]
+    sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
+    nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
+    gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
+    sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
+    nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
+    gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
+    
     n=3  #the dimension for pca
     if(request.POST['data_platform'] == 'U133A'):
         if 'Sanger Cell Line Project' in datas:  
-                        
-            sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
-            sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
+
             sanger_val=sanger_val[~np.isnan(sanger_val).any(axis=1)]
             sanger_val=np.matrix(sanger_val)
             tsanger_val=np.transpose(sanger_val)
             pca= PCA(n_components=n)
             Xsanger = pca.fit_transform(tsanger_val)
             tsanger=pca.explained_variance_ratio_
-            sanger_propotion=sum(tsanger[0:n-1])
-            Xsangerx=list(Xsanger[:,0])
-            Xsangery=list(Xsanger[:,1])
-            Xsangerz=list(Xsanger[:,2])
+            propotion=sum(tsanger[0:n-1])
+            X=list(Xsanger[:,0])
+            Y=list(Xsanger[:,1])
+            Z=list(Xsanger[:,2])
             
-            sanger_cell=[]
+            output_cell=[]
             samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])  
             ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
             cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))
+            all_name=cell_line_name
             sanger_cellline=cell   
             
             temp=0
@@ -67,24 +78,97 @@ def pca(request):
                 scell=ss.filter(cell_line_id__name=k.name)
                 #print(scell)
                 offset=list(scell.values_list('offset',flat=True))
-                sanger_cell.append([k,[]])
+                output_cell.append([k,[]])
+                counter=1
                 for i in offset:
                     for j in range(0,798):
                         if i!=j:
-                            sanger_cell[temp][1].append([cell_line_name[j],np.linalg.norm(Xsanger[j]-Xsanger[i])])
-                            #sanger_cell[temp][1].append([cell_line_name[j],0])
+                            output_cell[temp][1].append([counter,cell_line_name[j],'Sanger Cell Line Project',np.linalg.norm(Xsanger[j]-Xsanger[i])])
+                    selected_name.append(k.name+'('+str(counter)+')')
+                    #selected_name=[1,2,3]
+                    colorX.append(Xsanger[i][0])
+                    colorY.append(Xsanger[i][1])
+                    colorZ.append(Xsanger[i][2])
+                    counter=counter+1
                 temp=temp+1
+            #print(selected_name)
+            #print(colorY)
             #print(sanger_cell[0][1])
     else:
-        context={}
+        if 'NCI60' or 'GSE36133' in datas:                          
         
+            if 'NCI60' and 'GSE36133' in datas:
+                dataset_name=['NCI60','GSE36133']
+                nci_val=nci_val[~np.isnan(nci_val).any(axis=1)]
+                nci_val=np.matrix(nci_val)
+                tnci_val=np.transpose(nci_val)
+                gse_val=gse_val[~np.isnan(gse_val).any(axis=1)]
+                gse_val=np.matrix(gse_val)
+                tgse_val=np.transpose(gse_val)
+                val=np.concatenate((tnci_val, tgse_val))
+            elif 'NCI60' in datas:
+                dataset_name=['NCI60']
+                nci_val=nci_val[~np.isnan(nci_val).any(axis=1)]
+                nci_val=np.matrix(nci_val)
+                val=np.transpose(nci_val)
+            
+            else:
+                dataset_name=['GSE36133']
+                gse_val=gse_val[~np.isnan(gse_val).any(axis=1)]
+                gse_val=np.matrix(gse_val)
+                val=np.transpose(gse_val)
+            
+            pca= PCA(n_components=n)
+            Xplus2 = pca.fit_transform(val)
+            tplus2=pca.explained_variance_ratio_
+            propotion=sum(tplus2[0:n-1])
+            X=list(Xplus2[:,0])
+            Y=list(Xplus2[:,1])
+            Z=list(Xplus2[:,2])
+            
+            
+            output_cell=[]
+            
+            for d in dataset_name:
+                samples=Sample.objects.filter(dataset_id__name__in=[d])  
+                ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
+                cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))
+                all_name=all_name+cell_line_name   
+                range_size=Sample.objects.filter(dataset_id__name__in=[d]).count()
+                temp=0
+                
+                for k in cell:
+                    #print(k.name)
+                    scell=ss.filter(cell_line_id__name=k.name)
+                    #print(scell)
+                    offset=list(scell.values_list('offset',flat=True))
+                    output_cell.append([k,[]])
+                    counter=1
+                    for i in offset:
+                        for j in range(0,range_size):
+                            if i!=j:
+                                output_cell[temp][1].append([counter,cell_line_name[j],d,np.linalg.norm(Xplus2[j]-Xplus2[i])])
+                        selected_name.append(k.name+'('+str(counter)+')')
+                        colorX.append(Xplus2[i][0])
+                        colorY.append(Xplus2[i][1])
+                        colorZ.append(Xplus2[i][2])
+                        counter=counter+1
+                    temp=temp+1
+                
+                
+                #print(colorZ)
     return render_to_response('pca.html',RequestContext(request,
     {
-    'sanger_cell':sanger_cell,
-    'sanger_propotion':sanger_propotion,
-    'Xsangerx':Xsangerx,
-    'Xsangery':Xsangery,
-    'Xsangerz':Xsangerz,
+    'output_cell':output_cell,
+    'propotion':propotion,
+    'all_name':all_name,
+    'selected_name':selected_name,
+    'colorX':colorX,
+    'colorY':colorY,
+    'colorZ':colorZ,
+    'X':X,
+    'Y':Y,
+    'Z':Z,
     }))
 
     

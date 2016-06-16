@@ -12,12 +12,22 @@
 {% endblock extra_css %}
 {% block content %}
     <h2>PCA RESULTS:Plot</h2>
-    <div id="myDiv" style="width:100%;height:100%"></div>
-    {% for a,b in sanger_cell %}
-        <p>cell line name:{{a.name}}<p>
-        <p>primary site:{{a.primary_site}}<p>
-        <p>primary histology:{{a.primary_hist}}<p>
-        <p>proportion: {{sanger_propotion}}</p>
+    <div id="myDiv" style="width:100%;height:100%">
+       
+    
+    
+    
+    
+    </div>
+    <p>Red spots is the cell line you input.</p>
+    <p>If you do not see any red spot and any data in the table,</br> 
+    that means the cell lines are not in the dataset(s) you selected.
+    </p>
+    {% for cell_line,b in output_cell %}
+        <p>cell line name:{{cell_line.name}}<p>
+        <p>primary site:{{cell_line.primary_site}}<p>
+        <p>primary histology:{{cell_line.primary_hist}}<p>
+        <p>proportion: {{propotion}}</p>
         
         <div class="row">
             <div class="col-md-offset-1 col-md-10">
@@ -26,6 +36,7 @@
                 <table id="example" class="display">
                     <thead>
                     <tr>
+                        <th>Sample order</th>
                         <th>Cell Line name</th>
                         <th>dataset</th>
                         <th>distance</th>
@@ -33,11 +44,12 @@
                     </thead>
                     <tbody>
                     
-                        {% for i,j in b %} 
+                        {% for order,cname,setname,dis in b %} 
                             <tr>
-                                <td>{{ i }}</td>
-                                <td>Sanger Cell Line Project</td>
-                                <td>{{ j }}</td>
+                                <td>{{ order }}</td>
+                                <td>{{ cname }}</td>
+                                <td>{{setname}}</td>
+                                <td>{{ dis }}</td>
                             </tr>
                         {% endfor %}
                    
@@ -70,9 +82,28 @@ $(document).ready(function() {
 </script>
 <script>
 var trace2 = {
-    x:{{Xsangerx}},
-    y:{{Xsangery}},
-    z:{{Xsangerz}},
+    x:{{colorX}},
+    y:{{colorY}},
+    z:{{colorZ}},
+    mode: 'markers',
+  marker: {
+    color: 'rgb(255, 0, 0)',
+    size: 12,
+    symbol: 'circle',
+    line: {
+      color: 'rgb(204, 204, 204)',
+      width: 1
+    },
+    opacity: 0.9
+  },
+  //text: [{{selected_name}}],  //I don't know why this part cannot pass string to it(pass int can work)
+  name: 'Input cell lines',
+  type: 'scatter3d'
+};
+var trace1 = {
+    x:{{X}},
+    y:{{Y}},
+    z:{{Z}},
     mode: 'markers',
   marker: {
     color: 'rgb(127, 127, 127)',
@@ -84,9 +115,11 @@ var trace2 = {
     },
     opacity: 0.9
   },
+  //text: {{all_name}},
+  name: 'All data in selected datasets',
   type: 'scatter3d'
 };
-var data = [ trace2];
+var data = [trace1,trace2];
 var layout = {margin: {
     l: 0,
     r: 0,
@@ -94,5 +127,6 @@ var layout = {margin: {
     t: 0
   }};
 Plotly.newPlot('myDiv', data, layout);
+
 </script>
 {% endblock %}
