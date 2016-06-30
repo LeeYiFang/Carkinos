@@ -3,14 +3,15 @@ from django.http import HttpResponse, Http404
 from django.views.decorators.http import require_GET
 from .models import Dataset, CellLine, ProbeID, Sample, Platform
 from django.template import RequestContext
+from django.utils.html import mark_safe
+import json
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import sklearn
 from sklearn.decomposition import PCA
-import pylab
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
+
 
 def welcome(request):
     return render_to_response('welcome.html',locals())
@@ -99,10 +100,8 @@ def pca(request):
         
             if 'NCI60' and 'GSE36133' in datas:
                 dataset_name=['NCI60','GSE36133']
-                nci_val=nci_val[~np.isnan(nci_val).any(axis=1)]
                 nci_val=np.matrix(nci_val)
                 tnci_val=np.transpose(nci_val)
-                gse_val=gse_val[~np.isnan(gse_val).any(axis=1)]
                 gse_val=np.matrix(gse_val)
                 tgse_val=np.transpose(gse_val)
                 val=np.concatenate((tnci_val, tgse_val))
@@ -129,23 +128,30 @@ def pca(request):
             
             output_cell=[]
             
-            for d in dataset_name:
-                samples=Sample.objects.filter(dataset_id__name__in=[d])  
-                ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
-                cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))
-                all_name=all_name+cell_line_name   
-                range_size=Sample.objects.filter(dataset_id__name__in=[d]).count()
-                temp=0
+            #for d in dataset_name:
+            samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
+            ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
+            cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))
+            all_name=all_name+cell_line_name   
+                #range_size=Sample.objects.filter(dataset_id__name__in=[d]).count()
+            temp=0
                 
-                for k in cell:
-                    #print(k.name)
-                    scell=ss.filter(cell_line_id__name=k.name)
-                    #print(scell)
+            for k in cell:
+                #print(k.name)
+                scell=ss.filter(cell_line_id__name=k.name)
+                #print(scell)
+                output_cell.append([k,[]])
+                range_size=0
+                add_size=0
+                for d in dataset_name:
                     offset=list(scell.values_list('offset',flat=True))
-                    output_cell.append([k,[]])
+                    offset=[x+add_size for x in offset]   
+                    range_size=Sample.objects.filter(dataset_id__name__in=[d]).count()
+                    
+                
                     counter=1
                     for i in offset:
-                        for j in range(0,range_size):
+                        for j in range(add_size,range_size+add_size):
                             if i!=j:
                                 output_cell[temp][1].append([counter,cell_line_name[j],d,np.linalg.norm(Xplus2[j]-Xplus2[i])])
                         selected_name.append(k.name+'('+str(counter)+')')
@@ -153,7 +159,10 @@ def pca(request):
                         colorY.append(Xplus2[i][1])
                         colorZ.append(Xplus2[i][2])
                         counter=counter+1
-                    temp=temp+1
+                        
+                    add_size=add_size+range_size
+                
+                temp=temp+1
                 
                 
                 #print(colorZ)
@@ -161,8 +170,8 @@ def pca(request):
     {
     'output_cell':output_cell,
     'propotion':propotion,
-    'all_name':all_name,
-    'selected_name':selected_name,
+    'all_name':mark_safe(json.dumps(all_name)),
+    'selected_name':mark_safe(json.dumps(selected_name)),
     'colorX':colorX,
     'colorY':colorY,
     'colorZ':colorZ,
