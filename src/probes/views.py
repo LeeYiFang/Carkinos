@@ -56,151 +56,129 @@ def pca(request):
     gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
     
     n=3  #the dimension for pca
-    if(request.POST['data_platform'] == 'U133A'):
-        if 'Sanger Cell Line Project' in datas:  
-
+    if(request.POST['show_type'] == 'd_center'):
+        
+    else:
+        #if 'NCI60' or 'GSE36133' in datas:                          
+        print(datas)
+        if 'NCI60' in datas and 'GSE36133' in datas:
+            dataset_name=['NCI60','GSE36133']
+            nci_val=np.matrix(nci_val) #need fix
+            tnci_val=np.transpose(nci_val)
+            gse_val=np.matrix(gse_val) #need fix
+            tgse_val=np.transpose(gse_val)
+            val=np.concatenate((tnci_val, tgse_val))
+            samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
+            ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
+            cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))  #all name in datasets
+            
+            
+        elif 'NCI60' in datas:
+            dataset_name=['NCI60']
+            nci_val=nci_val[~np.isnan(nci_val).any(axis=1)]
+            nci_val=np.matrix(nci_val)
+            val=np.transpose(nci_val)
+            samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
+            ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
+            cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))  #all name in datasets
+        elif 'GSE36133' in datas:
+            
+            dataset_name=['GSE36133']
+            gse_val=gse_val[~np.isnan(gse_val).any(axis=1)]
+            gse_val=np.matrix(gse_val)
+            val=np.transpose(gse_val)
+            samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
+            #print(samples)
+            ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
+            cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))  #all name in datasets
+        else:
+            dataset_name=['Sanger Cell Line Project']
             sanger_val=sanger_val[~np.isnan(sanger_val).any(axis=1)]
             sanger_val=np.matrix(sanger_val)
-            tsanger_val=np.transpose(sanger_val)
-            pca= PCA(n_components=n)
-            Xsanger = pca.fit_transform(tsanger_val)
-            tsanger=pca.explained_variance_ratio_
-            propotion=sum(tsanger[0:n-1])
+            val=np.transpose(sanger_val)
+            samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
             
-            
-            output_cell=[]
-            samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])  
             ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
-            cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))
-            sanger_cellline=cell   
-            all_name=cell_line_name
-            temp=0
-            for k in sanger_cellline:
-                scell=ss.filter(cell_line_id__name=k.name)
-                all_name=list(filter((k.name).__ne__, all_name))
-                offset=list(scell.values_list('offset',flat=True))
-                total_offset=total_offset+offset
-                output_cell.append([k,[]])
-                counter=1
-                
-                for i in offset:
-                    for j in range(0,798):
-                        if i!=j:
-                            output_cell[temp][1].append([counter,cell_line_name[j],'Sanger Cell Line Project',np.linalg.norm(Xsanger[j]-Xsanger[i])])
-                    selected_name.append(k.name+'('+str(counter)+')')
-                    #selected_name=[1,2,3]
-                    colorX.append(Xsanger[i][0])
-                    colorY.append(Xsanger[i][1])
-                    colorZ.append(Xsanger[i][2])
-                    counter=counter+1
-                temp=temp+1
-            for j in range(0,798):
-                if j not in total_offset:
-                    X.append(Xsanger[j][0])
-                    Y.append(Xsanger[j][1])
-                    Z.append(Xsanger[j][2])
-    else:
-        if 'NCI60' or 'GSE36133' in datas:                          
-            print(datas)
-            if 'NCI60' in datas and 'GSE36133' in datas:
-                dataset_name=['NCI60','GSE36133']
-                nci_val=np.matrix(nci_val)[0:50,:]
-                tnci_val=np.transpose(nci_val)
-                gse_val=np.matrix(gse_val)[0:50,:]
-                tgse_val=np.transpose(gse_val)
-                val=np.concatenate((tnci_val, tgse_val))
-                samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
-                ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
-                cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))  #all name in datasets
-                
-                
-            elif 'NCI60' in datas:
-                dataset_name=['NCI60']
-                nci_val=nci_val[~np.isnan(nci_val).any(axis=1)]
-                nci_val=np.matrix(nci_val)
-                val=np.transpose(nci_val)
-                samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
-                ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
-                cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))  #all name in datasets
-            else:
-                print("i am here")
-                dataset_name=['GSE36133']
-                gse_val=gse_val[~np.isnan(gse_val).any(axis=1)]
-                gse_val=np.matrix(gse_val)
-                val=np.transpose(gse_val)
-                samples=Sample.objects.filter(dataset_id__name__in=dataset_name)  
-                #print(samples)
-                ss=samples.select_related('cell_line_id','dataset_id','cell_line_id__name')
-                cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))  #all name in datasets
-            
-            pca= PCA(n_components=n)
-            Xplus2 = pca.fit_transform(val)
-            tplus2=pca.explained_variance_ratio_
-            propotion=sum(tplus2[0:n-1])
-            
-            all_name=cell_line_name
-            output_cell=[]
-            
+            cell_line_name =list(ss.values_list('cell_line_id__name', flat=True))  #all name in datasets
         
-            temp=0
-                 
-            for k in cell:
-                all_name=list(filter((k.name).__ne__, all_name))
-                print(len(all_name))
+        pca= PCA(n_components=n)
+        Xplus2 = pca.fit_transform(val)
+        tplus2=pca.explained_variance_ratio_
+        propotion=sum(tplus2[0:n-1])
+        
+        all_name=cell_line_name
+        output_cell=[]
+        
+    
+        temp=0
+             
+        for k in cell:
+            all_name=list(filter((k.name).__ne__, all_name))
+            print(len(all_name))
+            
+            output_cell.append([k,[]])
+            range_size=0
+            count_set=0
+            if 'NCI60' in datas and 'GSE36133' in datas:
                 scell_nci=ss.filter(dataset_id__name__in=["NCI60"],cell_line_id__name=k.name) 
                 scell_ccle=ss.filter(dataset_id__name__in=["GSE36133"],cell_line_id__name=k.name)
-                output_cell.append([k,[]])
-                range_size=0
-                
-                count_set=0
                 offset_nci=list(scell_nci.values_list('offset',flat=True))
                 offset_ccle=list(scell_ccle.values_list('offset',flat=True))
                 new_index=Sample.objects.filter(dataset_id__name__in=["NCI60"]).count()
                 offset_ccle=[x+new_index for x in offset_ccle]
-                if 'NCI60' in datas and 'GSE36133' in datas:
-                    offset=offset_nci+offset_ccle
-                    add_size=0
-                elif 'NCI60' in datas:
-                    offset=offset_nci
-                    add_size=0
-                else:
-                    offset=offset_ccle
-                    add_size=0
-                total_offset=total_offset+offset
-                for d in dataset_name:
+                offset=offset_nci+offset_ccle
+                add_size=0
+            elif 'NCI60' in datas:
+                scell_nci=ss.filter(dataset_id__name__in=["NCI60"],cell_line_id__name=k.name) 
+                offset_nci=list(scell_nci.values_list('offset',flat=True))
+                offset=offset_nci
+                add_size=0
+            elif 'GSE36133' in datas:
+                scell_ccle=ss.filter(dataset_id__name__in=["GSE36133"],cell_line_id__name=k.name)
+                offset_ccle=list(scell_ccle.values_list('offset',flat=True))
+                offset=offset_ccle
+                add_size=0
+            else:    
+                scell_sanger=ss.filter(dataset_id__name__in=['Sanger Cell Line Project'],cell_line_id__name=k.name)
+                offset_sanger=list(scell_sanger.values_list('offset',flat=True))
+                offset=offset_sanger
+                add_size=0
+                
+            total_offset=total_offset+offset
+            for d in dataset_name:
+                
+                range_size=Sample.objects.filter(dataset_id__name__in=[d]).count()
+                
+            
+                counter=1
+                print(add_size)
+                print(range_size)
+                
                     
-                    range_size=Sample.objects.filter(dataset_id__name__in=[d]).count()
-                    
-                
-                    counter=1
-                    print(add_size)
-                    print(range_size)
-                    
-                        
-                    for i in offset:
-                        for j in range(add_size,range_size+add_size):
-                            if i!=j:
-                                output_cell[temp][1].append([counter,cell_line_name[j],d,np.linalg.norm(Xplus2[j]-Xplus2[i])])
-                        if count_set == 0:
-                            selected_name.append(k.name+'('+str(counter)+')')
-                            colorX.append(Xplus2[i][0])
-                            colorY.append(Xplus2[i][1])
-                            colorZ.append(Xplus2[i][2])
-                        counter=counter+1
-                    count_set=count_set+1    
-                    add_size=add_size+range_size
-                    print(offset)
-                
-                temp=temp+1
-                
-                
-            for j in range(0,len(Xplus2)):
-                if j not in total_offset:
-                    X.append(Xplus2[j][0])
-                    Y.append(Xplus2[j][1])
-                    Z.append(Xplus2[j][2])     
-            print("X:",len(X))    
-                
+                for i in offset:
+                    for j in range(add_size,range_size+add_size):
+                        if i!=j:
+                            output_cell[temp][1].append([counter,cell_line_name[j],d,np.linalg.norm(Xplus2[j]-Xplus2[i])])
+                    if count_set == 0:
+                        selected_name.append(k.name+'('+str(counter)+')')
+                        colorX.append(Xplus2[i][0])
+                        colorY.append(Xplus2[i][1])
+                        colorZ.append(Xplus2[i][2])
+                    counter=counter+1
+                count_set=count_set+1    
+                add_size=add_size+range_size
+                print(offset)
+            
+            temp=temp+1
+            
+            
+        for j in range(0,len(Xplus2)):
+            if j not in total_offset:
+                X.append(Xplus2[j][0])
+                Y.append(Xplus2[j][1])
+                Z.append(Xplus2[j][2])     
+        print("X:",len(X))    
+            
     return render_to_response('pca.html',RequestContext(request,
     {
     'output_cell':output_cell,
