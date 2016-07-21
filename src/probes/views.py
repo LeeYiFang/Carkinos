@@ -175,7 +175,7 @@ def pca(request):
                 dataset_dict[name]=dataset_name[0]
                 
                 offset=list(scell.values_list('offset',flat=True))
-                total_offset=total_offset+offset  #combine all the cell line offset together
+                total_offset=offset  #combine all the cell line offset together
             else:  
                 
                 for ss in scell:
@@ -195,11 +195,12 @@ def pca(request):
                
                 offset_ccle=[x+dataset_size[1] for x in offset_ccle]
                 offset=offset_nci+offset_ccle
-                total_offset=total_offset+offset 
+                total_offset=offset 
                 
             Xval_a=np.array(Xval)
             selected_Xval=Xval_a[total_offset]
             new_loca=(np.mean(selected_Xval,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
+
             cell_line_dict[name]=new_loca
         
         #count distance of selected cell lines and other cell lines base on centroid counted above
