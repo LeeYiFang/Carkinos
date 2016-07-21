@@ -76,10 +76,10 @@ def pca(request):
     else:
         if 'NCI60' in datas and 'GSE36133' in datas:
             dataset_name=['NCI60','GSE36133']
-            nci_val=np.matrix(nci_val)[:30,:] #need fix
+            nci_val=np.matrix(nci_val)#[:30,:] #need fix
             nci_size=Sample.objects.filter(dataset_id__name__in=["NCI60"]).count()
             tnci_val=np.transpose(nci_val)
-            gse_val=np.matrix(gse_val)[:30,:] #need fix
+            gse_val=np.matrix(gse_val)#[:30,:] #need fix
             tgse_val=np.transpose(gse_val)
             val=np.concatenate((tnci_val, tgse_val))#combine together  ##notice that the offset number will change
             dataset_size=[0,nci_size,nci_size+Sample.objects.filter(dataset_id__name__in=["GSE36133"]).count()]
@@ -210,27 +210,31 @@ def pca(request):
             
             
             selected_cell=k.name
-            del temp_cell_line_dict[selected_cell]
-            
-            output_cell.append([k,[]])
-            for c_name in all_name_distinct:
-                if c_name!=selected_cell:
-                    aX=np.array(cell_line_dict[selected_cell])
-                    aY=np.array(cell_line_dict[c_name])
-                    output_cell[temp][1].append([selected_cell,dataset_dict[selected_cell]
-                                                ,c_name,dataset_dict[c_name]
-                                                ,np.linalg.norm(aX-aY)])    
-            
-            selected_name.append(selected_cell)
-            templocation=cell_line_dict[selected_cell]
-            colorX.append(templocation[0])
-            colorY.append(templocation[1])
-            colorZ.append(templocation[2])
-            temp=temp+1
-            
+            if selected_cell in cell_line_dict:
+                del temp_cell_line_dict[selected_cell]
+                
+                output_cell.append([k,[]])
+                for c_name in all_name_distinct:
+                    if c_name!=selected_cell:
+                        aX=np.array(cell_line_dict[selected_cell])
+                        aY=np.array(cell_line_dict[c_name])
+                        output_cell[temp][1].append([selected_cell,dataset_dict[selected_cell]
+                                                    ,c_name,dataset_dict[c_name]
+                                                    ,np.linalg.norm(aX-aY)])    
+                
+                selected_name.append(selected_cell)
+                templocation=cell_line_dict[selected_cell]
+                colorX.append(templocation[0])
+                colorY.append(templocation[1])
+                colorZ.append(templocation[2])
+                temp=temp+1
+            else:
+                output_cell.append([k,[]])
+        
+        all_name=[]
         for key, value in temp_cell_line_dict.items():
             all_name.append(key)
-            print(value)
+            #print(value)
             X.append(value[0])    
             Y.append(value[1])
             Z.append(value[2])
