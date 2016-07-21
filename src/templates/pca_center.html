@@ -12,7 +12,7 @@
 {% endblock extra_css %}
 {% block content %}
     <h2>PCA RESULTS:Plot</h2>
-    <h3>Dots:one dot represents one sample(one cell line may include several samples)</h3>
+    <h3>Dots:one dot represents one cell line</h3>
     <div id="myDiv" style="width:100%;height:100%">
        
     
@@ -38,21 +38,19 @@
                     <thead>
                     <tr>
                         <th>Selected Cell Line</th>
-                        <th>Sample Name</th>
+                        <th>Selected Cell Line dataset</th>
                         <th>Cell Line name</th>
-                        <th>Sample name</th>
-                        <th>dataset</th>
+                        <th>Cell Line dataset</th>
                         <th>distance</th>
                     </tr>
                     </thead>
                     <tbody>
                     
-                        {% for order,sn,cname,sname,setname,dis in b %} 
+                        {% for order,ssetname,cname,setname,dis in b %} 
                             <tr>
                                 <td>{{ order }}</td>
-                                <td>{{ sn }}</td>
+                                <td>{{ssetname}}</td>
                                 <td>{{ cname }}</td>
-                                <td>{{ sname }}</td>
                                 <td>{{setname}}</td>
                                 <td>{{ dis }}</td>
                             </tr>
@@ -77,10 +75,13 @@ $(document).ready(function() {
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
-
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.flash.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
 
 <script>
  $(document).ready(function() {
+ //$('table[id="example"]').DataTable();
  $('table[id="example"]').DataTable({
         destroy: true,
         dom: 'lfrtBip',
