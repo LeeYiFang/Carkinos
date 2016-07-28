@@ -10,6 +10,7 @@ import numpy as np
 from pathlib import Path
 import sklearn
 from sklearn.decomposition import PCA
+from scipy import stats
 
 
 
@@ -21,7 +22,32 @@ def help_similar_assessment(request):
 
 def similar_assessment(request):    
     return render_to_response('similar_assessment.html',RequestContext(request))
+    
+def gene_signature(request):    
 
+    if 'cellline_g1' in request.POST:
+        cell_g1 = request.POST['cellline_g1']
+        cell_g1 = cell_g1.split()
+    else:
+        return render_to_response('help_similar_assessment.html',RequestContext(request))  #need to fix: make "HELP" file for gene signature
+        
+    if 'cellline_g2' in request.POST:
+        cell_g2 = request.POST['cellline_g2']
+        cell_g2 = cell_g2.split()
+    else:
+        return render_to_response('help_similar_assessment.html',RequestContext(request))  #need to fix: make "HELP" file for gene signature
+
+    group1=[]
+    group2=[]
+    
+    
+
+    return render_to_response('gene_signature.html',RequestContext(request))
+
+def heatmap(request):    
+    return render_to_response('heatmap.html',RequestContext(request))
+
+    
 def pca(request):
     
     if 'dataset' in request.POST:
@@ -100,7 +126,7 @@ def pca(request):
     samples=Sample.objects.filter(dataset_id__name__in=dataset_name).select_related('cell_line_id','dataset_id','cell_line_id__name')  
     sample_name=list(samples.values_list('name', flat=True))
     cell_line_name =list(samples.values_list('cell_line_id__name', flat=True))  #all name in datasets
-    all_name=cell_line_name         #all_name need to delete the selected_name later
+    all_name=cell_line_name.copy()         #all_name need to delete the selected_name later
     all_name_distinct =list(samples.values_list('cell_line_id__name', flat=True).distinct()) 
 
     n=3  #need to fix to the best one

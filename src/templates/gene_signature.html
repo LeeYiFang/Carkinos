@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Gene Signature Explore{% endblock title %}
+
+{% block content %}
+<h1>Gene Signature Explore</h1>
+</br>
+<form action="{% url 'heatmap' %}" method="post" target="_blank">{% csrf_token %}
+
+<h3>Step1 - Define Groups:</h3>
+<p>Two groups will use student t-test to evaluate the result.</p>
+<p>For more than two groups, we will use one-way-ANOVA</p>
+<!--
+add radio to choose 2 groups or more than two groups
+
+
+
+-->
+<style type="text/css">  
+    .help {display: none}
+</style> 
+
+<div>
+    <h4>Group 1:</h4>
+    <p>Input the cell lines you want in group 1:</p>
+    <p>For more than one cell lines, please separate with space or new line</p>
+    <span class="help" style="color:red;" name="needed_group1">*Please enter at least one cell line <br /></span>
+    <textarea class="form-control" rows="5" id="cellline_g1" 
+    style="width:300px;height:100px;" required="required"
+    type="text" name="cellline" placeholder="Enter cell line name"/></textarea> 
+
+</div>
+
+<div>
+    <h4>Group 2:</h4>
+    <p>Input the cell lines you want in group 2:</p>
+    <p>For more than one cell lines, please separate with space or new line</p>
+    <span class="help" style="color:red;" name="needed_group2">*Please enter at least one cell line <br /></span>
+    <textarea class="form-control" rows="5" id="cellline_g2" 
+    style="width:300px;height:100px;" required="required"
+    type="text" name="cellline" placeholder="Enter cell line name"/></textarea> 
+</div>
+
+</br>
+<button type="button" class="btn btn-info">Add Group</button>
+
+</br>
+<button class="btn btn-default" type="submit" id="submit">Submit</button>
+
+
+{% endblock content %}
+
+{% block scripts %}
+<script>
+$(document).ready(function () {
+    
+    
+    
+});
+$("#submit").click(function() {  
+  if ($("#cellline_g1").val() == "") 
+  {
+    $("span[name='needed_group1']").show(); 
+    
+  }
+  else
+  {
+    $("span[name='needed_group1']").hide();
+  }
+  if ($("#cellline_g2").val() == "") 
+  {
+    $("span[name='needed_group2']").show(); 
+    
+  }
+  else
+  {
+    $("span[name='needed_group2']").hide();
+  }
+  
+});
+</script> 
+
+
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Heatmap Result{% endblock title %}
+
+{% block extra_css %}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.11/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+<!--<link href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />-->
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/buttons/1.1.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/select/1.1.0/css/select.dataTables.min.css">
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.css"/>-->
+
+{% endblock extra_css %}
+
+{% block content %}
+<h1>Gene Signature Explore: Heatmap Result</h1>
+</br>
+<p>The heatmap will show the top 20 probes that are most significant.</p>
+
+<div id="myDiv">
+<!-- Plotly chart will be drawn inside this DIV -->
+
+</div>
+
+
+
+{% endblock content %}
+
+{% block scripts %}
+<script>
+var data = [
+  {
+    z: [[1, 20, 30, 50, 1], [20, 1, 60, 80, 30], [30, 60, 1, -10, 20]], //need to be expression data
+    x: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // need to be cell line name
+    y: ['Morning', 'Afternoon', 'Evening'], //need to be probe name(cluster with same gene names)
+    type: 'heatmap'
+  }
+];
+
+Plotly.newPlot('myDiv', data);
+</script>
+{% endblock %}
