@@ -9,7 +9,7 @@ urlpatterns = [
     url(r'^$',welcome,name="welcome"),
     url(r'^pca$',pca,name="pca"),
     url(r'^heatmap$',heatmap,name="heatmap"),
-    url(r'^gene_signature',gene_signature,name="gene_signature"),
+    url(r'^gene_signature$',gene_signature,name="gene_signature"),
     url(r'^help_similar_assessment$',help_similar_assessment,name="help_similar_assessment"),
     
 ]

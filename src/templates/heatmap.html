@@ -16,8 +16,12 @@
 <h1>Gene Signature Explore: Heatmap Result</h1>
 </br>
 <p>The heatmap will show the top 20 probes that are most significant.</p>
-
-<div id="myDiv">
+<!--<style>
+img.big {
+    height: 80%;
+}
+</style>-->
+<div id="myDiv" >
 <!-- Plotly chart will be drawn inside this DIV -->
 
 </div>
@@ -27,16 +31,36 @@
 {% endblock content %}
 
 {% block scripts %}
+<script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
+
 <script>
 var data = [
   {
-    z: [[1, 20, 30, 50, 1], [20, 1, 60, 80, 30], [30, 60, 1, -10, 20]], //need to be expression data
-    x: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // need to be cell line name
-    y: ['Morning', 'Afternoon', 'Evening'], //need to be probe name(cluster with same gene names)
+    z: {{expression}},
+    //[[1, 20, 30, 50, 1], [20, 1, 60, 80, 30], [30, 60, 1, -10, 20]], //need to be expression data
+    x: {{sample_out}},
+    //['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // need to be cell line name
+    y: {{probe_out}},
+    //['Morning', 'Afternoon', 'Evening'], //need to be probe name(cluster with same gene names)
     type: 'heatmap'
   }
 ];
-
-Plotly.newPlot('myDiv', data);
+var layout = {
+  title: 'Heatmap',
+  autosize: false,
+  width: 1140,
+  height: 1500,
+  margin: {
+    l: 200,
+    r: 50,
+    b: 100,
+    t: 100,
+    pad: 4
+  },
+};
+Plotly.newPlot('myDiv', data,layout);
 </script>
 {% endblock %}

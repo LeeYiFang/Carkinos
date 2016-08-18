@@ -20,32 +20,165 @@ def welcome(request):
 def help_similar_assessment(request):
     return render_to_response('help_similar_assessment.html',RequestContext(request))
 
-def similar_assessment(request):    
+def similar_assessment(request):   
     return render_to_response('similar_assessment.html',RequestContext(request))
     
 def gene_signature(request):    
+    samples = Sample.objects.filter(
+        dataset_id__name__in=['Sanger Cell Line Project']
+    ).select_related('cell_line_id')
+    ncisamples = Sample.objects.filter(
+        dataset_id__name__in=['NCI60']
+    ).select_related('cell_line_id')
+    CCsamples = Sample.objects.filter(
+        dataset_id__name__in=['GSE36133']
+    ).select_related('cell_line_id')
+    # Get all distinct primary sites from selected samples
+    celllines = sorted(
+        samples.values_list('cell_line_id__name', flat=True).distinct()
+    )
+    ncicelllines = sorted(
+        ncisamples.values_list('cell_line_id__name', flat=True).distinct()
+    )
+    CCcelllines = sorted(
+        CCsamples.values_list('cell_line_id__name', flat=True).distinct()
+    )
+    
+    check_celllines=list(celllines)
 
-    if 'cellline_g1' in request.POST:
-        cell_g1 = request.POST['cellline_g1']
-        cell_g1 = cell_g1.split()
-    else:
-        return render_to_response('help_similar_assessment.html',RequestContext(request))  #need to fix: make "HELP" file for gene signature
+    return render(request, 'gene_signature.html', {
+        'check_celllines': mark_safe(json.dumps(check_celllines)),
+        'celllines': celllines,
+        'ncicelllines': ncicelllines,
+        'CCcelllines': CCcelllines,
         
-    if 'cellline_g2' in request.POST:
-        cell_g2 = request.POST['cellline_g2']
-        cell_g2 = cell_g2.split()
-    else:
-        return render_to_response('help_similar_assessment.html',RequestContext(request))  #need to fix: make "HELP" file for gene signature
+    })
+    
 
+def heatmap(request):   
+    
     group1=[]
     group2=[]
+    group_count=0
+    presult={} #{probe object:p value}
+    expression=[]
+    probe_out=[]
+    sample_out=[]
+    
+    ##open all the file
+    sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
+    nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
+    gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
+    sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
+    nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
+    gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
+    
+    #sanger_val=sanger_val[~np.isnan(sanger_val).any(axis=1)]
+    #how to deal with val=NAN?
+    if request.POST['cell_line_method'] == 'text':
+        #this part is for input cell line
+
+        pform=request.POST['data_platform']
+        
+        group_counter=1
+        while True:
+            temp_name='cellline_g'+str(group_counter)
+            if temp_name in request.POST:
+                #print(group_counter)
+                group_counter=group_counter+1
+            else:
+                group_counter=group_counter-1
+                break
+        
+        #text part with more than two group need to use one way ANOVA
+        s_group_dict={}  #store sample
+        offset_group_dict={} #store offset
+        for i in range(1,group_counter+1):
+            c='cellline_g'+str(i)
+            s=Sample.objects.filter(cell_line_id__name__in=(request.POST[c].split()),platform_id__name=pform).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
+            s_group_dict['g'+str(i)]=s
+            goffset=s.values_list('offset',flat=True)
+            offset_group_dict['g'+str(i)]=goffset
+        
+        #get probe from different platform
+        all_probe=ProbeID.objects.filter(platform__name=pform)
+        probe_offset=list(all_probe.values_list('offset',flat=True))
+                    
+        #deal with "nan" in Sanger dataset
+        if pform=="U133A":
+            all_probe=list(all_probe)
+            for x in range(22275,22281):
+                probe_offset.index(x)
+                probe_offset.remove(x)
+                all_probe.pop(x)
+            
+        #for more than two datasets
+        gseindex=-1
+        
+        val=[] #store value get from binary data 
+        group_name=[]
+        for i in range(1,group_counter+1):
+            nci_data=[]
+            gse_data=[]
+            temp_name='g'+str(i)
+            group_name.append(temp_name)
+            if pform=="PLUS2":
+                listg=list(s_group_dict[temp_name].values('dataset_id'))
+                if {'dataset_id':3} in listg:
+                    gseindex=listg.index({'dataset_id':3})
+                    nci_data=nci_val[np.ix_(probe_offset,offset_group_dict[temp_name][:gseindex])]
+                    gse_data=gse_val[np.ix_(probe_offset,offset_group_dict[temp_name][gseindex:])]
+                    g_data=np.concatenate((nci_data,gse_data),axis=1)
+                    val.append(g_data.tolist())
+                else:
+                    g_data=nci_val[np.ix_(probe_offset,offset_group_dict[temp_name])]
+                    val.append(g_data.tolist())
+            else:
+                g_data=sanger_val[np.ix_(probe_offset,offset_group_dict[temp_name])]
+                val.append(g_data.tolist())
+                
+         #run the one way ANOVA test for every probe base on the platform selected    
+        express={}
+        
+        for i in range(0,25):#range(0,len(all_probe)):   need to fix!!!!
+            to_anova=[]
+            for n in range(0,group_counter):
+                #val[n]=sum(val[n],[])
+                to_anova.append(val[n][i])
+              
+            presult[all_probe[i]]=stats.f_oneway(*to_anova)[1]  
+            express[all_probe[i]]=sum(to_anova,[])
+           
+            
+        #sort the dictionary with p-value and need to get the expression data again (top20)    
+        sortkey=sorted(presult,key=presult.get)
+        
+        counter=1
+        for w in sortkey:     
+            #print(presult[w])
+            expression.append(express[w])
+            probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
+            counter+=1
+            if counter==21:
+                break
+        
+        for n in group_name:
+            for s in s_group_dict[n]:
+                sample_out.append(s.name+"("+s.cell_line_id.name+")")
+          
+    else:#this part is for select cell line
+        ssss=1
+        
     
     
-
-    return render_to_response('gene_signature.html',RequestContext(request))
-
-def heatmap(request):    
-    return render_to_response('heatmap.html',RequestContext(request))
+    
+    return render_to_response('heatmap.html',RequestContext(request,
+        {
+        'sample_out':mark_safe(json.dumps(sample_out)),
+        'expression':expression,
+        'probe_out':mark_safe(json.dumps(probe_out)),
+        
+        }))
 
     
 def pca(request):
@@ -129,7 +262,7 @@ def pca(request):
     all_name=cell_line_name.copy()         #all_name need to delete the selected_name later
     all_name_distinct =list(samples.values_list('cell_line_id__name', flat=True).distinct()) 
 
-    n=3  #need to fix to the best one
+    n=3  #need to fix to the best one #need to fix
     pca= PCA(n_components=n)
     Xval = pca.fit_transform(val)
     ratio_temp=pca.explained_variance_ratio_
