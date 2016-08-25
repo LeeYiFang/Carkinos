@@ -66,7 +66,7 @@ add radio to choose 2 groups or more than two groups
             <div id="select_a_g1">
                 <p>please select the data set(s) you want to compare:</p>
                 <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger_g1" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="sanger_g1" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
             </div>
         
             
@@ -74,8 +74,8 @@ add radio to choose 2 groups or more than two groups
             <div id="select_plus2_g1">
                 <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
                 <p>please select the data set(s) you want to compare:</p>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci_g1" value="NCI60">NCI60</label>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="gse_g1" value="GSE36133">GSE36133</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="nci_g1" value="NCI60">NCI60</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="gse_g1" value="GSE36133">GSE36133</label>
                 
             </div>
         
@@ -172,7 +172,7 @@ add radio to choose 2 groups or more than two groups
             <div id="select_a_g2">
                 <p>please select the data set(s) you want to compare:</p>
                 <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger_g2" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="sanger_g2" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
             </div>
         
             
@@ -180,8 +180,8 @@ add radio to choose 2 groups or more than two groups
             <div id="select_plus2_g2">
                 <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
                 <p>please select the data set(s) you want to compare:</p>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci_g2" value="NCI60">NCI60</label>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="gse_g2" value="GSE36133">GSE36133</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="nci_g2" value="NCI60">NCI60</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="gse_g2" value="GSE36133">GSE36133</label>
                 
             </div>
         
@@ -377,7 +377,7 @@ $("input[name='data_platform']").change(function(){
            
         }
     });
-$(document).on('change',"input[name='dataset']",function(){
+$(document).on('change',"input[name^='dataset_g']",function(){
         //alert("changed!!")
         var $div = $('div[id^="group"]:last');
         var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
@@ -437,7 +437,7 @@ $(document).on('click', '#add_group', function() {
                         '<div id="select_a_g'+index+'">'+
                             '<p>please select the data set(s) you want to compare:</p>'+
                             '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset" id="sanger_g'+index+'" value="Sanger Cell Line Project">Sanger Cell Line Project</label>'+
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="sanger_g'+index+'" value="Sanger Cell Line Project">Sanger Cell Line Project</label>'+
                         '</div>'+
                     
                         
@@ -445,8 +445,8 @@ $(document).on('click', '#add_group', function() {
                         '<div id="select_plus2_g'+index+'">'+
                             '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
                             '<p>please select the data set(s) you want to compare:</p>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset" id="nci_g'+index+'" value="NCI60">NCI60</label>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset" id="gse_g'+index+'" value="GSE36133">GSE36133</label>'+
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="nci_g'+index+'" value="NCI60">NCI60</label>'+
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="gse_g'+index+'" value="GSE36133">GSE36133</label>'+
                             
                         '</div>'+
                     

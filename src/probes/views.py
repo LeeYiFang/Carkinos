@@ -73,8 +73,7 @@ def heatmap(request):
     nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
     gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
     
-    #sanger_val=sanger_val[~np.isnan(sanger_val).any(axis=1)]
-    #how to deal with val=NAN?
+    
     if request.POST['cell_line_method'] == 'text':
         #this part is for input cell line
 
@@ -95,10 +94,11 @@ def heatmap(request):
         offset_group_dict={} #store offset
         for i in range(1,group_counter+1):
             c='cellline_g'+str(i)
-            s=Sample.objects.filter(cell_line_id__name__in=(request.POST[c].split()),platform_id__name=pform).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
-            s_group_dict['g'+str(i)]=s
-            goffset=s.values_list('offset',flat=True)
-            offset_group_dict['g'+str(i)]=goffset
+            if request.POST[c] !='':
+                s=Sample.objects.filter(cell_line_id__name__in=(request.POST[c].split()),platform_id__name=pform).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
+                s_group_dict['g'+str(i)]=s
+                goffset=s.values_list('offset',flat=True)
+                offset_group_dict['g'+str(i)]=goffset
         
         #get probe from different platform
         all_probe=ProbeID.objects.filter(platform__name=pform)
@@ -137,10 +137,97 @@ def heatmap(request):
                 g_data=sanger_val[np.ix_(probe_offset,offset_group_dict[temp_name])]
                 val.append(g_data.tolist())
                 
-         #run the one way ANOVA test for every probe base on the platform selected    
-        express={}
         
-        for i in range(0,25):#range(0,len(all_probe)):   need to fix!!!!
+          
+    else:#this part is for select cell line
+        pform=request.POST['data_platform']
+        
+        #get probe from different platform
+        all_probe=ProbeID.objects.filter(platform__name=pform)
+        probe_offset=list(all_probe.values_list('offset',flat=True))
+        
+        all_probe=list(all_probe)
+        #deal with "nan" in Sanger dataset
+        if pform=="U133A":
+            #all_probe=list(all_probe)
+            for x in range(22275,22281):
+                probe_offset.index(x)
+                probe_offset.remove(x)
+                all_probe.pop(x)
+        
+        #count the number of group 
+        group_counter=1
+        while True:
+            temp_name='dataset_g'+str(group_counter)
+            if temp_name in request.POST:
+                #print(group_counter)
+                group_counter=group_counter+1
+            else:
+                group_counter=group_counter-1
+                break
+        
+        #get binary data
+        s_group_dict={}  #store sample
+        val=[] #store value get from binary data 
+        group_name=[]
+        for i in range(1,group_counter+1):
+            
+            dname='dataset_g'+str(i)
+            datasets=request.POST.getlist(dname)
+            sanger_data=[]
+            nci_data=[]
+            gse_data=[]
+            temp_name='g'+str(i)
+            group_name.append(temp_name)
+            if pform=="U133A":
+                csanger='select_sanger_g'+str(i)
+                if 'Sanger Cell Line Project' in datasets:
+                    SANGER=request.POST.getlist(csanger)
+                    s=Sample.objects.filter(cell_line_id__name__in=SANGER,platform_id__name=pform).select_related('cell_line_id__name','dataset_id')
+                    goffset=s.values_list('offset',flat=True)
+                    sanger_data=sanger_val[np.ix_(probe_offset,list(goffset))]
+                    s_group_dict['g'+str(i)]=s
+                    val.append(sanger_data.tolist())
+            else:
+                cnci='select_nci_g'+str(i)
+                cgse='select_ccle_g'+str(i)
+                s_nci=s_gse=[]
+                #if 'NCI60' in datasets:
+                NCI=request.POST.getlist(cnci)
+                s_nci=Sample.objects.filter(cell_line_id__name__in=NCI,dataset_id__name__in=['NCI60']).select_related('cell_line_id__name','dataset_id')
+                goffset=s_nci.values_list('offset',flat=True)
+                nci_data=nci_val[np.ix_(probe_offset,list(goffset))]
+                #if 'GSE36133' in datasets:
+                GSE=request.POST.getlist(cgse)
+                s_gse=Sample.objects.filter(cell_line_id__name__in=GSE,dataset_id__name__in=['GSE36133']).select_related('cell_line_id__name','dataset_id')
+                goffset=s_gse.values_list('offset',flat=True)
+                gse_data=gse_val[np.ix_(probe_offset,list(goffset))]
+                
+                #append nci60 and gse36133 as g_data
+               
+                s_group_dict['g'+str(i)]=list(s_nci)+list(s_gse)
+                g_data=np.concatenate((nci_data,gse_data),axis=1)
+                val.append(g_data.tolist())
+            
+            
+            
+    #run the one way ANOVA test or ttest for every probe base on the platform selected    
+    express={}
+    
+    if group_counter<=2:
+        if len(s_group_dict['g1'])==len(s_group_dict['g2']):
+            print("use pair t test")
+            for i in range(0,len(all_probe)):   #need to fix if try to run on laptop
+                presult[all_probe[i]]=stats.ttest_rel(list(val[0][i]),list(val[1][i]),nan_policy='omit')[1] 
+                express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
+        else:
+            print("use unpair ttest")
+            for i in range(0,len(all_probe)):    #need to fix if try to run on laptop
+                presult[all_probe[i]]=stats.ttest_ind(list(val[0][i]),list(val[1][i]),equal_var=False,nan_policy='omit')[1]
+                express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
+    else:
+        print("use one way anova")
+        for i in range(0,len(all_probe)):   #need to fix if try to run on laptop
             to_anova=[]
             for n in range(0,group_counter):
                 #val[n]=sum(val[n],[])
@@ -148,30 +235,33 @@ def heatmap(request):
               
             presult[all_probe[i]]=stats.f_oneway(*to_anova)[1]  
             express[all_probe[i]]=sum(to_anova,[])
-           
-            
-        #sort the dictionary with p-value and need to get the expression data again (top20)    
-        sortkey=sorted(presult,key=presult.get)
+       
         
-        counter=1
-        for w in sortkey:     
-            #print(presult[w])
-            expression.append(express[w])
-            probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
-            counter+=1
-            if counter==21:
-                break
-        
-        for n in group_name:
-            for s in s_group_dict[n]:
-                sample_out.append(s.name+"("+s.cell_line_id.name+")")
-          
-    else:#this part is for select cell line
-        ssss=1
-        
+    #sort the dictionary with p-value and need to get the expression data again (top20)  
+    #presult[all_probe[0]]=float('nan')
+    #presult[all_probe[11]]=float('nan')
+    #how to deal with all "nan"?
+    tempf=pd.DataFrame(list(presult.items()), columns=['probe', 'pvalue'])
+    tempf=tempf.replace(to_replace=float('nan'),value=float('+inf'))
+    presult=dict(zip(tempf.probe, tempf.pvalue))
+    sortkey=sorted(presult,key=presult.get)
     
+    counter=1
+    for w in sortkey:     
+        #print(presult[w],":",w.Probe_id)
+        expression.append(express[w])
+        probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
+        counter+=1
+        if counter==21:
+            break
     
+    n_counter=1
+    for n in group_name:
+        for s in s_group_dict[n]:
+            sample_out.append(s.name+"("+s.cell_line_id.name+")"+"(group"+str(n_counter)+")")    
+        n_counter+=1
     
+
     return render_to_response('heatmap.html',RequestContext(request,
         {
         'sample_out':mark_safe(json.dumps(sample_out)),
