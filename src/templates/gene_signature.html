@@ -65,14 +65,14 @@ add radio to choose 2 groups or more than two groups
             
             <div id="select_a_g1">
                 <p>please select the data set(s) you want to compare:</p>
-                <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
+                <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="sanger_g1" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
             </div>
         
             
         
             <div id="select_plus2_g1">
-                <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
+                <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
                 <p>please select the data set(s) you want to compare:</p>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="nci_g1" value="NCI60">NCI60</label>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="gse_g1" value="GSE36133">GSE36133</label>
@@ -268,6 +268,8 @@ add radio to choose 2 groups or more than two groups
     </div>
 </div>
 <div id="more_group"></div>
+<div id="error_display"></div>
+<div id="select_error"></div>
 </br>
 <button type="button" class="btn btn-info" id="add_group">Add Group</button>
 <button type="button" class="btn btn-info" id="delete_group">Delete Group</button>
@@ -306,6 +308,9 @@ $(document).on('change', 'input[name="cell_line_method"]',function(){
                 $("div[id^='select_platform_g']").hide();
                 $("div[id^='input_g']").show();
                 $("textarea").attr('required', '');
+                $("#error_display").show();
+                $("#select_error").hide();
+                
                 
             }
         if($("#select").is(':checked')){
@@ -317,41 +322,170 @@ $(document).on('change', 'input[name="cell_line_method"]',function(){
             $("div[id^='nci_table_g']").hide();
             $("div[id^='ccle_table_g']").hide();
             $("textarea").removeAttr('required');
+            $("#error_display").hide();
+            $("#select_error").show();
+            var $div = $('div[id^="group"]:last');
+        var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
+             
+       
+            for (var i=1;i<=num; i++)
+            {   
+                if($("#sanger_g"+i).is(':checked'))
+                {                    
+                    $("#sanger_table_g"+i).show() ;          
+                }
+                else
+                {
+                    $("#sanger_table_g"+i).hide();
+                }
+                if($("#nci_g"+i).is(':checked'))
+                {
+                    $("#nci_table_g"+i).show();           
+                }
+                else
+                {
+                    $("#nci_table_g"+i).hide();
+                }
+                if($("#gse_g"+i).is(':checked'))
+                {
+                    $("#ccle_table_g"+i).show();           
+                }
+                else
+                {
+                    $("#ccle_table_g"+i).hide();
+                }
+                
+            }
 
         } 
 }); 
 $("#submit").click(function() { 
     var $div = $('div[id^="group"]:last');
     var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
-             
-       
-    for (var i=1;i<=num; i++)
-    {   
-    
-        var lines = $("textarea[id='cellline_g"+i+"']").val().split(/\n/);
-        /*var texts = [];
-        for (var i=0; i < lines.length; i++) {
-          // only push this line if it contains a non whitespace character.
-          if (/\S/.test(lines[i])) {
-            texts.push($.trim(lines[i]));
-          }
-        }*/
-      //if(jQuery.inArray("A549", {{check_celllines}}) !== -1)
-      //{alert("I am in the array!!");}
-      if ($("textarea[id='cellline_g"+i+"']").val() == "") 
-      {
-        $("span[name='needed_group"+i+"']").show(); 
+    if ($("#select").is(':checked'))
+    {
+        var ef=0;
+        $("#select_error").empty();
+        for (var i=1;i<=num; i++)
+        {
+            //alert("I am in select check!!");
+            if($( "input[name='dataset_g"+i+"']:checked" ).length==0)
+            {
+                ef=1;
+                $("span[name='needed"+i+"']").css('display', 'block');
+            }
+            else
+            {
+                $("span[name='needed"+i+"']").css('display', 'none');
+            };
+            
+        };
+        if(ef==1)
+        {
+            return false;
+        };
+        for (var i=1;i<=num; i++)
+        {
+            if($("#sanger_g"+i).is(':checked'))
+            {
+                if( !$("#select_sanger_g"+i).val() ) 
+                {
+                    //alert("error!!");
+                    ef=1;
+                    $("#select_error").append('<br /><p style="color:red;">'+
+                        'The cell line selection part of Sanger Cell Line Project in Group'+ i +' cannot be empty.</p>');
+                
+                };
+            };
+            if($("#nci_g"+i).is(':checked'))
+            {
+                if( !$("#select_nci_g"+i).val() ) 
+                {
+                    //alert("error!!");
+                    ef=1;
+                    $("#select_error").append('<br /><p style="color:red;">'+
+                        'The cell line selection part of NCI60 in Group'+ i +' cannot be empty.</p>');
+                
+                };
+            };
+            if($("#gse_g"+i).is(':checked'))
+            {
+                if( !$("#select_ccle_g"+i).val() ) 
+                {
+                    //alert("error!!");
+                    ef=1;
+                    $("#select_error").append('<br /><p style="color:red;">'+
+                        'The cell line selection part of GSE36133 in Group'+ i +' cannot be empty.</p>');
+                
+                };
+            };
+        };
+    };    
+    if ($("#text").is(':checked')) {
+        var ef=0;
+        $("#error_display").empty();
+        for (var i=1;i<=num; i++)
+        {
+            if ($("textarea[id='cellline_g"+i+"']").val() == "") 
+            {
+                ef=1;
+                $("span[name='needed_group"+i+"']").show(); 
+                
+            }
+            else
+            {
+                $("span[name='needed_group"+i+"']").hide();
+            };
+        };
+        if(ef==1)
+        {
+            //alert("I am in return false");
+            return false;
+        };
+        for (var i=1;i<=num; i++)
+        {   
+            var lines = $("textarea[id='cellline_g"+i+"']").val().split(/\s+/);
+            
+            for (var j=0; j < lines.length; j++) 
+            {
+              //if not found will equal -1
+              if($("#U133A-id").is(':checked'))
+              {
+                  if(jQuery.inArray(lines[j], {{check_celllines}}) == -1)
+                  {
+                    $("#error_display").append('<br /><p style="color:red;">' + lines[j] +
+                    ' of Group'+ i +' is not in the platform you selected.</p>');
+
+                    ef=1;
+                  };
+              };
+              if($("#PLUS2-id").is(':checked'))
+              {
+                if(jQuery.inArray(lines[j], {{plus2_celllines}}) == -1)
+                  {
+                    $("#error_display").append('<br /><p style="color:red;">' + lines[j] +
+                    ' of Group'+ i +' is not in the platform you selected.</p>');
+
+                    ef=1;
+                  };
+              };
+            };
+            
+          
+        };
         
-      }
-      else
-      {
-        $("span[name='needed_group"+i+"']").hide();
-      }
+        
+    };
+    if(ef==1)
+    {
+            //alert("I am in return false");
+            return false;
     };
 });
 </script>
 <script type="text/javascript">
 $("input[name='data_platform']").change(function(){
+        $("#select_error").empty();
         if($("#U133A-id").is(':checked')){
             $("div[id^='select_a_g']").show();
             $("div[id^='select_plus2_g']").hide();
@@ -378,7 +512,7 @@ $("input[name='data_platform']").change(function(){
         }
     });
 $(document).on('change',"input[name^='dataset_g']",function(){
-        //alert("changed!!")
+        //alert("changed!!");
         var $div = $('div[id^="group"]:last');
         var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
              

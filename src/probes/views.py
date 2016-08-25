@@ -45,9 +45,11 @@ def gene_signature(request):
     )
     
     check_celllines=list(celllines)
+    plus2_celllines=list(ncicelllines)+list(CCcelllines)
 
     return render(request, 'gene_signature.html', {
         'check_celllines': mark_safe(json.dumps(check_celllines)),
+        'plus2_celllines': mark_safe(json.dumps(plus2_celllines)),
         'celllines': celllines,
         'ncicelllines': ncicelllines,
         'CCcelllines': CCcelllines,
