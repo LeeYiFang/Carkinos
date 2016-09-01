@@ -36,17 +36,13 @@
         
 </label>
 
-<h3>Step3 - Define Groups:</h3>
-<p>Two groups will use student t-test to evaluate the result.</p>
-<p>For more than two groups, we will use one-way-ANOVA</p>
-<p style="color:blue;">Notice: To prevent statistical error, please at least input 2 cell lines in each group.</p>
-
+<h3>Step3 - Choose microarray platform:</h3>
 <style type="text/css">  
     .help {display: none}
 </style> 
 <div id="platform_type">
-    <p>First choose the platform</p>
-    <p>The following input of the groups should be based on the platform you select.</p>
+    <p>Please choose the platform:</p>
+    <p>The cell lines input in Step4 should be based on the platform you select.</p>
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
@@ -62,7 +58,11 @@
     </div>
     
 </div>
-
+<h3>Step4 - Define Groups:</h3>
+<p>Two groups will use student t-test to evaluate the result.</p>
+<p>For more than two groups, we will use one-way-ANOVA</p>
+<p>The following input of the groups should be based on the platform you select in Step3.</p>
+<p style="color:blue;">Notice: To prevent statistical error, please at least input 2 cell lines in each group.</p>
 <div  id="group1">
     
     <div name="select_g1" id="select_g1">

@@ -365,11 +365,15 @@ def pca(request):
     all_name=cell_line_name.copy()         #all_name need to delete the selected_name later
     all_name_distinct =list(samples.values_list('cell_line_id__name', flat=True).distinct()) 
 
-    n=3  #need to fix to the best one #need to fix
+    n=429  #need to fix to the best one #need to fix proportion  
+    #429 0.900169151952
+    #206 0.8
+    #99 0.7
     pca= PCA(n_components=n)
     Xval = pca.fit_transform(val)
     ratio_temp=pca.explained_variance_ratio_
-    propotion=sum(ratio_temp[0:n-1])
+    propotion=sum(ratio_temp[0:3])
+    table_propotion=sum(ratio_temp[0:n+1])
     
     if 'd_sample' in display_method:
         
@@ -417,6 +421,7 @@ def pca(request):
         {
         'output_cell':output_cell,
         'propotion':propotion,
+        'table_propotion':table_propotion,
         'all_name':mark_safe(json.dumps(all_name)),
         'selected_name':mark_safe(json.dumps(selected_name)),
         'colorX':colorX,
@@ -507,6 +512,7 @@ def pca(request):
         {
         'output_cell':output_cell,
         'propotion':propotion,
+        'table_propotion':table_propotion,
         'all_name':mark_safe(json.dumps(all_name)),
         'selected_name':mark_safe(json.dumps(selected_name)),
         'colorX':colorX,
