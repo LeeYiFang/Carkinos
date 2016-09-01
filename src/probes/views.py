@@ -269,7 +269,7 @@ def heatmap(request):
             if dataset_n=="Sanger Cell Line Project":
                 sample_out.append(str(sample_counter)+"-SCLP("+s.cell_line_id.name+")"+"(group"+str(n_counter)+")")   
             else:
-                sample_out.append(str(sample_counter)+"-"+s.dataset_id.name+"("+s.cell_line_id.name+")"+"(group"+str(n_counter)+")")   
+                sample_out.append(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")   
             sample_counter+=1
         n_counter+=1
     

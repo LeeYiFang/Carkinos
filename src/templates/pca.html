@@ -24,6 +24,7 @@
     <p>If you do not see any red spot and any data in the table,</br> 
     that means the cell lines are not in the dataset(s) you selected.
     </p>
+    <HR>
     {% for cell_line,b in output_cell %}
         <p>cell line name:{{cell_line.name}}</p>
         <p>primary site:{{cell_line.primary_site}}</p>
@@ -63,7 +64,7 @@
                 </table>
             </div>
         </div>
-        
+    <HR>    
     {% endfor %}
 {% endblock content %}
 
@@ -78,7 +79,9 @@ $(document).ready(function() {
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
-
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.flash.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
 
 <script>
  $(document).ready(function() {
