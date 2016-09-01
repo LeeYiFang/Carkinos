@@ -15,7 +15,8 @@
 {% block content %}
 <h1>Gene Signature Explore: Heatmap Result</h1>
 </br>
-<p>The heatmap will show the top 20 probes that are most significant.</p>
+<p>The heatmap will show the top {{pro_number}} probes that are most significant.</p> 
+<p>"SCLP" is short for Sanger Cell Line Project</p>
 <!--<style>
 img.big {
     height: 80%;
@@ -50,13 +51,13 @@ var data = [
 ];
 var layout = {
   title: 'Heatmap',
-  autosize: false,
+  autosize: true, //false
   width: 1140,
   height: 1500,
   margin: {
     l: 200,
-    r: 50,
-    b: 100,
+    r: 40,
+    b: 200, //100 change to auto
     t: 100,
     pad: 4
   },

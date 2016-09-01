@@ -24,15 +24,23 @@
 
 </br>
 
-<h3>Step2 - Define Groups:</h3>
+<h3>Step2 - Decide probe number:</h3>
+<p>Please decide how many probes will be shown on the result heat map.</p>
+<label>
+        <input type="radio" name="probe_number" value="25" checked>25</input>
+        <input type="radio" name="probe_number" value="50">50 </input>
+        <input type="radio" name="probe_number" value="75">75 </input>
+        <input type="radio" name="probe_number" value="100">100 </input>
+        <input type="radio" name="probe_number" value="250">250 </input>
+        <input type="radio" name="probe_number" value="500">500 </input>
+        
+</label>
+
+<h3>Step3 - Define Groups:</h3>
 <p>Two groups will use student t-test to evaluate the result.</p>
 <p>For more than two groups, we will use one-way-ANOVA</p>
-<!--
-add radio to choose 2 groups or more than two groups
+<p style="color:blue;">Notice: To prevent statistical error, please at least input 2 cell lines in each group.</p>
 
-
-
--->
 <style type="text/css">  
     .help {display: none}
 </style> 
@@ -66,7 +74,7 @@ add radio to choose 2 groups or more than two groups
             <div id="select_a_g1">
                 <p>please select the data set(s) you want to compare:</p>
                 <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="sanger_g1" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="sanger_g1" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>
             </div>
         
             
@@ -75,7 +83,7 @@ add radio to choose 2 groups or more than two groups
                 <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
                 <p>please select the data set(s) you want to compare:</p>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="nci_g1" value="NCI60">NCI60</label>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="gse_g1" value="GSE36133">GSE36133</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="gse_g1" value="GSE36133">CCLE(GSE36133)</label>
                 
             </div>
         
@@ -84,7 +92,7 @@ add radio to choose 2 groups or more than two groups
         <div class="panel panel-default" id="sanger_table_g1">
           <!-- Default panel contents -->
             <div class="panel-heading">
-                Sanger Cell Line Project:
+                Sanger Cell Line Project(SCLP):
             </div>
             <div class="panel-body">
                 <p>please select the cell lines you want:</p>
@@ -128,7 +136,7 @@ add radio to choose 2 groups or more than two groups
         <div class="panel panel-default" id="ccle_table_g1">
           <!-- Default panel contents -->
             <div class="panel-heading">
-                GSE36133:
+                CCLE(GSE36133):
             </div>
             <div class="panel-body">
                 <p>please select the cell lines you want:</p>
@@ -172,7 +180,7 @@ add radio to choose 2 groups or more than two groups
             <div id="select_a_g2">
                 <p>please select the data set(s) you want to compare:</p>
                 <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="sanger_g2" value="Sanger Cell Line Project">Sanger Cell Line Project</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="sanger_g2" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>
             </div>
         
             
@@ -181,7 +189,7 @@ add radio to choose 2 groups or more than two groups
                 <span class="help" style="color:red;" name="needed2">*Please check at least one dataset<br /></span>
                 <p>please select the data set(s) you want to compare:</p>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="nci_g2" value="NCI60">NCI60</label>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="gse_g2" value="GSE36133">GSE36133</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g2" id="gse_g2" value="GSE36133">CCLE(GSE36133)</label>
                 
             </div>
         
@@ -190,7 +198,7 @@ add radio to choose 2 groups or more than two groups
         <div class="panel panel-default" id="sanger_table_g2"><!--need to change to id-->
           <!-- Default panel contents -->
             <div class="panel-heading">
-                Sanger Cell Line Project:
+                Sanger Cell Line Project(SCLP):
             </div>
             <div class="panel-body">
                 <p>please select the cell lines you want:</p>
@@ -234,7 +242,7 @@ add radio to choose 2 groups or more than two groups
         <div class="panel panel-default" id="ccle_table_g2">
           <!-- Default panel contents -->
             <div class="panel-heading">
-                GSE36133:
+                CCLE(GSE36133):
             </div>
             <div class="panel-body">
                 <p>please select the cell lines you want:</p>
@@ -393,7 +401,7 @@ $("#submit").click(function() {
                     //alert("error!!");
                     ef=1;
                     $("#select_error").append('<br /><p style="color:red;">'+
-                        'The cell line selection part of Sanger Cell Line Project in Group'+ i +' cannot be empty.</p>');
+                        'The cell line selection part of Sanger Cell Line Project(SCLP) in Group'+ i +' cannot be empty.</p>');
                 
                 };
             };
@@ -415,7 +423,7 @@ $("#submit").click(function() {
                     //alert("error!!");
                     ef=1;
                     $("#select_error").append('<br /><p style="color:red;">'+
-                        'The cell line selection part of GSE36133 in Group'+ i +' cannot be empty.</p>');
+                        'The cell line selection part of CCLE(GSE36133) in Group'+ i +' cannot be empty.</p>');
                 
                 };
             };
@@ -445,9 +453,15 @@ $("#submit").click(function() {
         for (var i=1;i<=num; i++)
         {   
             var lines = $("textarea[id='cellline_g"+i+"']").val().split(/\s+/);
-            
+            var counter=0;
             for (var j=0; j < lines.length; j++) 
             {
+               //長度不為0才往下做(或內容為空白)
+              if(lines[j].length==0)
+              {
+                counter=counter+1;
+                continue;
+              }
               //if not found will equal -1
               if($("#U133A-id").is(':checked'))
               {
@@ -470,7 +484,12 @@ $("#submit").click(function() {
                   };
               };
             };
-            
+            if(counter==lines.length)
+            {
+                $("#error_display").append('<br /><p style="color:red;">' + 
+                    'please input at least one cell line in Group' + i +'</p>');
+                ef=1;
+            }
           
         };
         
@@ -571,7 +590,7 @@ $(document).on('click', '#add_group', function() {
                         '<div id="select_a_g'+index+'">'+
                             '<p>please select the data set(s) you want to compare:</p>'+
                             '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="sanger_g'+index+'" value="Sanger Cell Line Project">Sanger Cell Line Project</label>'+
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="sanger_g'+index+'" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>'+
                         '</div>'+
                     
                         
@@ -580,7 +599,7 @@ $(document).on('click', '#add_group', function() {
                             '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
                             '<p>please select the data set(s) you want to compare:</p>'+
                             '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="nci_g'+index+'" value="NCI60">NCI60</label>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="gse_g'+index+'" value="GSE36133">GSE36133</label>'+
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="gse_g'+index+'" value="GSE36133">CCLE(GSE36133)</label>'+
                             
                         '</div>'+
                     
@@ -590,7 +609,7 @@ $(document).on('click', '#add_group', function() {
 
                 '<div id="select_g'+index+'">'+
                     '<div class="panel panel-default" id="sanger_table_g'+index+'">'+
-                        '<div class="panel-heading">Sanger Cell Line Project:</div>'+
+                        '<div class="panel-heading">Sanger Cell Line Project(SCLP):</div>'+
                         '<div class="panel-body">'+
                             '<p>please select the cell lines you want:</p>'+
                             '<div id="test_g'+index+'"></div>'+
@@ -631,7 +650,7 @@ $(document).on('click', '#add_group', function() {
                     '</div>'+
                     
                     '<div class="panel panel-default" id="ccle_table_g'+index+'">'+
-                        '<div class="panel-heading">GSE36133:</div>'+
+                        '<div class="panel-heading">CCLE(GSE36133):</div>'+
                         '<div class="panel-body">'+
                             '<p>please select the cell lines you want:</p>'+
                             '<div id="test_ccle_g'+index+'"></div>'+

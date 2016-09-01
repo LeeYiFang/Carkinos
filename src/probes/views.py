@@ -13,6 +13,8 @@ from sklearn.decomposition import PCA
 from scipy import stats
 
 
+def upload(request):
+    return render_to_response('upload.html',locals())
 
 def welcome(request):
     return render_to_response('welcome.html',locals())
@@ -219,7 +221,7 @@ def heatmap(request):
     if group_counter<=2:
         if len(s_group_dict['g1'])==len(s_group_dict['g2']):
             print("use pair t test")
-            for i in range(0,len(all_probe)):   #need to fix if try to run on laptop
+            for i in range(0,len(all_probe)):   #len(all_probe) need to fix if try to run on laptop
                 presult[all_probe[i]]=stats.ttest_rel(list(val[0][i]),list(val[1][i]),nan_policy='omit')[1] 
                 express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
         else:
@@ -249,23 +251,32 @@ def heatmap(request):
     sortkey=sorted(presult,key=presult.get)
     
     counter=1
+    pro_number=int(request.POST['probe_number'])
+    stop_end=pro_number+1
     for w in sortkey:     
         #print(presult[w],":",w.Probe_id)
         expression.append(express[w])
         probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
         counter+=1
-        if counter==21:
+        if counter==stop_end:
             break
     
     n_counter=1
     for n in group_name:
+        sample_counter=1
         for s in s_group_dict[n]:
-            sample_out.append(s.name+"("+s.cell_line_id.name+")"+"(group"+str(n_counter)+")")    
+            dataset_n=s.dataset_id.name
+            if dataset_n=="Sanger Cell Line Project":
+                sample_out.append(str(sample_counter)+"-SCLP("+s.cell_line_id.name+")"+"(group"+str(n_counter)+")")   
+            else:
+                sample_out.append(str(sample_counter)+"-"+s.dataset_id.name+"("+s.cell_line_id.name+")"+"(group"+str(n_counter)+")")   
+            sample_counter+=1
         n_counter+=1
     
 
     return render_to_response('heatmap.html',RequestContext(request,
         {
+        'pro_number':pro_number,
         'sample_out':mark_safe(json.dumps(sample_out)),
         'expression':expression,
         'probe_out':mark_safe(json.dumps(probe_out)),
