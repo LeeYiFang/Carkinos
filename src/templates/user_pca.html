@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload File PCA Plot{% endblock title %}
+{% block extra_css %}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.11/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+<!--<link href="//cdn.datatables.net/1.10.8/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />-->
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/buttons/1.1.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/select/1.1.0/css/select.dataTables.min.css">
+<!--<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.css"/>-->
+
+{% endblock extra_css %}
+{% block content %}
+    <h2>PCA RESULTS:Plot</h2>
+    <h3>Dots:one dot represents one sample</h3>
+    <div id="myDiv" style="width:100%;height:100%">
+       
+    
+    
+    
+    
+    </div>
+    <p>Red spots is the cell line you input.</p>
+    <p>If you do not see any red spot and any data in the table,</br> 
+    that means the cell lines are not in the dataset(s) you selected.
+    </p>
+    <HR>
+    {% for cell_line,b in output_cell %}
+        <p>cell line name:{{cell_line.name}}</p>
+        <p>primary site:{{cell_line.primary_site}}</p>
+        <p>primary histology:{{cell_line.primary_hist}}</p>
+        <p>Percentage of variance explained by 3D pca plot: {{propotion}}</p>
+        <p>Percentage of variance explained by distance table: {{table_propotion}}</p>
+        
+        <div class="row">
+            <div class="col-md-offset-1 col-md-10">
+                <h2>PCA Results:Distance</h2>
+             
+                <table id="example" class="display">
+                    <thead>
+                    <tr>
+                        <th>Selected Cell Line</th>
+                        <th>Sample Name</th>
+                        <th>Cell Line name</th>
+                        <th>Sample name</th>
+                        <th>dataset</th>
+                        <th>distance</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    
+                        {% for order,sn,cname,sname,setname,dis in b %} 
+                            <tr>
+                                <td>{{ order }}</td>
+                                <td>{{ sn }}</td>
+                                <td>{{ cname }}</td>
+                                <td>{{ sname }}</td>
+                                <td>{{setname}}</td>
+                                <td>{{ dis|floatformat:4 }}</td>
+                            </tr>
+                        {% endfor %}
+                   
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <HR>    
+    {% endfor %}
+{% endblock content %}
+
+{% block scripts %}
+<!--<script src="static/DataTables/meida/js/jquery.dataTables.js"></script>
+<script>
+$(document).ready(function() {
+    $('#example').DataTable();
+} );
+</script>-->
+<script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.flash.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
+
+<script>
+ $(document).ready(function() {
+ $('table[id="example"]').DataTable({
+        destroy: true,
+        dom: 'lfrtBip',
+        buttons: [
+            'excel'
+        ]
+    } );
+  
+ } );
+</script>
+<script>
+var trace2 = {
+    x:{{colorX}},
+    y:{{colorY}},
+    z:{{colorZ}},
+    mode: 'markers',
+  marker: {
+    color: 'rgb(255, 0, 0)',
+    size: 12,
+    symbol: 'circle',
+    line: {
+      color: 'rgb(204, 204, 204)',
+      width: 1
+    },
+    opacity: 0.9
+  },
+  text: {{selected_name}},  
+  name: 'Input cell lines',
+  type: 'scatter3d'
+};
+var trace1 = {
+    x:{{X}},
+    y:{{Y}},
+    z:{{Z}},
+    mode: 'markers',
+  marker: {
+    color: 'rgb(127, 127, 127)',
+    size: 12,
+    symbol: 'circle',
+    line: {
+      color: 'rgb(204, 204, 204)',
+      width: 1
+    },
+    opacity: 0.9
+  },
+  text: {{all_name}},
+  name: 'All data in selected datasets',
+  type: 'scatter3d'
+};
+var data = [trace1,trace2];
+var layout = {margin: {
+    l: 0,
+    r: 0,
+    b: 0,
+    t: 0
+  }};
+Plotly.newPlot('myDiv', data, layout);
+
+</script>
+{% endblock %}

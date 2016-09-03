@@ -12,9 +12,84 @@ import sklearn
 from sklearn.decomposition import PCA
 from scipy import stats
 
+def user_pca(request):
 
-def upload(request):
-    return render_to_response('upload.html',locals())
+#notice that we need to return a user_pca_center.html, too!!
+    return render_to_response('user_pca.html',locals())
+def express_profiling(request):
+    samples = Sample.objects.filter(
+        dataset_id__name__in=['Sanger Cell Line Project']
+    ).select_related('cell_line_id')
+    ncisamples = Sample.objects.filter(
+        dataset_id__name__in=['NCI60']
+    ).select_related('cell_line_id')
+    CCsamples = Sample.objects.filter(
+        dataset_id__name__in=['GSE36133']
+    ).select_related('cell_line_id')
+    # Get all distinct primary sites from selected samples
+    celllines = sorted(
+        samples.values_list('cell_line_id__name', flat=True).distinct()
+    )
+    ncicelllines = sorted(
+        ncisamples.values_list('cell_line_id__name', flat=True).distinct()
+    )
+    CCcelllines = sorted(
+        CCsamples.values_list('cell_line_id__name', flat=True).distinct()
+    )
+    nci=[]
+    nciprime=Sample.objects.filter(dataset_id__name="NCI60").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    ncisites=list(nciprime.values_list('cell_line_id__primary_site',flat=True))
+    ncicells=list(nciprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    ncidi=list(nciprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    ncicells=list(ncicells)
+    id_counter=0
+   
+    for p in range(0,len(ncidi)):
+        temp=ncisites.count(ncidi[p])
+        nci.append((ncidi[p],list(set(ncicells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    sanger=[]
+    sangerprime=Sample.objects.filter(dataset_id__name="Sanger Cell Line Project").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    sangersites=list(sangerprime.values_list('cell_line_id__primary_site',flat=True))
+    sangercells=list(sangerprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    sangerdi=list(sangerprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    sangercells=list(sangercells)
+    id_counter=0
+   
+    for p in range(0,len(sangerdi)):
+        temp=sangersites.count(sangerdi[p])
+        sanger.append((sangerdi[p],list(set(sangercells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    ccle=[]
+    ccleprime=Sample.objects.filter(dataset_id__name="GSE36133").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    cclesites=list(ccleprime.values_list('cell_line_id__primary_site',flat=True))
+    cclecells=list(ccleprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    ccledi=list(ccleprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    cclecells=list(cclecells)
+    id_counter=0
+   
+    for p in range(0,len(ccledi)):
+        temp=cclesites.count(ccledi[p])
+        ccle.append((ccledi[p],list(set(cclecells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    check_celllines=list(celllines) #all U133A cell lines
+    plus2_celllines=list(ncicelllines)+list(CCcelllines)
+
+    return render(request, 'express_profiling.html', {
+        'check_celllines': mark_safe(json.dumps(check_celllines)),
+        'plus2_celllines': mark_safe(json.dumps(plus2_celllines)),
+        'nci':nci,
+        'sanger':sanger,
+        'ccle':ccle,
+        
+    })
+   
 
 def welcome(request):
     return render_to_response('welcome.html',locals())
@@ -45,16 +120,57 @@ def gene_signature(request):
     CCcelllines = sorted(
         CCsamples.values_list('cell_line_id__name', flat=True).distinct()
     )
-    
-    check_celllines=list(celllines)
+    nci=[]
+    nciprime=Sample.objects.filter(dataset_id__name="NCI60").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    ncisites=list(nciprime.values_list('cell_line_id__primary_site',flat=True))
+    ncicells=list(nciprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    ncidi=list(nciprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    ncicells=list(ncicells)
+    id_counter=0
+   
+    for p in range(0,len(ncidi)):
+        temp=ncisites.count(ncidi[p])
+        nci.append((ncidi[p],list(set(ncicells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    sanger=[]
+    sangerprime=Sample.objects.filter(dataset_id__name="Sanger Cell Line Project").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    sangersites=list(sangerprime.values_list('cell_line_id__primary_site',flat=True))
+    sangercells=list(sangerprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    sangerdi=list(sangerprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    sangercells=list(sangercells)
+    id_counter=0
+   
+    for p in range(0,len(sangerdi)):
+        temp=sangersites.count(sangerdi[p])
+        sanger.append((sangerdi[p],list(set(sangercells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    ccle=[]
+    ccleprime=Sample.objects.filter(dataset_id__name="GSE36133").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    cclesites=list(ccleprime.values_list('cell_line_id__primary_site',flat=True))
+    cclecells=list(ccleprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    ccledi=list(ccleprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    cclecells=list(cclecells)
+    id_counter=0
+   
+    for p in range(0,len(ccledi)):
+        temp=cclesites.count(ccledi[p])
+        ccle.append((ccledi[p],list(set(cclecells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    check_celllines=list(celllines) #all U133A cell lines
     plus2_celllines=list(ncicelllines)+list(CCcelllines)
 
     return render(request, 'gene_signature.html', {
         'check_celllines': mark_safe(json.dumps(check_celllines)),
         'plus2_celllines': mark_safe(json.dumps(plus2_celllines)),
-        'celllines': celllines,
-        'ncicelllines': ncicelllines,
-        'CCcelllines': CCcelllines,
+        'nci':nci,
+        'sanger':sanger,
+        'ccle':ccle,
         
     })
     
@@ -105,7 +221,7 @@ def heatmap(request):
                 offset_group_dict['g'+str(i)]=goffset
         
         #get probe from different platform
-        all_probe=ProbeID.objects.filter(platform__name=pform)
+        all_probe=ProbeID.objects.filter(platform__name=pform)#.order_by('id')
         probe_offset=list(all_probe.values_list('offset',flat=True))
                     
         #deal with "nan" in Sanger dataset
@@ -219,18 +335,10 @@ def heatmap(request):
     express={}
     
     if group_counter<=2:
-        if len(s_group_dict['g1'])==len(s_group_dict['g2']):
-            print("use pair t test")
-            for i in range(0,len(all_probe)):   #len(all_probe) need to fix if try to run on laptop
-                presult[all_probe[i]]=stats.ttest_rel(list(val[0][i]),list(val[1][i]),nan_policy='omit')[1] 
-                express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
-        else:
-            print("use unpair ttest")
-            for i in range(0,len(all_probe)):    #need to fix if try to run on laptop
-                presult[all_probe[i]]=stats.ttest_ind(list(val[0][i]),list(val[1][i]),equal_var=False,nan_policy='omit')[1]
-                express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
+        for i in range(0,len(all_probe)):    #need to fix if try to run on laptop
+            presult[all_probe[i]]=stats.ttest_ind(list(val[0][i]),list(val[1][i]),equal_var=False,nan_policy='omit')[1]
+            express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
     else:
-        print("use one way anova")
         for i in range(0,len(all_probe)):   #need to fix if try to run on laptop
             to_anova=[]
             for n in range(0,group_counter):
@@ -267,7 +375,7 @@ def heatmap(request):
         for s in s_group_dict[n]:
             dataset_n=s.dataset_id.name
             if dataset_n=="Sanger Cell Line Project":
-                sample_out.append(str(sample_counter)+"-SCLP("+s.cell_line_id.name+")"+"(group"+str(n_counter)+")")   
+                sample_out.append(s.cell_line_id.name+"(SCLP)(group"+str(n_counter)+"-"+str(sample_counter)+")")   
             else:
                 sample_out.append(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")   
             sample_counter+=1
@@ -536,7 +644,8 @@ def cellline_microarray(request):
     ).select_related('cell_line_id')
     CCsamples = Sample.objects.filter(
         dataset_id__name__in=['GSE36133']
-    ).select_related('cell_line_id')
+    ).select_related('cell_line_id')    
+    '''
     # Get all distinct primary sites from selected samples
     primary_sites = sorted(
         samples.values_list('cell_line_id__primary_site', flat=True).distinct()
@@ -547,15 +656,62 @@ def cellline_microarray(request):
     CCprimary_sites = sorted(
         CCsamples.values_list('cell_line_id__primary_site', flat=True).distinct()
     )
+    '''
+    nci=[]
+    nciprime=Sample.objects.filter(dataset_id__name="NCI60").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    ncisites=list(nciprime.values_list('cell_line_id__primary_site',flat=True))
+    ncicells=list(nciprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    ncidi=list(nciprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    ncicells=list(ncicells)
+    id_counter=0
+   
+    for p in range(0,len(ncidi)):
+        temp=ncisites.count(ncidi[p])
+        nci.append((ncidi[p],list(set(ncicells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    sanger=[]
+    sangerprime=Sample.objects.filter(dataset_id__name="Sanger Cell Line Project").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    sangersites=list(sangerprime.values_list('cell_line_id__primary_site',flat=True))
+    sangercells=list(sangerprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    sangerdi=list(sangerprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    sangercells=list(sangercells)
+    id_counter=0
+   
+    for p in range(0,len(sangerdi)):
+        temp=sangersites.count(sangerdi[p])
+        sanger.append((sangerdi[p],list(set(sangercells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+        
+    ccle=[]
+    ccleprime=Sample.objects.filter(dataset_id__name="GSE36133").order_by('cell_line_id__primary_site').select_related('cell_line_id')
+    cclesites=list(ccleprime.values_list('cell_line_id__primary_site',flat=True))
+    cclecells=list(ccleprime.values_list('cell_line_id__name',flat=True))
+    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
+    ccledi=list(ccleprime.values_list('cell_line_id__primary_site',flat=True).distinct())
+    cclecells=list(cclecells)
+    id_counter=0
+   
+    for p in range(0,len(ccledi)):
+        temp=cclesites.count(ccledi[p])
+        ccle.append((ccledi[p],list(set(cclecells[id_counter:id_counter+temp]))))
+        id_counter+=temp
+    
+    
     
 
     return render(request, 'cellline_microarray.html', {
+        'nci': nci,
+        'sanger':sanger,
+        'ccle':ccle,
         'samples': samples,
-        'primary_sites': primary_sites,
+        #'primary_sites': primary_sites,
         'ncisamples': ncisamples,
-        'nciprimary_sites': nciprimary_sites,
+        #'nciprimary_sites': nciprimary_sites,
         'CCsamples': CCsamples,
-        'CCprimary_sites': CCprimary_sites,
+        #'CCprimary_sites': CCprimary_sites,
         
     })
 
@@ -571,7 +727,7 @@ def cell_lines(request):
     cell_line_dict={}
     context={}
     nr_samples=[]
-    samples=Sample.objects.all().select_related('cell_line_id','dataset_id')
+    samples=Sample.objects.all().select_related('cell_line_id','dataset_id').order_by('id') 
     for ss in samples:
         name=ss.cell_line_id.name
         primary_site=ss.cell_line_id.primary_site
@@ -613,21 +769,21 @@ def data(request):
         c = request.POST['cellline']
         c = c.split()
         sanger_flag=1
-        samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])      
-        cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__name__in=c)
-        offset=cell.values_list('offset',flat=True)
+        samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project']).order_by('id')      
+        cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__name__in=c).order_by('id')
+        offset=list(cell.values_list('offset',flat=True))
         ps_id='1'
         
         nci_flag=1
-        ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id')
-        ncicell=ncisamples.filter(cell_line_id__name__in=c)
-        ncioffset=ncicell.values_list('offset',flat=True)
+        ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id').order_by('id') 
+        ncicell=ncisamples.filter(cell_line_id__name__in=c).order_by('id') 
+        ncioffset=list(ncicell.values_list('offset',flat=True))
         pn_id='3'
         
         gse_flag=1
-        CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id')
-        CCcell=CCsamples.filter(cell_line_id__name__in=c)
-        CCoffset=CCcell.values_list('offset',flat=True)
+        CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id').order_by('id') 
+        CCcell=CCsamples.filter(cell_line_id__name__in=c).order_by('id') 
+        CCoffset=list(CCcell.values_list('offset',flat=True))
         pn_id='3'
     else:
         if 'dataset' in request.POST and request.POST['dataset'] != '':
@@ -635,23 +791,23 @@ def data(request):
             if 'Sanger Cell Line Project' in datas:
                 sanger_flag=1
                 SANGER=request.POST.getlist('select_sanger')
-                samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project'])      
-                cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__primary_site__in=SANGER)
-                offset=cell.values_list('offset',flat=True)
+                samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project']).order_by('id')       
+                cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__name__in=SANGER).order_by('id') 
+                offset=list(cell.values_list('offset',flat=True))
                 ps_id='1'
             if 'NCI60' in datas:
                 nci_flag=1
                 NCI=request.POST.getlist('select_nci')
-                ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id')
-                ncicell=ncisamples.filter(cell_line_id__primary_site__in=NCI)
-                ncioffset=ncicell.values_list('offset',flat=True)
+                ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id').order_by('id') 
+                ncicell=ncisamples.filter(cell_line_id__name__in=NCI).order_by('id') 
+                ncioffset=list(ncicell.values_list('offset',flat=True))
                 pn_id='3'
             if 'GSE36133' in datas:
                 gse_flag=1
                 GSE=request.POST.getlist('select_gse')
-                CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id')
-                CCcell=CCsamples.filter(cell_line_id__primary_site__in=GSE)
-                CCoffset=CCcell.values_list('offset',flat=True)
+                CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id').order_by('id') 
+                CCcell=CCsamples.filter(cell_line_id__name__in=GSE).order_by('id') 
+                CCoffset=list(CCcell.values_list('offset',flat=True))
                 pn_id='3'
             if len(SANGER)==0 and len(NCI)==0 and len(GSE)==0:
                 return HttpResponse("<p>please select primary sites.</p>" )
@@ -682,8 +838,8 @@ def data(request):
     norm_name=[request.POST['normalize']]
     if sanger_flag==1:
         #if request.POST['normalize']!='NTRK3-AS1':
-        sanger_g=ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=norm_name)
-        sanger_probe_offset=sanger_g.values_list('offset',flat=True)
+        sanger_g=ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=norm_name).order_by('id') 
+        sanger_probe_offset=list(sanger_g.values_list('offset',flat=True))
         temp=sanger_val[np.ix_(sanger_probe_offset,offset)]
         norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
         #else:
@@ -691,16 +847,16 @@ def data(request):
     else:
         norm=0.0  #if / should = 1   
     if nci_flag==1:
-        nci_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
-        nci_probe_offset=nci_g.values_list('offset',flat=True)
+        nci_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name).order_by('id') 
+        nci_probe_offset=list(nci_g.values_list('offset',flat=True))
         temp=nci_val[np.ix_(nci_probe_offset,ncioffset)]
         nci_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
         #print(nci_norm)   
     else:
         nci_norm=0.0  #if / should = 1
     if gse_flag==1:
-        CC_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name)
-        CC_probe_offset=CC_g.values_list('offset',flat=True)
+        CC_g=ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=norm_name).order_by('id') 
+        CC_probe_offset=list(CC_g.values_list('offset',flat=True))
         temp=gse_val[np.ix_(CC_probe_offset,CCoffset)]
         CC_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
         #print(CC_norm)
@@ -711,11 +867,11 @@ def data(request):
             
     #dealing with probes    
     if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
-        gene = ProbeID.objects.filter(platform__in=ps_id).filter(Probe_id__in=words)
-        probe_offset=gene.values_list('offset',flat=True)
+        gene = ProbeID.objects.filter(platform__in=ps_id).filter(Probe_id__in=words).order_by('id') 
+        probe_offset=list(gene.values_list('offset',flat=True))
         
-        ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Probe_id__in=words)
-        nciprobe_offset=ncigene.values_list('offset',flat=True)
+        ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Probe_id__in=words).order_by('id') 
+        nciprobe_offset=list(ncigene.values_list('offset',flat=True))
         #nci60 and ccle use same probe set(ncigene) and nicprobe
         
         # Make a generator to generate all (cell, probe, val) pairs
@@ -761,10 +917,10 @@ def data(request):
         return render_to_response('data.html', RequestContext(request,context))
 
     elif 'gtype' in request.POST and request.POST['gtype'] == 'symbol':
-        gene = ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=words)
+        gene = ProbeID.objects.filter(platform__in=ps_id).filter(Gene_symbol__in=words).order_by('id') 
         probe_offset=gene.values_list('offset',flat=True)
         
-        ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=words)
+        ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Gene_symbol__in=words).order_by('id') 
         nciprobe_offset=ncigene.values_list('offset',flat=True)
         #nci60 and ccle use same probe set(ncigene) and nicprobe
         
@@ -810,10 +966,10 @@ def data(request):
         return render_to_response('data.html', RequestContext(request,context))
 
     elif 'gtype' in request.POST and request.POST['gtype'] == 'entrez':
-        gene = ProbeID.objects.filter(platform__in=ps_id).filter(Entrez_id=words)
+        gene = ProbeID.objects.filter(platform__in=ps_id).filter(Entrez_id=words).order_by('id') 
         probe_offset=gene.values_list('offset',flat=True)
         
-        ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Entrez_id__in=words)
+        ncigene = ProbeID.objects.filter(platform__in=pn_id).filter(Entrez_id__in=words).order_by('id') 
         nciprobe_offset=ncigene.values_list('offset',flat=True)
         #nci60 and ccle use same probe set(ncigene) and nicprobe
         

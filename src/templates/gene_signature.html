@@ -8,7 +8,7 @@
 </br>
 <form action="{% url 'heatmap' %}" method="post" target="_blank">{% csrf_token %}
 
-<h3>Step1 - Select the method used in Step2</h3>
+<h3>Step1 - Select the method used in Step3</h3>
 <div class="radio">
     <label>
         <input type="radio" name="cell_line_method" value="text" id="text" checked>
@@ -98,12 +98,19 @@
                 <p>please select the cell lines you want:</p>
                 <div id="test_g1"></div>
                 <select multiple="multiple" id="select_sanger_g1" name="select_sanger_g1">
-                    <optgroup label="ALL" id="optgroup1">
+                <!--    <optgroup label="ALL" id="optgroup1">
                         {% for s in celllines %}
                             <option value="{{ s }}">{{ s }}</option>
                         {% endfor %}
                     </optgroup>
-                     
+                -->
+                {% for p,cell in sanger %}
+                <optgroup label="{{p}}" id="optgroup1">
+                        {% for c in cell %}
+                        <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                </optgroup>     
+                {% endfor %}
                 </select>
             </div>
             
@@ -120,12 +127,19 @@
                 <p>please select the cell lines you want:</p>
                 <div id="test_nci_g1"></div>
                 <select multiple="multiple" id="select_nci_g1" name="select_nci_g1">
-                    <optgroup label="ALL" id="optgroup2">
+                    <!--<optgroup label="ALL" id="optgroup2">
                         {% for s in ncicelllines %}
                             <option value="{{ s }}">{{ s }}</option>
                         {% endfor %}
                     </optgroup>
-                     
+                    -->
+                   {% for p,cell in nci %}
+                    <optgroup label="{{p}}" id="optgroup2">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
                 </select>
             </div>
             
@@ -142,12 +156,19 @@
                 <p>please select the cell lines you want:</p>
                 <div id="test_ccle_g1"></div>
                 <select multiple="multiple" id="select_ccle_g1" name="select_ccle_g1">
-                    <optgroup label="ALL" id="optgroup3">
+                    <!--<optgroup label="ALL" id="optgroup3">
                         {% for s in CCcelllines %}
                             <option value="{{ s }}">{{ s }}</option>
                         {% endfor %}
                     </optgroup>
-                     
+                     -->
+                    {% for p,cell in ccle %}
+                    <optgroup label="{{p}}" id="optgroup3">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
                 </select>
             </div>
             
@@ -204,11 +225,13 @@
                 <p>please select the cell lines you want:</p>
                 <div id="test_g2"></div>
                 <select multiple="multiple" id="select_sanger_g2" name="select_sanger_g2">
-                    <optgroup label="ALL" id="optgroup1">
-                        {% for s in celllines %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}
-                    </optgroup>
+                    {% for p,cell in sanger %}
+                    <optgroup label="{{p}}" id="optgroup1">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
                      
                 </select>
             </div>
@@ -226,11 +249,13 @@
                 <p>please select the cell lines you want:</p>
                 <div id="test_nci_g2"></div>
                 <select multiple="multiple" id="select_nci_g2" name="select_nci_g2">
-                    <optgroup label="ALL" id="optgroup2">
-                        {% for s in ncicelllines %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}
-                    </optgroup>
+                    {% for p,cell in nci %}
+                    <optgroup label="{{p}}" id="optgroup2">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
                      
                 </select>
             </div>
@@ -248,11 +273,13 @@
                 <p>please select the cell lines you want:</p>
                 <div id="test_ccle_g2"></div>
                 <select multiple="multiple" id="select_ccle_g2" name="select_ccle_g2">
-                    <optgroup label="ALL" id="optgroup3">
-                        {% for s in CCcelllines %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}
-                    </optgroup>
+                    {% for p,cell in ccle %}
+                    <optgroup label="{{p}}" id="optgroup3">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
                      
                 </select>
             </div>
@@ -295,7 +322,9 @@
 <script>
         $("select").multipleSelect({
             filter: true,
-            multiple: true
+            multiple: true,
+            //multipleWidth:100,
+            width: '100%'
         });
 </script>
 <script>
@@ -614,12 +643,13 @@ $(document).on('click', '#add_group', function() {
                             '<p>please select the cell lines you want:</p>'+
                             '<div id="test_g'+index+'"></div>'+
                             '<select multiple="multiple" id="select_sanger_g'+index+'" name="select_sanger_g'+index+'">'+
-                                '<optgroup label="ALL">'+
-                                    '{% for s in celllines %}'+
-                                    '    <option value="{{ s }}">{{ s }}</option>'+
-                                    '{% endfor %}'+
-                                '</optgroup>'+
-                                 
+                                '{% for p,cell in sanger %}'+
+                                '<optgroup label="{{p}}">'+
+                                        '{% for c in cell %}'+
+                                        '<option value="{{ c }}">{{ c }}</option>'+
+                                        '{% endfor %}'+
+                                '</optgroup>'+     
+                                '{% endfor %}'+
                             '</select>'+
                         '</div>'+
                 
@@ -636,11 +666,13 @@ $(document).on('click', '#add_group', function() {
                             '<p>please select the cell lines you want:</p>'+
                             '<div id="test_nci_g'+index+'"></div>'+
                             '<select multiple="multiple" id="select_nci_g'+index+'" name="select_nci_g'+index+'">'+
-                                '<optgroup label="ALL">'+
-                                    '{% for s in ncicelllines %}'+
-                                        '<option value="{{ s }}">{{ s }}</option>'+
-                                    '{% endfor %}'+
-                                '</optgroup>'+
+                                '{% for p,cell in nci %}'+
+                                '<optgroup label="{{p}}">'+
+                                        '{% for c in cell %}'+
+                                        '<option value="{{ c }}">{{ c }}</option>'+
+                                        '{% endfor %}'+
+                                '</optgroup>'+     
+                                '{% endfor %}'+
                                  
                             '</select>'+
                         '</div>'+
@@ -655,12 +687,13 @@ $(document).on('click', '#add_group', function() {
                             '<p>please select the cell lines you want:</p>'+
                             '<div id="test_ccle_g'+index+'"></div>'+
                             '<select multiple="multiple" id="select_ccle_g'+index+'" name="select_ccle_g'+index+'">'+
-                                '<optgroup label="ALL">'+
-                                    '{% for s in CCcelllines %}'+
-                                       ' <option value="{{ s }}">{{ s }}</option>'+
-                                    '{% endfor %}'+
-                                '</optgroup>'+
-                                 
+                                '{% for p,cell in ccle %}'+
+                                '<optgroup label="{{p}}">'+
+                                        '{% for c in cell %}'+
+                                        '<option value="{{ c }}">{{ c }}</option>'+
+                                        '{% endfor %}'+
+                                '</optgroup>'+     
+                                '{% endfor %}'+
                             '</select>'+
                         '</div>'+
                         
@@ -688,15 +721,21 @@ $(document).on('click', '#add_group', function() {
             $head.text("Group "+index+":");
             $("#select_sanger_g" + index).multipleSelect({
             filter: true,
-            multiple: true
+            multiple: true,
+            //multipleWidth:100,
+            width: '100%'
             });
             $("#select_nci_g" + index).multipleSelect({
             filter: true,
-            multiple: true
+            multiple: true,
+            //multipleWidth:100,
+            width: '100%'
             });
             $("#select_ccle_g" + index).multipleSelect({
             filter: true,
-            multiple: true
+            multiple: true,
+            //multipleWidth:100,
+            width: '100%'
             });
             if ($("#text").is(':checked')) {
                 //alert("I am in text!!");

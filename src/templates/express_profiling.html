@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}Gene Expression Profiling Analysis{% endblock title %}
+
+{% block extra_css %}
+<style type="text/css">  
+    .help {display: none}
+</style> 
+{% endblock extra_css %}
+
+{% block content %}
+<h1>Gene Expression Profiling Analysis</h1>
+</br>
+<form action="{% url 'user_pca' %}" method="post" target="_blank" enctype="multipart/form-data">{% csrf_token %}
+
+<h3>Step1 - Choose microarray platform: </h3>
+<div id="platform_type">
+    <p>Please select the microarray platfrom of your data:</p>
+    <p>Steps below will be based on the platform you select.</p>
+    <div class="radio">
+        <label>
+            <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
+            Affymatrix U133A platform
+        </label>
+    </div>
+    
+    <div class="radio">
+        <label>
+            <input type="radio" name="data_platform" value="PLUS2" id="PLUS2-id" >
+            Affymatrix U133plus2 platform
+        </label>
+    </div>
+    
+</div>
+
+<h3>Step2 - Upload file</h3>
+<p>Please upload your own data.</p>
+<p>The samples you upload with be red in the result PCA plot.</p>
+<!--TODO:1.more files can be uploaded with different colors. 2..CEL files-->
+<p style="color:blue;">Notice:only accept .txt file now</p>
+<input type="file" name="somename" size="chars"></input>
+</br>
+
+<h3>Step3 - Select the Method used in Step4</h3>
+<div class="radio">
+    <label>
+        <input type="radio" name="cell_line_method" value="text" id="text" checked>
+        Select by input cell line names
+    </label>
+</div>
+<div class="radio">
+    <label>
+        <input type="radio" name="cell_line_method" value="select" id="select" >
+        Select by dataset and cell lines
+    </label>
+</div>
+
+</br>
+
+<h3>Step4 - Select Compare Data:</h3>
+<p>Each group of cell lines you define will have different colors.</p>
+<p>Press "Add group" to add more group and "Delete group" to delete the last group below.</p>
+<p>You can at most have 3 groups.</p>  <!--This part will have to discuss with kinomoto-->
+<div  id="group1">
+    
+    <div name="select_g1" id="select_g1">
+        <h4>Group 1: Gray</h4>   <!--NOTICE:WE CHANGE IT TO H4 NOW!!!!-->
+        <div name="select_platform_g1" id="select_platform_g1">
+            <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
+            
+            
+            <div id="select_a_g1">
+                <p>please select the data set(s) you want to compare:</p>
+                <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="sanger_g1" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>
+            </div>
+        
+            
+        
+            <div id="select_plus2_g1">
+                <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
+                <p>please select the data set(s) you want to compare:</p>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="nci_g1" value="NCI60">NCI60</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="gse_g1" value="GSE36133">CCLE(GSE36133)</label>
+                
+            </div>
+        
+        </div>
+        
+        <div class="panel panel-default" id="sanger_table_g1">
+          <!-- Default panel contents -->
+            <div class="panel-heading">
+                Sanger Cell Line Project(SCLP):
+            </div>
+            <div class="panel-body">
+                <p>please select the cell lines you want:</p>
+                <div id="test_g1"></div>
+                <select multiple="multiple" id="select_sanger_g1" name="select_sanger_g1">
+                <!--    <optgroup label="ALL" id="optgroup1">
+                        {% for s in celllines %}
+                            <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                    </optgroup>
+                -->
+                {% for p,cell in sanger %}
+                <optgroup label="{{p}}" id="optgroup1">
+                        {% for c in cell %}
+                        <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                </optgroup>     
+                {% endfor %}
+                </select>
+            </div>
+            
+            <br />
+          
+        </div>
+        
+        <div class="panel panel-default" id="nci_table_g1">
+          <!-- Default panel contents -->
+            <div class="panel-heading">
+                NCI60:
+            </div>
+            <div class="panel-body">
+                <p>please select the cell lines you want:</p>
+                <div id="test_nci_g1"></div>
+                <select multiple="multiple" id="select_nci_g1" name="select_nci_g1">
+                    <!--<optgroup label="ALL" id="optgroup2">
+                        {% for s in ncicelllines %}
+                            <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    -->
+                   {% for p,cell in nci %}
+                    <optgroup label="{{p}}" id="optgroup2">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <br />
+          
+        </div>
+        
+        <div class="panel panel-default" id="ccle_table_g1">
+          <!-- Default panel contents -->
+            <div class="panel-heading">
+                CCLE(GSE36133):
+            </div>
+            <div class="panel-body">
+                <p>please select the cell lines you want:</p>
+                <div id="test_ccle_g1"></div>
+                <select multiple="multiple" id="select_ccle_g1" name="select_ccle_g1">
+                    <!--<optgroup label="ALL" id="optgroup3">
+                        {% for s in CCcelllines %}
+                            <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                    </optgroup>
+                     -->
+                    {% for p,cell in ccle %}
+                    <optgroup label="{{p}}" id="optgroup3">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <br />
+          
+        </div>
+    </div>
+
+    <div name="input_g1" id="input_g1">
+        <h3>Group 1:</h3>
+        <p>Input the cell lines you want:</p>
+        <p>For more than one cell lines, please separate with space or new line</p>
+        <div class="form-group">
+            <span class="help" style="color:red;" name="needed_group1">*Please enter at least one cell line <br /></span>
+            <textarea class="form-control" rows="5" id="cellline_g1" 
+                style="width:300px;height:100px;" required="required"
+                type="text" name="cellline_g1" placeholder="Enter cell line name"/></textarea> 
+        </div>
+    </div>
+</div>
+
+<div id="more_group"></div>
+<div id="error_display"></div>
+<div id="select_error"></div>
+</br>
+<button type="button" class="btn btn-info" id="add_group">Add Group</button>
+<button type="button" class="btn btn-info" id="delete_group">Delete Group</button>
+
+</br>
+<h3>Step5 - Select the PCA display method:</h3>
+<div class="radio">
+        <label>
+            <input type="radio" name="show_type" value="d_sample" id="d_sample" >
+            Dots:one dot represents one sample(one cell line may include several samples)
+        </label>
+</div>
+<div class="radio">
+        <label>
+            <input type="radio" name="show_type" value="d_center" id="d_center" checked>
+            Dots:one dot represents one cell line
+        </label>
+</div>
+</br>
+<button class="btn btn-default" type="submit" id="submit">Submit</button>
+
+
+{% endblock content %}
+
+{% block scripts %}
+<script src="static/css/multiple-select.js"></script>
+<script>
+        $("select").multipleSelect({
+            filter: true,
+            multiple: true,
+            //multipleWidth:100,
+            width: '100%'
+        });
+</script>
+{% endblock %}
