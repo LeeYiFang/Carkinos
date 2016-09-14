@@ -151,3 +151,6 @@ src/probes/migrations/0006_auto_20160302_2025.py
 *.xlsx
 src/Untitled.ipynb
 src/GSE36133.npy
+src/nci60.npy
+src/sanger_cell_line_proj.npy
+*.ipynb
