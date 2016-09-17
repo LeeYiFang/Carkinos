@@ -650,11 +650,25 @@
                 this.$disableItems.parent().hide();
                 this.$selectGroups.each(function () {
                     var $parent = $(this).parent();
+                    
                     var group = $parent.attr('data-group'),
                         $items = that.$selectItems.filter(':visible');
                     $parent[$items.filter(sprintf('[data-group="%s"]', group)).length ? 'show' : 'hide']();
+                    //I add this part: for select the label or primary sites
+                    if(!($parent.is(":visible")))
+                    {
+                        $parent[removeDiacritics($parent.text().toLowerCase()).indexOf(removeDiacritics(text)) < 0 ? 'hide' : 'show']();
+                    }
+                    if(removeDiacritics($parent.text().toLowerCase()).indexOf(removeDiacritics(text)) >= 0){
+                    var group = $parent.attr('data-group'),
+                        $items = that.$selectItems.filter(sprintf('[data-group="%s"]', group));
+                    $items.parent().show();
+                    
+                    }
+                    
                 });
-
+                
+            
                 //Check if no matches found
                 if (this.$selectItems.parent().filter(':visible').length) {
                     this.$selectAll.parent().show();
@@ -664,6 +678,7 @@
                     this.$noResults.show();
                 }
             }
+            
             this.updateOptGroupSelect();
             this.updateSelectAll();
             this.options.onFilter(text);

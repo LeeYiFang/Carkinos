@@ -38,6 +38,10 @@ img.big {
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
 
 <script>
+var colorscaleValue = [
+  [0, '#19E916'],
+  [1, '#E92B16']
+];
 var data = [
   {
     z: {{expression}},
@@ -46,9 +50,11 @@ var data = [
     //['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // need to be cell line name
     y: {{probe_out}},
     //['Morning', 'Afternoon', 'Evening'], //need to be probe name(cluster with same gene names)
-    type: 'heatmap'
+    type: 'heatmap',
+    colorscale: colorscaleValue
   }
 ];
+
 var layout = {
   title: 'Heatmap',
   autosize: true, //false

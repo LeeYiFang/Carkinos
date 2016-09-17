@@ -31,6 +31,7 @@ tfoot input {
             <th>Entrez_id</th>
             <th>Gene_name</th>
             <th>value</th>
+            <th>ranking</th>
             <th>normalized</th>
         </tr>
     </thead>
@@ -46,12 +47,13 @@ tfoot input {
             <th>Entrez_id</th>
             <th>Gene_name</th>
             <th>value</th>
+            <th>ranking</th>
             <th>normalized</th>
         </tr>
     </tfoot>
 
 	<tbody>
-		{% for c, p, val, norm in cell_probe_val_pairs %}
+		{% for c, p, val,rank, norm in cell_probe_val_pairs %}
 		<tr>
             <td></td>
 			<td>{{ c.dataset_id.name }}</td>
@@ -63,11 +65,16 @@ tfoot input {
 			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
 			<td>{{ val|floatformat:4 }}</td>
+            {% for i in rank%}
+                <td>{{i}}</td>
+            {% empty %}
+                <td>nan</td>
+            {% endfor %}
             <td>{{norm|floatformat:4}}</td>
 		</tr>
 		{% endfor %}
 
-        {% for c, p, val, norm in nci_cell_probe_val_pairs %}
+        {% for c, p, val,rank, norm in nci_cell_probe_val_pairs %}
 		<tr>
             <td></td>
 			<td>{{ c.dataset_id.name }}</td>
@@ -79,10 +86,15 @@ tfoot input {
 			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
 			<td>{{ val|floatformat:4 }}</td>
+            {% for i in rank%}
+            <td>{{i}}</td>
+            {% empty %}
+                <td>nan</td>
+            {% endfor %}
             <td>{{norm|floatformat:4}}</td>
 		</tr>
 		{% endfor %}   
-        {% for c, p, val, norm in CC_cell_probe_val_pairs %}
+        {% for c, p, val,rank, norm in CC_cell_probe_val_pairs %}
 		<tr>
             <td></td>
 			<td>{{ c.dataset_id.name }}</td>
@@ -94,6 +106,11 @@ tfoot input {
 			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
 			<td>{{ val|floatformat:4 }}</td>
+            {% for i in rank%}
+            <td>{{i}}</td>
+            {% empty %}
+                <td>nan</td>
+            {% endfor %}
             <td>{{norm|floatformat:4}}</td>
 		</tr>
 		{% endfor %}

@@ -8,23 +8,7 @@
 </br>
 <form action="{% url 'heatmap' %}" method="post" target="_blank">{% csrf_token %}
 
-<h3>Step1 - Select the method used in Step3</h3>
-<div class="radio">
-    <label>
-        <input type="radio" name="cell_line_method" value="text" id="text" checked>
-        Select by input cell line names
-    </label>
-</div>
-<div class="radio">
-    <label>
-        <input type="radio" name="cell_line_method" value="select" id="select" >
-        Select by dataset and cell lines
-    </label>
-</div>
-
-</br>
-
-<h3>Step2 - Decide probe number:</h3>
+<h3>Step1 - Decide probe number:</h3>
 <p>Please decide how many probes will be shown on the result heat map.</p>
 <label>
         <input type="radio" name="probe_number" value="25" checked>25</input>
@@ -36,7 +20,7 @@
         
 </label>
 
-<h3>Step3 - Choose microarray platform:</h3>
+<h3>Step2 - Choose microarray platform:</h3>
 <style type="text/css">  
     .help {display: none}
 </style> 
@@ -58,6 +42,22 @@
     </div>
     
 </div>
+</br>
+<h3>Step3 - Select the method used in Step4</h3>
+<div class="radio">
+    <label>
+        <input type="radio" name="cell_line_method" value="text" id="text" checked>
+        Select by input cell line names
+    </label>
+</div>
+<div class="radio">
+    <label>
+        <input type="radio" name="cell_line_method" value="select" id="select" >
+        Select by dataset and cell lines
+    </label>
+</div>
+
+</br>
 <h3>Step4 - Define Groups:</h3>
 <p>Two groups will use student t-test to evaluate the result.</p>
 <p>For more than two groups, we will use one-way-ANOVA</p>
@@ -328,8 +328,7 @@
         });
 </script>
 <script>
-//TODO:block the wrong input of textarea(not in dataset)/block the empty input of select part/show the empty message in select part(duplicate name"needed")
-//unable
+
 $(document).ready(function () {
     $("div[id^='select_g']").hide();
     $("div[id^='input_g']").show();
