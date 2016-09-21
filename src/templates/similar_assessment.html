@@ -375,35 +375,37 @@ $("#submit").click(function() {
         var uni_sanger=[];
         var uni_nci=[];
         var uni_ccle=[];
-        if($("[id^=sanger_g]").is(':checked'))
+        for (var i=1;i<=num; i++)
         {
-            //alert("I am in sanger checked!");
-            $("select[name^='select_sanger_g'] option:selected").each(function() {
-                          var indata=$( this ).text();
-                          cell_content_sanger.push(indata);
-            });
-            var uni_sanger=jQuery.unique(cell_content_sanger);
-            total_cell=total_cell+parseInt(uni_sanger.length,10);
+            if($("#sanger_g"+i).is(':checked'))
+            {
+                //alert("I am in sanger checked!");
+                $("select[name='select_sanger_g"+i+"'] option:selected").each(function() {
+                              var indata=$( this ).text();
+                              cell_content_sanger.push(indata);
+                });
+                var uni_sanger=jQuery.unique(cell_content_sanger);
+                total_cell=total_cell+parseInt(uni_sanger.length,10);
+            }
+            if($("#nci_g"+i).is(':checked'))
+            {
+                $("select[name='select_nci_g"+i+"'] option:selected").each(function() {
+                              var indata=$( this ).text();
+                              cell_content_nci.push(indata);
+                });
+                var uni_nci=jQuery.unique(cell_content_nci);
+                total_cell=total_cell+parseInt(uni_nci.length,10);
+            }
+            if($("#gse_g"+i).is(':checked'))
+            {
+                $("select[name='select_ccle_g"+i+"'] option:selected").each(function() {
+                              var indata=$( this ).text();
+                              cell_content_ccle.push(indata);
+                });
+                var uni_ccle=jQuery.unique(cell_content_ccle);
+                total_cell=total_cell+parseInt(uni_ccle.length,10);
+            }
         }
-        if($("[id^=nci_g]").is(':checked'))
-        {
-            $("select[name^='select_nci_g'] option:selected").each(function() {
-                          var indata=$( this ).text();
-                          cell_content_nci.push(indata);
-            });
-            var uni_nci=jQuery.unique(cell_content_nci);
-            total_cell=total_cell+parseInt(uni_nci.length,10);
-        }
-        if($("[id^=gse_g]").is(':checked'))
-        {
-            $("select[name^='select_ccle_g'] option:selected").each(function() {
-                          var indata=$( this ).text();
-                          cell_content_ccle.push(indata);
-            });
-            var uni_ccle=jQuery.unique(cell_content_ccle);
-            total_cell=total_cell+parseInt(uni_ccle.length,10);
-        }
-       
         //total_cell=total_cell+(uni_nci.lengh);
         //$("#select_error").append('<br /><p>sanger:'+(uni_sanger.length)+'</p>');
         //$("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
@@ -511,14 +513,19 @@ $("#submit").click(function() {
 });
 </script>
 <script type="text/javascript">
+//$(document).on('change', 'input[name="data_platform"]',function(){
 $("input[name='data_platform']").change(function(){
+        
         $("#select_error").empty();
         if($("#U133A-id").is(':checked')){
+            //alert("in A now");
             $("div[id^='select_a_g']").show();
             $("div[id^='select_plus2_g']").hide();
             $("input[id^='sanger_g']").removeAttr('checked');
             $("input[id^='nci_g']").removeAttr('checked');
             $("input[id^='gse_g']").removeAttr('checked');
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
             $("div[id^='sanger_table_g']").hide();
             $("div[id^='nci_table_g']").hide();
             $("div[id^='ccle_table_g']").hide();
@@ -531,6 +538,8 @@ $("input[name='data_platform']").change(function(){
             $("input[id^='sanger_g']").removeAttr('checked');
             $("input[id^='nci_g']").removeAttr('checked');
             $("input[id^='gse_g']").removeAttr('checked');
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
             $("div[id^='sanger_table_g']").hide();
             $("div[id^='nci_table_g']").hide();
             $("div[id^='ccle_table_g']").hide();

@@ -483,7 +483,7 @@ def pca(request):
                             uni_nci=list(set(temp_nci)-set(all_c_nci))
                             all_c_nci=all_c_nci+uni_nci
                     else:
-                        uni_nci=list(temp_nci)
+                        uni_nci=list(temp_nci)          #do not filter duplicate input only when select+centroid
                     s_nci=Sample.objects.filter(cell_line_id__name__in=uni_nci,dataset_id__name__in=['NCI60']).order_by('dataset_id'
                     ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
                     goffset_nci=list(s_nci.values_list('offset',flat=True))
@@ -535,7 +535,7 @@ def pca(request):
         nci_val=np.matrix(nci_val)[:,:] #need fix
         val=np.transpose(nci_val)
     else:
-        gse_val=np.matrix(gse_val)[:30,:] #need fix
+        gse_val=np.matrix(gse_val)[:,:] #need fix
         val=np.transpose(gse_val)
         
     
@@ -558,38 +558,12 @@ def pca(request):
         sample_counter[i.name]=1
         cell_object.append(i.cell_line_id)
     
-    n=15  #need to fix to the best one #need to fix proportion  
-        #429 0.900169151952
-        #206 0.8
-        #99 0.7    
+     
+          
     pca_index=[]
     dis_offset=[]
       
-    if (('d_center' in show)and(request.POST['cell_line_method'] == 'select')):   
-        
-        for x in range(0,len(all_sample)):
-            
-            if all_offset[x] not in dis_offset:
-                dis_offset.append(all_offset[x])
-        
-        for x in all_offset:
-            pca_index.append(dis_offset.index(x))
-        #run the pca
-        pca= PCA(n_components=n)
-        Xval = pca.fit_transform(val[dis_offset,:])  #cannot get Xval with original offset any more
-        ratio_temp=pca.explained_variance_ratio_
-        propotion=sum(ratio_temp[0:3])
-        table_propotion=sum(ratio_temp[0:n+1])
-        print(Xval)
 
-        
-    else:    
-        pca= PCA(n_components=n)
-        Xval = pca.fit_transform(val[all_offset,:])  #cannot get Xval with original offset any more
-        ratio_temp=pca.explained_variance_ratio_
-        propotion=sum(ratio_temp[0:3])
-        table_propotion=sum(ratio_temp[0:n+1])
-        print(Xval)
     
     #PREMISE:same dataset same cell line will have only one type of primary site and primary histology
     name1=[]
@@ -612,7 +586,17 @@ def pca(request):
     X5=[]
     Y5=[]
     Z5=[]
+    n=3  #need to fix to the best one #need to fix proportion 
+    
     if 'd_sample' in show:
+        #count the pca first
+        pca= PCA(n_components=n)
+        Xval = pca.fit_transform(val[all_offset,:])  #cannot get Xval with original offset any more
+        ratio_temp=pca.explained_variance_ratio_
+        propotion=sum(ratio_temp[0:3])
+        table_propotion=sum(ratio_temp[0:n+1])
+        print(Xval)
+        
         max=0
         min=10000000000
         out_group=[]
@@ -704,17 +688,22 @@ def pca(request):
         #This part is for centroid display
         return_html='pca_center.html'
         #deal with text part first, get all cell line base on platform instead of dataset--->different group need to filter same cell line name first
+        #count the centroid--->use this new data to run pca--->new location to count distance
         if request.POST['cell_line_method'] == 'text':
             dis_cellline=list(set(cell_object))
-            location_dict={} #{cell object:new location}
+            #location_dict={} #{cell object:new location}
             dataset_dict={}  #{cell object:dataset combined}
             a_cell_object=np.array(cell_object)
+            X_val=[]
+            
             for c in dis_cellline:
                 total_offset=np.where(a_cell_object==c)[0]
-                Xval_a=np.array(Xval)
-                selected_Xval=Xval_a[total_offset]
-                new_loca=(np.mean(selected_Xval,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
-                location_dict[c]=new_loca
+                val_a=np.array(val)
+                a_all_offset=np.array(all_offset)
+                selected_val=val_a[a_all_offset[total_offset]]
+                new_loca=(np.mean(selected_val,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
+                #location_dict[c]=new_loca
+                X_val.append(new_loca)   #in the order of dis_cellline
                 
                 a_sample=np.array(all_sample)
                 selected_sample=a_sample[total_offset]
@@ -732,26 +721,39 @@ def pca(request):
                             dataset_dict[c]=dataset+"/"+sets
                     except KeyError: 
                         dataset_dict[c]=dataset
-            #print(dataset_dict)
+            
+            
+            #run the pca again here and store it with new offset to get the new pca data
+            X_val=np.matrix(X_val)
+            pca= PCA(n_components=3)
+            new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
+            ratio_temp=pca.explained_variance_ratio_
+            propotion=sum(ratio_temp[0:3])
+            table_propotion=sum(ratio_temp[0:n+1])
+            print(new_val)
             
             out_group=[]
             min=10000000000
             max=0
+            #count distance base on X_val
             for g in range(1,group_counter+1):
                 output_cell=[]
                 exist_cell=[]
-                check={}
+                check={} #to remove A-B and B-A
                 for s in range(g_s_counter[g-1],g_s_counter[g]):
                     cell=all_sample[s].cell_line_id
+                    index_cell=np.where(np.array(dis_cellline)==cell)[0][0]
                     if (cell not in exist_cell):
                         output_cell.append([cell,[]])
-                        check[cell]=[]
+                        check[cell]=[]  
                         #count the distance
                         for c in dis_cellline:
                             if c != cell:
+                                index_c=np.where(np.array(dis_cellline)==c)[0][0]
+                                
                                 try:
                                     if(cell not in check[c]):
-                                        distance=np.linalg.norm(np.array(location_dict[cell])-np.array(location_dict[c]))
+                                        distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[index_c]))
                                         if distance<min:
                                             min=distance
                                         if distance>max:
@@ -760,7 +762,7 @@ def pca(request):
                                         check[cell].append(c)
                                 except KeyError:
                                     
-                                    distance=np.linalg.norm(np.array(location_dict[cell])-np.array(location_dict[c]))
+                                    distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[index_c]))
                                     if distance<min:
                                         min=distance
                                     if distance>max:
@@ -768,42 +770,57 @@ def pca(request):
                                     output_cell[len(output_cell)-1][1].append([cell,dataset_dict[cell],c,dataset_dict[c],distance])
                                     check[cell].append(c)
                                                     
-                        exist_cell.append(cell)                             
+                        exist_cell.append(cell) 
+                        
+                        
                         if(g==1):
                             name1.append(cell.name+'<br>'+dataset_dict[cell])
-                            X1.append(location_dict[cell][0])
-                            Y1.append(location_dict[cell][1])
-                            Z1.append(location_dict[cell][2])
+                            X1.append(new_val[index_cell][0])
+                            Y1.append(new_val[index_cell][1])
+                            Z1.append(new_val[index_cell][2])
                         elif(g==2):
                             name2.append(cell.name+'<br>'+dataset_dict[cell])
-                            X2.append(location_dict[cell][0])
-                            Y2.append(location_dict[cell][1])
-                            Z2.append(location_dict[cell][2])
+                            X2.append(new_val[index_cell][0])
+                            Y2.append(new_val[index_cell][1])
+                            Z2.append(new_val[index_cell][2])
                         elif(g==3):
                             name3.append(cell.name+'<br>'+dataset_dict[cell])
-                            X3.append(location_dict[cell][0])
-                            Y3.append(location_dict[cell][1])
-                            Z3.append(location_dict[cell][2])
+                            X3.append(new_val[index_cell][0])
+                            Y3.append(new_val[index_cell][1])
+                            Z3.append(new_val[index_cell][2])
                         elif(g==4):
                             name4.append(cell.name+'<br>'+dataset_dict[cell])
-                            X4.append(location_dict[cell][0])
-                            Y4.append(location_dict[cell][1])
-                            Z4.append(location_dict[cell][2])
+                            X4.append(new_val[index_cell][0])
+                            Y4.append(new_val[index_cell][1])
+                            Z4.append(new_val[index_cell][2])
                         elif(g==5):
                             name5.append(cell.name+'<br>'+dataset_dict[cell])
-                            X5.append(location_dict[cell][0])
-                            Y5.append(location_dict[cell][1])
-                            Z5.append(location_dict[cell][2]) 
+                            X5.append(new_val[index_cell][0])
+                            Y5.append(new_val[index_cell][1])
+                            Z5.append(new_val[index_cell][2]) 
                 out_group.append([g,output_cell]) 
                            
 
         else:
         #This part is for select cell line base on dataset,count centroid base on the dataset
         #group中的cell line為單位來算重心
+        
+            for x in range(0,len(all_sample)):  #delete duplicate offset to prevent pca error
+            
+                if all_offset[x] not in dis_offset:
+                    dis_offset.append(all_offset[x])
+            
+            for x in all_offset:
+                pca_index.append(dis_offset.index(x))
+        
+        
             location_dict={} #{group number:[[cell object,dataset,new location]]}
             combined=[]
             sample_list=[]
             pca_index=np.array(pca_index)
+            X_val=[]
+            val_a=np.array(val)
+            a_all_offset=np.array(all_offset)
             for i in range(1,group_counter+1):
                 dis_cellline=list(set(cell_object[g_s_counter[i-1]:g_s_counter[i]]))  #cell object may have duplicate cell line since:NCI A + CCLE A===>[A,A]
                 location_dict['g'+str(i)]=[]
@@ -815,17 +832,15 @@ def pca(request):
                     temp1=np.where((a_cell_object==c))[0]
                     
                     temp2=np.where((temp1>=g_s_counter[i-1])&(temp1<g_s_counter[i]))
-                    total_offset=pca_index[temp1[temp2]]
-                    #print(total_offset)
-                    Xval_a=np.array(Xval)
-                    selected_Xval=Xval_a[total_offset]
-                    new_loca=(np.mean(selected_Xval,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
+                    total_offset=temp1[temp2]
+                    selected_val=val_a[a_all_offset[total_offset]]
+                    new_loca=(np.mean(selected_val,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
                     
                     
                     a_sample=np.array(all_sample)
                     selected_sample=a_sample[total_offset]
                     
-                    if list(selected_sample) in sample_list:
+                    if list(selected_sample) in sample_list:   #to prevent two different colors in different group
                         continue
                     else:
                         sample_list.append(list(selected_sample))
@@ -852,10 +867,23 @@ def pca(request):
                                 dataset_dict[c]=dataset+"/"+sets
                         except KeyError: 
                             dataset_dict[c]=dataset
+                    X_val.append(new_loca)
+                    location_dict['g'+str(i)].append([c,dataset_dict[c],len(X_val)-1])  #the last part is the index to get pca result from new_val
+                    combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
+            
+            #run the pca
+            X_val=np.matrix(X_val)
+            pca= PCA(n_components=3)
+            new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
+            ratio_temp=pca.explained_variance_ratio_
+            propotion=sum(ratio_temp[0:3])
+            table_propotion=sum(ratio_temp[0:n+1])
+            print(new_val)
 
-                    location_dict['g'+str(i)].append([c,dataset_dict[c],new_loca])
-                    combined.append([c,dataset_dict[c],new_loca])
-                    
+
+
+
+            
             out_group=[]
             min=10000000000
             max=0
@@ -863,7 +891,7 @@ def pca(request):
                 output_cell=[]
                 exist_cell={}
                 
-                for group_c in location_dict['g'+str(g)]:  #a list of [c,dataset_dict[c],new_loca] in group one
+                for group_c in location_dict['g'+str(g)]:  #a list of [c,dataset_dict[c],new_val index] in group one
                     cell=group_c[0]
                     key_string=cell.name+'/'+cell.primary_site+'/'+cell.primary_hist+'/'+group_c[1]
                     exist_cell[key_string]=[]
@@ -875,7 +903,7 @@ def pca(request):
                         temp_string=c.name+'/'+c.primary_site+'/'+c.primary_hist+'/'+temp_list[1]
                         try:
                             if(key_string not in exist_cell[temp_string]):
-                                distance=np.linalg.norm(np.array(group_c[2])-np.array(temp_list[2]))
+                                distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[temp_list[2]]))
                                 if distance==0:
                                     continue
                                 if distance<min:
@@ -885,7 +913,7 @@ def pca(request):
                                 output_cell[len(output_cell)-1][1].append([cell,group_c[1],temp_list[0],temp_list[1],distance])
                                 exist_cell[key_string].append(temp_string)
                         except KeyError:
-                            distance=np.linalg.norm(np.array(group_c[2])-np.array(temp_list[2]))
+                            distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[temp_list[2]]))
                             if distance==0:
                                 continue
                             if distance<min:
@@ -896,29 +924,29 @@ def pca(request):
                             exist_cell[key_string].append(temp_string)
                     if(g==1):
                         name1.append(cell.name+'<br>'+group_c[1])
-                        X1.append(group_c[2][0])
-                        Y1.append(group_c[2][1])
-                        Z1.append(group_c[2][2])
+                        X1.append(new_val[group_c[2]][0])
+                        Y1.append(new_val[group_c[2]][1])
+                        Z1.append(new_val[group_c[2]][2])
                     elif(g==2):
                         name2.append(cell.name+'<br>'+group_c[1])
-                        X2.append(group_c[2][0])
-                        Y2.append(group_c[2][1])
-                        Z2.append(group_c[2][2])
+                        X2.append(new_val[group_c[2]][0])
+                        Y2.append(new_val[group_c[2]][1])
+                        Z2.append(new_val[group_c[2]][2])
                     elif(g==3):
                         name3.append(cell.name+'<br>'+group_c[1])
-                        X3.append(group_c[2][0])
-                        Y3.append(group_c[2][1])
-                        Z3.append(group_c[2][2])
+                        X3.append(new_val[group_c[2]][0])
+                        Y3.append(new_val[group_c[2]][1])
+                        Z3.append(new_val[group_c[2]][2])
                     elif(g==4):
                         name4.append(cell.name+'<br>'+group_c[1])
-                        X4.append(group_c[2][0])
-                        Y4.append(group_c[2][1])
-                        Z4.append(group_c[2][2])
+                        X4.append(new_val[group_c[2]][0])
+                        Y4.append(new_val[group_c[2]][1])
+                        Z4.append(new_val[group_c[2]][2])
                     elif(g==5):
                         name5.append(cell.name+'<br>'+group_c[1])
-                        X5.append(group_c[2][0])
-                        Y5.append(group_c[2][1])
-                        Z5.append(group_c[2][2]) 
+                        X5.append(new_val[group_c[2]][0])
+                        Y5.append(new_val[group_c[2]][1])
+                        Z5.append(new_val[group_c[2]][2]) 
                 out_group.append([g,output_cell])
                     
     return render_to_response(return_html,RequestContext(request,
