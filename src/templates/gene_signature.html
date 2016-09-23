@@ -539,6 +539,8 @@ $("input[name='data_platform']").change(function(){
             $("input[id^='sanger_g']").removeAttr('checked');
             $("input[id^='nci_g']").removeAttr('checked');
             $("input[id^='gse_g']").removeAttr('checked');
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
             $("div[id^='sanger_table_g']").hide();
             $("div[id^='nci_table_g']").hide();
             $("div[id^='ccle_table_g']").hide();
@@ -551,6 +553,8 @@ $("input[name='data_platform']").change(function(){
             $("input[id^='sanger_g']").removeAttr('checked');
             $("input[id^='nci_g']").removeAttr('checked');
             $("input[id^='gse_g']").removeAttr('checked');
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
             $("div[id^='sanger_table_g']").hide();
             $("div[id^='nci_table_g']").hide();
             $("div[id^='ccle_table_g']").hide();

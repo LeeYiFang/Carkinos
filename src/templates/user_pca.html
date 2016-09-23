@@ -20,61 +20,61 @@
     
     
     </div>
-    <p>Red spots is the cell line you input.</p>
-    <p>If you do not see any red spot and any data in the table,</br> 
-    that means the cell lines are not in the dataset(s) you selected.
-    </p>
+    <p>Percentage of variance explained by 3D pca plot: {{propotion}}</p>
+    <p>Percentage of variance explained by distance table: {{table_propotion}}</p>
+    <p>Maximum distance:{{max}}</p>
+    <p>Minimum distance:{{min}}</p>
     <HR>
-    {% for cell_line,b in output_cell %}
-        <p>cell line name:{{cell_line.name}}</p>
-        <p>primary site:{{cell_line.primary_site}}</p>
-        <p>primary histology:{{cell_line.primary_hist}}</p>
-        <p>Percentage of variance explained by 3D pca plot: {{propotion}}</p>
-        <p>Percentage of variance explained by distance table: {{table_propotion}}</p>
-        
-        <div class="row">
-            <div class="col-md-offset-1 col-md-10">
-                <h2>PCA Results:Distance</h2>
+    
+        {% for index,output_cell in out_group %}
+        <!--<div class="row">
+            <div class="col-md-offset-1 col-md-10">-->
+                <h2>PCA Results: {{index}} Distance</h2>
              
                 <table id="example" class="display">
                     <thead>
                     <tr>
-                        <th>Selected Cell Line</th>
+                        <th>Group Cell Line</th>
                         <th>Sample Name</th>
-                        <th>Cell Line name</th>
+                        <th>Primary site</th>
+                        <th>Primary histology</th>
+                        <th>Dataset</th>
+                        <th>Paired Cell Line name</th>
                         <th>Sample name</th>
-                        <th>dataset</th>
+                        <th>Primary site</th>
+                        <th>Primary histology</th>
+                        <th>Dataset</th>
                         <th>distance</th>
                     </tr>
                     </thead>
                     <tbody>
-                    
-                        {% for order,sn,cname,sname,setname,dis in b %} 
-                            <tr>
-                                <td>{{ order }}</td>
+                    <!--This part need to fix with above column defined-->
+                    {% for cell_line,b in output_cell %}
+                        {% for group_cell,sn,cell_line_primary_site,cell_line_primary_hist,dset,cname,sname,cell_primary_site,cell_primary_hist,setname,dis in b %} 
+                            <tr> 
+                                <td>{{ group_cell }}</td>
                                 <td>{{ sn }}</td>
+                                <td>{{cell_line_primary_site}}</td>
+                                <td>{{cell_line_primary_hist}}</td>
+                                <td>{{dset}}</td>
                                 <td>{{ cname }}</td>
                                 <td>{{ sname }}</td>
+                                <td>{{cell_primary_site}}</td>
+                                <td>{{cell_primary_hist}}</td>
                                 <td>{{setname}}</td>
                                 <td>{{ dis|floatformat:4 }}</td>
                             </tr>
                         {% endfor %}
-                   
+                    {% endfor %}
                     </tbody>
                 </table>
-            </div>
-        </div>
+        <!--    </div>
+        </div>-->
+        {% endfor %}
     <HR>    
-    {% endfor %}
 {% endblock content %}
 
 {% block scripts %}
-<!--<script src="static/DataTables/meida/js/jquery.dataTables.js"></script>
-<script>
-$(document).ready(function() {
-    $('#example').DataTable();
-} );
-</script>-->
 <script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
@@ -85,6 +85,7 @@ $(document).ready(function() {
 
 <script>
  $(document).ready(function() {
+ 
  $('table[id="example"]').DataTable({
         destroy: true,
         dom: 'lfrtBip',
@@ -96,13 +97,14 @@ $(document).ready(function() {
  } );
 </script>
 <script>
-var trace2 = {
-    x:{{colorX}},
-    y:{{colorY}},
-    z:{{colorZ}},
+//need to change color and fix the views part
+var trace5 = {
+    x:{{X5}},
+    y:{{Y5}},
+    z:{{Z5}},
     mode: 'markers',
   marker: {
-    color: 'rgb(255, 0, 0)',
+    color: 'rgb(16, 246, 16)',  //green
     size: 12,
     symbol: 'circle',
     line: {
@@ -111,17 +113,74 @@ var trace2 = {
     },
     opacity: 0.9
   },
-  text: {{selected_name}},  
-  name: 'Input cell lines',
+  text: {{name5}},
+  name: 'Group5',
+  type: 'scatter3d'
+};
+var trace4 = {
+    x:{{X4}},
+    y:{{Y4}},
+    z:{{Z4}},
+    mode: 'markers',
+  marker: {
+    color: 'rgb(9, 9, 1)',  //black
+    size: 12,
+    symbol: 'circle',
+    line: {
+      color: 'rgb(204, 204, 204)',
+      width: 1
+    },
+    opacity: 0.9
+  },
+  text: {{name4}},
+  name: 'Dataset Group3',
+  type: 'scatter3d'
+};
+var trace3 = {
+    x:{{X3}},
+    y:{{Y3}},
+    z:{{Z3}},
+    mode: 'markers',
+  marker: {
+    color: 'rgb(255, 255, 0)',  //yellow
+    size: 12,
+    symbol: 'circle',
+    line: {
+      color: 'rgb(204, 204, 204)',
+      width: 1
+    },
+    opacity: 0.9
+  },
+  text: {{name3}},
+  name: 'Dataset Group2',
+  type: 'scatter3d'
+};
+var trace2 = {
+    x:{{X2}},
+    y:{{Y2}},
+    z:{{Z2}},
+    mode: 'markers',
+  marker: {
+    color: 'rgb(0, 0, 255)',  //blue
+    size: 12,
+    symbol: 'circle',
+    line: {
+      color: 'rgb(204, 204, 204)',
+      width: 1
+    },
+    opacity: 0.9
+  },
+  text:{{name2}},  
+  name: 'Dataset Group1',
   type: 'scatter3d'
 };
 var trace1 = {
-    x:{{X}},
-    y:{{Y}},
-    z:{{Z}},
+    x:{{X1}},
+    y:{{Y1}},
+    z:{{Z1}},
     mode: 'markers',
   marker: {
-    color: 'rgb(127, 127, 127)',
+    color: 'rgb(255, 0, 0)',  //red
     size: 12,
     symbol: 'circle',
     line: {
@@ -130,17 +189,20 @@ var trace1 = {
     },
     opacity: 0.9
   },
-  text: {{all_name}},
-  name: 'All data in selected datasets',
+  text: {{name1}},  //fix to name1 later
+  name: 'User Group1',
+  showlegend: true,
   type: 'scatter3d'
 };
-var data = [trace1,trace2];
+var data = [trace1,trace2,trace3,trace4,trace5];
 var layout = {margin: {
     l: 0,
     r: 0,
     b: 0,
     t: 0
-  }};
+  },
+  legend: {"orientation": "h"}
+  };
 Plotly.newPlot('myDiv', data, layout);
 
 </script>

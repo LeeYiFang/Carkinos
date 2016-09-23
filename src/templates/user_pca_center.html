@@ -48,15 +48,15 @@
                     <tbody>
                     <!--This part need to fix with above column defined-->
                     {% for cell_line,b in output_cell %}
-                        {% for group_cell,group_dataset,paired_cell,paired_dataset,dis in b %} 
+                        {% for group_cell,gcp,gch,group_dataset,paired_cell,pcp,pch,paired_dataset,dis in b %} 
                             <tr> 
-                                <td>{{ group_cell.name }}</td>
-                                <td>{{ group_cell.primary_site }}</td>
-                                <td>{{ group_cell.primary_hist }}</td>
+                                <td>{{ group_cell }}</td>
+                                <td>{{ gcp }}</td>
+                                <td>{{ gch }}</td>
                                 <td>{{ group_dataset }}</td>
-                                <td>{{ paired_cell.name }}</td>
-                                <td>{{ paired_cell.primary_site }}</td>
-                                <td>{{ paired_cell.primary_hist }}</td>
+                                <td>{{ paired_cell }}</td>
+                                <td>{{ pcp }}</td>
+                                <td>{{ pch }}</td>
                                 <td>{{ paired_dataset }}</td>
                                 <td>{{ dis|floatformat:4 }}</td>
                             </tr>
@@ -117,7 +117,7 @@ var trace5 = {
     opacity: 0.9
   },
   text: {{name5}},
-  name: 'Group5',
+  name: 'Dataset Group4',
   type: 'scatter3d'
 };
 var trace4 = {
@@ -136,7 +136,7 @@ var trace4 = {
     opacity: 0.9
   },
   text: {{name4}},
-  name: 'Group4',
+  name: 'Dataset Group3',
   type: 'scatter3d'
 };
 var trace3 = {
@@ -155,7 +155,7 @@ var trace3 = {
     opacity: 0.9
   },
   text: {{name3}},
-  name: 'Group3',
+  name: 'Dataset Group2',
   type: 'scatter3d'
 };
 var trace2 = {
@@ -174,7 +174,7 @@ var trace2 = {
     opacity: 0.9
   },
   text:{{name2}},  
-  name: 'Group2',
+  name: 'Dataset Group1',
   type: 'scatter3d'
 };
 var trace1 = {
@@ -193,7 +193,7 @@ var trace1 = {
     opacity: 0.9
   },
   text: {{name1}},  //fix to name1 later
-  name: 'Group1',
+  name: 'User Group1',
   showlegend: true,
   type: 'scatter3d'
 };

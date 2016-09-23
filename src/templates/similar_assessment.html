@@ -384,8 +384,8 @@ $("#submit").click(function() {
                               var indata=$( this ).text();
                               cell_content_sanger.push(indata);
                 });
-                var uni_sanger=jQuery.unique(cell_content_sanger);
-                total_cell=total_cell+parseInt(uni_sanger.length,10);
+                uni_sanger=jQuery.unique(cell_content_sanger);
+                //total_cell=total_cell+parseInt(uni_sanger.length,10);
             }
             if($("#nci_g"+i).is(':checked'))
             {
@@ -393,8 +393,8 @@ $("#submit").click(function() {
                               var indata=$( this ).text();
                               cell_content_nci.push(indata);
                 });
-                var uni_nci=jQuery.unique(cell_content_nci);
-                total_cell=total_cell+parseInt(uni_nci.length,10);
+                uni_nci=jQuery.unique(cell_content_nci);
+                //total_cell=total_cell+parseInt(uni_nci.length,10);
             }
             if($("#gse_g"+i).is(':checked'))
             {
@@ -402,15 +402,16 @@ $("#submit").click(function() {
                               var indata=$( this ).text();
                               cell_content_ccle.push(indata);
                 });
-                var uni_ccle=jQuery.unique(cell_content_ccle);
-                total_cell=total_cell+parseInt(uni_ccle.length,10);
+                uni_ccle=jQuery.unique(cell_content_ccle);
+                //total_cell=total_cell+parseInt(uni_ccle.length,10);
             }
+            
         }
-        //total_cell=total_cell+(uni_nci.lengh);
-        //$("#select_error").append('<br /><p>sanger:'+(uni_sanger.length)+'</p>');
-        //$("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
-        //$("#select_error").append('<br /><p>nci:'+(uni_nci.length)+'</p>');
-        //$("#select_error").append('<br /><p>total:'+(total_cell)+'</p>');
+        total_cell=total_cell+parseInt(uni_ccle.length,10)+parseInt(uni_nci.length,10)+parseInt(uni_sanger.length,10);
+        $("#select_error").append('<br /><p>sanger:'+(uni_sanger.length)+'</p>');
+        $("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
+        $("#select_error").append('<br /><p>nci:'+(uni_nci.length)+'</p>');
+        $("#select_error").append('<br /><p>total:'+(total_cell)+'</p>');
         if(total_cell<3)
         {
             //alert("I am here!!");

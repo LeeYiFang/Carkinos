@@ -48,8 +48,10 @@
 <p>Please upload your own data.</p>
 <p>The samples you upload with be red in the result PCA plot.</p>
 <!--TODO:1.more files can be uploaded with different colors. -->
+<h4>User Group1:Red</h4>
 <p style="color:blue;">Notice:only accept .csv file now</p>
 <input type="file" name="user_file" size="chars"></input>
+<!--<input type="file" name="user_file[]" size="chars"></input>-->
 </br>
 
 <h3>Step4 - Select the Method used in Step5</h3>
@@ -71,11 +73,12 @@
 <h3>Step5 - Select Compare Data:</h3>
 <p>Each group of cell lines you define will have different colors.</p>
 <p>Press "Add group" to add more group and "Delete group" to delete the last group below.</p>
-<p style="color:blue;">You can at most have 3 groups.</p>  <!--This part will have to discuss with kinomoto-->
+<p style="color:blue;">You can at most have 3 groups.</p>  
+<p style="color:blue;">You need to have at least 3 cell lines in groups.</p>
 <div  id="group1">
     
     <div name="select_g1" id="select_g1">
-        <h3>Group 1: Yellow</h3>   <!--NOTICE:WE CHANGE IT TO h3 NOW!!!!-->
+        <h3>Dataset Group 1: Blue</h3>   <!--NOTICE:WE CHANGE IT TO h3 NOW!!!!-->
         <div name="select_platform_g1" id="select_platform_g1">
             <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
             
@@ -187,7 +190,7 @@
     </div>
 
     <div name="input_g1" id="input_g1">
-        <h3>Group 1:</h3>
+        <h3>Dataset Group 1:Blue</h3>
         <p>Input the cell lines you want:</p>
         <p>For more than one cell lines, please separate with space or new line</p>
         <div class="form-group">
@@ -224,7 +227,6 @@
         });
 </script>
 <script>
-
 $(document).ready(function () {
     $("div[id^='select_g']").hide();
     $("div[id^='input_g']").show();
@@ -294,8 +296,11 @@ $(document).on('change', 'input[name="cell_line_method"]',function(){
 $("#submit").click(function() { 
     var $div = $('div[id^="group"]:last');
     var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
+    //var cell_counter=0;
+    
     if ($("#select").is(':checked'))
     {
+        var cell_counter=0;
         var ef=0;
         $("#select_error").empty();
         for (var i=1;i<=num; i++)
@@ -316,6 +321,7 @@ $("#submit").click(function() {
         {
             return false;
         };
+        
         for (var i=1;i<=num; i++)
         {
             if($("#sanger_g"+i).is(':checked'))
@@ -327,7 +333,7 @@ $("#submit").click(function() {
                     $("#select_error").append('<br /><p style="color:red;">'+
                         'The cell line selection part of Sanger Cell Line Project(SCLP) in Group'+ i +' cannot be empty.</p>');
                 
-                };
+                }
             };
             if($("#nci_g"+i).is(':checked'))
             {
@@ -338,7 +344,7 @@ $("#submit").click(function() {
                     $("#select_error").append('<br /><p style="color:red;">'+
                         'The cell line selection part of NCI60 in Group'+ i +' cannot be empty.</p>');
                 
-                };
+                }
             };
             if($("#gse_g"+i).is(':checked'))
             {
@@ -349,12 +355,66 @@ $("#submit").click(function() {
                     $("#select_error").append('<br /><p style="color:red;">'+
                         'The cell line selection part of CCLE(GSE36133) in Group'+ i +' cannot be empty.</p>');
                 
-                };
+                }
+                
             };
+            
         };
+        var cell_content_sanger=[];
+        var cell_content_nci=[];
+        var cell_content_ccle=[];
+        var total_cell=0;
+        var uni_sanger=[];
+        var uni_nci=[];
+        var uni_ccle=[];
+        for (var i=1;i<=num; i++)
+        {
+            if($("#sanger_g"+i).is(':checked'))
+            {
+                //alert("I am in sanger checked!");
+                $("select[name='select_sanger_g"+i+"'] option:selected").each(function() {
+                              var indata=$( this ).text();
+                              cell_content_sanger.push(indata);
+                });
+                var uni_sanger=jQuery.unique(cell_content_sanger);
+                total_cell=total_cell+parseInt(uni_sanger.length,10);
+            }
+            if($("#nci_g"+i).is(':checked'))
+            {
+                $("select[name='select_nci_g"+i+"'] option:selected").each(function() {
+                              var indata=$( this ).text();
+                              cell_content_nci.push(indata);
+                });
+                var uni_nci=jQuery.unique(cell_content_nci);
+                total_cell=total_cell+parseInt(uni_nci.length,10);
+            }
+            if($("#gse_g"+i).is(':checked'))
+            {
+                $("select[name='select_ccle_g"+i+"'] option:selected").each(function() {
+                              var indata=$( this ).text();
+                              cell_content_ccle.push(indata);
+                });
+                var uni_ccle=jQuery.unique(cell_content_ccle);
+                total_cell=total_cell+parseInt(uni_ccle.length,10);
+            }
+        }
+        //total_cell=total_cell+(uni_nci.lengh);
+        //$("#select_error").append('<br /><p>sanger:'+(uni_sanger.length)+'</p>');
+        //$("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
+        //$("#select_error").append('<br /><p>nci:'+(uni_nci.length)+'</p>');
+        //$("#select_error").append('<br /><p>total:'+(total_cell)+'</p>');
+        if(total_cell<3)
+        {
+            //alert("I am here!!");
+            ef=1;
+            $("#select_error").append('<br /><p style="color:red;">' + 
+                        'please select at least three cell lines in Step4(you may have duplicate one or do not have at least three)');
+        }
     };    
     if ($("#text").is(':checked')) {
         var ef=0;
+        var cell_counter=0;
+        var cell_content=[];
         $("#error_display").empty();
         for (var i=1;i<=num; i++)
         {
@@ -376,8 +436,10 @@ $("#submit").click(function() {
         };
         for (var i=1;i<=num; i++)
         {   
+            
             var lines = $("textarea[id='cellline_g"+i+"']").val().split(/\s+/);
-            var counter=0;
+            $.merge( cell_content, lines )
+            var counter=0;  //counter for white space
             for (var j=0; j < lines.length; j++) 
             {
                //長度不為0才往下做(或內容為空白)
@@ -386,6 +448,7 @@ $("#submit").click(function() {
                 counter=counter+1;
                 continue;
               }
+              
               //if not found will equal -1
               if($("#U133A-id").is(':checked'))
               {
@@ -395,7 +458,11 @@ $("#submit").click(function() {
                     ' of Group'+ i +' is not in the platform you selected.</p>');
 
                     ef=1;
-                  };
+                  }
+                  else
+                  {
+                    cell_counter=cell_counter+1;
+                  }
               };
               if($("#PLUS2-id").is(':checked'))
               {
@@ -405,7 +472,11 @@ $("#submit").click(function() {
                     ' of Group'+ i +' is not in the platform you selected.</p>');
 
                     ef=1;
-                  };
+                  }
+                  else
+                  {
+                    cell_counter=cell_counter+1;
+                  }
               };
             };
             if(counter==lines.length)
@@ -416,9 +487,16 @@ $("#submit").click(function() {
             }
           
         };
-        
+        var uni=jQuery.unique(cell_content);
+        if((cell_counter<3) || (uni.length<3))
+        {
+            ef=1;
+            $("#error_display").append('<br /><p style="color:red;">' + 
+                        'please input at least three cell lines in Step4(you may have duplicate one or do not have at least three)');
+        }
         
     };
+    
     if(ef==1)
     {
             //alert("I am in return false");
@@ -427,14 +505,19 @@ $("#submit").click(function() {
 });
 </script>
 <script type="text/javascript">
+//$(document).on('change', 'input[name="data_platform"]',function(){
 $("input[name='data_platform']").change(function(){
+        
         $("#select_error").empty();
         if($("#U133A-id").is(':checked')){
+            //alert("in A now");
             $("div[id^='select_a_g']").show();
             $("div[id^='select_plus2_g']").hide();
             $("input[id^='sanger_g']").removeAttr('checked');
             $("input[id^='nci_g']").removeAttr('checked');
             $("input[id^='gse_g']").removeAttr('checked');
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
             $("div[id^='sanger_table_g']").hide();
             $("div[id^='nci_table_g']").hide();
             $("div[id^='ccle_table_g']").hide();
@@ -447,6 +530,8 @@ $("input[name='data_platform']").change(function(){
             $("input[id^='sanger_g']").removeAttr('checked');
             $("input[id^='nci_g']").removeAttr('checked');
             $("input[id^='gse_g']").removeAttr('checked');
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
             $("div[id^='sanger_table_g']").hide();
             $("div[id^='nci_table_g']").hide();
             $("div[id^='ccle_table_g']").hide();
@@ -500,7 +585,7 @@ $( "#delete_group" ).click(function() {
     }
 });
 $(document).on('click', '#add_group', function() {
-   
+            
             var index = $("#more_group h3").length+2;
             if(index==4)
             {
@@ -509,7 +594,7 @@ $(document).on('click', '#add_group', function() {
             };
             $("#more_group").append(
                 '<div id="group'+index+'">'+
-                '<h3 id="gname'+index+'">Group 2:</h3>'+
+                '<h3 id="gname'+index+'">Dataset Group 2: Green</h3>'+
                 '<div name="select_platform_g'+index+'" id="select_platform_g'+index+'">'+
                         '<p>Please select the datasets and related cell lines you want in each of the datasets.</p>'+
                         
@@ -617,9 +702,9 @@ $(document).on('click', '#add_group', function() {
             );
             var $head = $('h3[id^="gname"]:last');
             if(index==2){
-                $head.text("Group "+index+": Black");}
+                $head.text("Dataset Group "+index+": Yellow");}
             if(index==3){
-                $head.text("Group "+index+": Orange");}
+                $head.text("Dataset Group "+index+": Black");}
             
             $("#select_sanger_g" + index).multipleSelect({
             filter: true,
