@@ -650,7 +650,6 @@
                 this.$disableItems.parent().hide();
                 this.$selectGroups.each(function () {
                     var $parent = $(this).parent();
-                    
                     var group = $parent.attr('data-group'),
                         $items = that.$selectItems.filter(':visible');
                     $parent[$items.filter(sprintf('[data-group="%s"]', group)).length ? 'show' : 'hide']();

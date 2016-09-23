@@ -135,7 +135,7 @@ def user_pca(request):
     data = pd.read_csv(text)
     data.index = data['probe']
     data.index.name = None
-    data=data.iloc[:, 1:2]
+    data=data.iloc[:, 1:]
     data=data.reindex(pd.unique(probe_list.PROBEID[:]))
     data=data.rank(method='dense')
     #rank_data=data.rank(method='dense')
@@ -150,7 +150,7 @@ def user_pca(request):
     temp=[x for x in range(1,len(data)+1)]
     t=len(temp)
     for i in col_name:
-        for j in range(0,len(probe_list)):
+        for j in range(0,len(data[i])):
             data[i][j]=quantile[int(data[i][j]-1)]
         #rank_data[i].replace(temp,quantile[:len(temp)],inplace=True)
         #data[i].replace(temp,quantile[:len(temp)],inplace=True)
