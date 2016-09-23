@@ -88,74 +88,51 @@ def generate_samples():
 
 
 def user_pca(request):
-    
-    #open files
-    sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
-    nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
-    gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
-    sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
-    nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
-    gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
-    '''
-    plus2=np.load('ranking_u133plus2.npy')[:]
-    probe_path=Path('../').resolve().joinpath('src','raw','Affy_U133plus2_probe_info.csv')
-    probe=pd.read_csv(probe_path.as_posix())
-    data = pd.read_csv("ranking_index.csv")
-    data.index = data['probe']
-    data.index.name = None
-    data=data.iloc[:, 1:]
-    data=data.reindex(pd.unique(probe.PROBEID))
-    rank_data=data.rank(method='dense')
-    col_name=list(data.columns.values)
-    col_name=[ "user_"+str(index)+"_"+s for index,s in enumerate(col_name)]
-    rank_data.columns=col_name
-    data.columns=col_name
-    for i in col_name:
-        rank_data[i].replace([i for i in range(1,len(rank_data)+1)],plus2,inplace=True)
-    print(rank_data.head())
-    '''
-    
-    
-    
-    
-    #load the ranking file and the table of probe first
+
+    #load the ranking file and the table of probe first,open files
     pform=request.POST['data_platform']
     if (pform=="U133A"):
         quantile=list(np.load('ranking_u133a.npy'))
         probe_path=Path('../').resolve().joinpath('src','raw','Affy_U133A_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
+        sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
+        sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
     else:
         quantile=np.load('ranking_u133plus2.npy')
         probe_path=Path('../').resolve().joinpath('src','raw','Affy_U133plus2_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
+        nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
+        gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
+        
+        nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
+        gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
     
     #read the user file(suppose only one file now)    
     text=request.FILES['user_file']
-    #print(text)
+
     data = pd.read_csv(text)
     data.index = data['probe']
     data.index.name = None
-    data=data.iloc[:, 1:]
+    data=data.iloc[:, 1:2]
     data=data.reindex(pd.unique(probe_list.PROBEID[:]))
     data=data.rank(method='dense')
-    #rank_data=data.rank(method='dense')
-    #print(data.head())
+    
     #add "use_" to user's sample names
     col_name=list(data.columns.values)   #have user's sample name list here
     origin_name=list(data.columns.values)
     col_name=[ "user_"+str(index)+"_"+s for index,s in enumerate(col_name)]
     data.columns=col_name
     
-    print(len(probe_list))
     temp=[x for x in range(1,len(quantile)+1)]
     t=len(temp)
+    
     for i in col_name:
         for j in range(0,len(data[i])):
             if(not(np.isnan(data[i][j]))):
                 data[i][j]=quantile[int(data[i][j]-1)]
-        #rank_data[i].replace(temp,quantile[:len(temp)],inplace=True)
-        #data[i].replace(temp,quantile[:len(temp)],inplace=True)
+        
     print(data.head())
+    
     data=np.array(data)
     
     propotion=0
@@ -179,7 +156,6 @@ def user_pca(request):
                 group_counter=group_counter-1
                 break
     
-        group_name=[]
         s_group_dict={}  #store sample
         offset_group_dict={} #store offset
         gse_flag=0
@@ -189,8 +165,7 @@ def user_pca(request):
             c='cellline_g'+str(i)
             if request.POST[c] !='':
                 temp_name='g'+str(i)
-                group_name.append(temp_name)
-                
+
                 temp=list(set(request.POST[c].split()))
                 if all_c==[]:
                     all_c=all_c+temp
@@ -234,7 +209,6 @@ def user_pca(request):
                 break
     
         s_group_dict={}  #store sample
-        group_name=[]
         offset_group_dict={} #store offset
         gse_flag=0
         nci_flag=0
@@ -249,7 +223,6 @@ def user_pca(request):
             nci_data=[]
             gse_data=[]
             temp_name='g'+str(i)
-            group_name.append(temp_name)
             if pform=="U133A":
                 csanger='select_sanger_g'+str(i)
                 if 'Sanger Cell Line Project' in datasets:
@@ -327,30 +300,30 @@ def user_pca(request):
     #delete nan, combine user data to the datasets,transpose matrix
     if pform=="U133A":
         user_offset=len(sanger_val[0])
-        comb=np.concatenate((sanger_val[:,:], data), axis=1)
+        comb=np.concatenate((sanger_val, data), axis=1)
         sanger_val=comb[~np.isnan(comb).any(axis=1)]
-        sanger_val=np.matrix(sanger_val)[:,:]#need fix
+        sanger_val=np.matrix(sanger_val)#need fix
         val=np.transpose(sanger_val)
         
     elif((nci_flag==1) and (gse_flag==1)):
         user_offset=len(nci_val[0])+len(gse_val[0])
-        comb=np.concatenate((nci_val[:,:], gse_val[:,:]), axis=1)
+        comb=np.concatenate((nci_val, gse_val), axis=1)
         comb=np.concatenate((comb, data), axis=1)
         comb=comb[~np.isnan(comb).any(axis=1)]
-        val=np.matrix(comb)[:,:] #need fix
+        val=np.matrix(comb) #need fix
         val=np.transpose(val)
 
     elif nci_flag==1:
         user_offset=len(nci_val[0])
-        comb=np.concatenate((nci_val[:,:], data), axis=1)
+        comb=np.concatenate((nci_val, data), axis=1)
         comb=comb[~np.isnan(comb).any(axis=1)]
-        nci_val=np.matrix(comb)[:,:] #need fix
+        nci_val=np.matrix(comb) #need fix
         val=np.transpose(nci_val)
     else:
         user_offset=len(gse_val[0])
-        comb=np.concatenate((gse_val[:,:], data), axis=1)
+        comb=np.concatenate((gse_val, data), axis=1)
         comb=comb[~np.isnan(comb).any(axis=1)]
-        gse_val=np.matrix(comb)[:,:] #need fix
+        gse_val=np.matrix(comb) #need fix
         val=np.transpose(gse_val)
         
     
