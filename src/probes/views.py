@@ -147,11 +147,12 @@ def user_pca(request):
     data.columns=col_name
     
     print(len(probe_list))
-    temp=[x for x in range(1,len(data)+1)]
+    temp=[x for x in range(1,len(quantile)+1)]
     t=len(temp)
     for i in col_name:
         for j in range(0,len(data[i])):
-            data[i][j]=quantile[int(data[i][j]-1)]
+            if(not(np.isnan(data[i][j]))):
+                data[i][j]=quantile[int(data[i][j]-1)]
         #rank_data[i].replace(temp,quantile[:len(temp)],inplace=True)
         #data[i].replace(temp,quantile[:len(temp)],inplace=True)
     print(data.head())
@@ -326,14 +327,14 @@ def user_pca(request):
     #delete nan, combine user data to the datasets,transpose matrix
     if pform=="U133A":
         user_offset=len(sanger_val[0])
-        comb=np.concatenate((sanger_val[:t,:], data), axis=1)
+        comb=np.concatenate((sanger_val[:,:], data), axis=1)
         sanger_val=comb[~np.isnan(comb).any(axis=1)]
         sanger_val=np.matrix(sanger_val)[:,:]#need fix
         val=np.transpose(sanger_val)
         
     elif((nci_flag==1) and (gse_flag==1)):
         user_offset=len(nci_val[0])+len(gse_val[0])
-        comb=np.concatenate((nci_val[:t,:], gse_val[:t,:]), axis=1)
+        comb=np.concatenate((nci_val[:,:], gse_val[:,:]), axis=1)
         comb=np.concatenate((comb, data), axis=1)
         comb=comb[~np.isnan(comb).any(axis=1)]
         val=np.matrix(comb)[:,:] #need fix
@@ -341,13 +342,13 @@ def user_pca(request):
 
     elif nci_flag==1:
         user_offset=len(nci_val[0])
-        comb=np.concatenate((nci_val[:t,:], data), axis=1)
+        comb=np.concatenate((nci_val[:,:], data), axis=1)
         comb=comb[~np.isnan(comb).any(axis=1)]
         nci_val=np.matrix(comb)[:,:] #need fix
         val=np.transpose(nci_val)
     else:
         user_offset=len(gse_val[0])
-        comb=np.concatenate((gse_val[:t,:], data), axis=1)
+        comb=np.concatenate((gse_val[:,:], data), axis=1)
         comb=comb[~np.isnan(comb).any(axis=1)]
         gse_val=np.matrix(comb)[:,:] #need fix
         val=np.transpose(gse_val)
