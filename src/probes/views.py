@@ -93,13 +93,13 @@ def user_pca(request):
     pform=request.POST['data_platform']
     if (pform=="U133A"):
         quantile=list(np.load('ranking_u133a.npy'))
-        probe_path=Path('../').resolve().joinpath('src','raw','Affy_U133A_probe_info.csv')
+        probe_path=Path('../').resolve().joinpath('src','Affy_U133A_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
         sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
         sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
     else:
         quantile=np.load('ranking_u133plus2.npy')
-        probe_path=Path('../').resolve().joinpath('src','raw','Affy_U133plus2_probe_info.csv')
+        probe_path=Path('../').resolve().joinpath('src','Affy_U133plus2_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
         nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
         gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
@@ -113,7 +113,7 @@ def user_pca(request):
     data = pd.read_csv(text)
     data.index = data['probe']
     data.index.name = None
-    data=data.iloc[:, 1:2]
+    data=data.iloc[:, 1:]
     data=data.reindex(pd.unique(probe_list.PROBEID[:]))
     data=data.rank(method='dense')
     
