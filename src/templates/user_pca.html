@@ -20,10 +20,50 @@
     
     
     </div>
-    <p>Percentage of variance explained by 3D pca plot: {{propotion}}</p>
-    <p>Percentage of variance explained by distance table: {{table_propotion}}</p>
-    <p>Maximum distance:{{max}}</p>
-    <p>Minimum distance:{{min}}</p>
+    <p>Percentage of variance explained by 3D pca plot: {{propotion|floatformat:4}}</p>
+    <p>Percentage of variance explained by distance table: {{table_propotion|floatformat:4}}</p>
+    <p>Maximum distance:{{max|floatformat:4}}</p>
+    <p>Minimum distance:{{min|floatformat:4}}</p>
+    <hr>
+    {% for index,output_cell in user_out_group %}
+        <!--<div class="row">
+            <div class="col-md-offset-1 col-md-10">-->
+                <h2>PCA Results: {{index}} Distance</h2>
+             
+                <table id="example_user" class="display">
+                    <thead>
+                    <tr>
+                        <th>User Sample Name</th>
+                        <th>Dataset</th>
+                        <th>Paired Cell Line name</th>
+                        <th>Sample name</th>
+                        <th>Primary site</th>
+                        <th>Primary histology</th>
+                        <th>Dataset</th>
+                        <th>distance</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!--This part need to fix with above column defined-->
+                    {% for cell_line,b in output_cell %}
+                        {% for sn,dset,cname,sname,cell_primary_site,cell_primary_hist,setname,dis in b %} 
+                            <tr> 
+                                <td>{{ sn }}</td>
+                                <td>{{dset}}</td>
+                                <td>{{ cname }}</td>
+                                <td>{{ sname }}</td>
+                                <td>{{cell_primary_site}}</td>
+                                <td>{{cell_primary_hist}}</td>
+                                <td>{{setname}}</td>
+                                <td>{{ dis|floatformat:4 }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+        <!--    </div>
+        </div>-->
+    {% endfor %}
     <HR>
     
         {% for index,output_cell in out_group %}
@@ -31,7 +71,7 @@
             <div class="col-md-offset-1 col-md-10">-->
                 <h2>PCA Results: {{index}} Distance</h2>
              
-                <table id="example" class="display">
+                <table id="example_dataset" class="display">
                     <thead>
                     <tr>
                         <th>Group Cell Line</th>
@@ -86,7 +126,7 @@
 <script>
  $(document).ready(function() {
  
- $('table[id="example"]').DataTable({
+ $('table[id^="example"]').DataTable({
         destroy: true,
         dom: 'lfrtBip',
         buttons: [
@@ -114,7 +154,7 @@ var trace5 = {
     opacity: 0.9
   },
   text: {{name5}},
-  name: 'Group5',
+  name: 'Dataset Group3',
   type: 'scatter3d'
 };
 var trace4 = {
@@ -133,7 +173,7 @@ var trace4 = {
     opacity: 0.9
   },
   text: {{name4}},
-  name: 'Dataset Group3',
+  name: 'Dataset Group2',
   type: 'scatter3d'
 };
 var trace3 = {
@@ -152,7 +192,7 @@ var trace3 = {
     opacity: 0.9
   },
   text: {{name3}},
-  name: 'Dataset Group2',
+  name: 'Dataset Group1',
   type: 'scatter3d'
 };
 var trace2 = {
@@ -171,7 +211,7 @@ var trace2 = {
     opacity: 0.9
   },
   text:{{name2}},  
-  name: 'Dataset Group1',
+  name: 'User Group2',
   type: 'scatter3d'
 };
 var trace1 = {

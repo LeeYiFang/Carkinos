@@ -48,10 +48,17 @@
 <p>Please upload your own data.</p>
 <p>The samples you upload with be red in the result PCA plot.</p>
 <!--TODO:1.more files can be uploaded with different colors. -->
-<h4>User Group1:Red</h4>
+<h3>User Group1:Red</h3>
 <p style="color:blue;">Notice:only accept .csv file now</p>
 <input type="file" name="user_file" size="chars"></input>
-<!--<input type="file" name="user_file[]" size="chars"></input>-->
+
+<div id="upload_div"></div>
+
+</br>
+
+<button type="button" class="btn btn-success"  id="user_add">Upload more</button>
+<button type="button" class="btn btn-success"  id="user_delete">Delete</button>
+
 </br>
 
 <h3>Step4 - Select the Method used in Step5</h3>
@@ -78,7 +85,7 @@
 <div  id="group1">
     
     <div name="select_g1" id="select_g1">
-        <h3>Dataset Group 1: Blue</h3>   <!--NOTICE:WE CHANGE IT TO h3 NOW!!!!-->
+        <h3>Dataset Group 1: Yellow</h3>   <!--NOTICE:WE CHANGE IT TO h3 NOW!!!!-->
         <div name="select_platform_g1" id="select_platform_g1">
             <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
             
@@ -190,7 +197,7 @@
     </div>
 
     <div name="input_g1" id="input_g1">
-        <h3>Dataset Group 1:Blue</h3>
+        <h3>Dataset Group 1:Yellow</h3>
         <p>Input the cell lines you want:</p>
         <p>For more than one cell lines, please separate with space or new line</p>
         <div class="form-group">
@@ -585,6 +592,29 @@ $( "#delete_group" ).click(function() {
         $('div[id^="group"]:last').remove();
     }
 });
+$( "#user_delete" ).click(function() {
+    var $div = $('div[id^="upload_user"]:last');
+    var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
+    if(num>0)
+    {   
+        $('div[id^="upload_user"]:last').remove();
+    }
+});
+$(document).on('click', '#user_add', function() {
+    var index = $("#upload_div h3").length+2;
+            if(index==3)
+            {
+                alert("Sorry, you can at most have 2 groups.");
+                return false;
+            };
+            $("#upload_div").append(
+                '<div id="upload_user'+index+'">'+
+                '<h3 id="user_group'+index+'">User Group 2: Blue</h3>'+
+                '<input type="file" name="user_file" size="chars"></input>'+
+                '</div>'
+            );
+});
+
 $(document).on('click', '#add_group', function() {
             
             var index = $("#more_group h3").length+2;
@@ -703,9 +733,9 @@ $(document).on('click', '#add_group', function() {
             );
             var $head = $('h3[id^="gname"]:last');
             if(index==2){
-                $head.text("Dataset Group "+index+": Yellow");}
-            if(index==3){
                 $head.text("Dataset Group "+index+": Black");}
+            if(index==3){
+                $head.text("Dataset Group "+index+": Green");}
             
             $("#select_sanger_g" + index).multipleSelect({
             filter: true,

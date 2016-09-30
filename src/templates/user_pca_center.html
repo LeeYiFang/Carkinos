@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}PCA Results{% endblock title %}
+{% block title %}Upload File PCA Plot{% endblock title %}
 {% block extra_css %}
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.11/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
@@ -20,18 +20,55 @@
     
     
     </div>
-    <p>Percentage of variance explained by 3D pca plot: {{propotion}}</p>
-    <p>Percentage of variance explained by distance table: {{table_propotion}}</p>
-    <p>Maximum distance:{{max}}</p>
-    <p>Minimum distance:{{min}}</p>
+    <p>Percentage of variance explained by 3D pca plot: {{propotion|floatformat:4}}</p>
+    <p>Percentage of variance explained by distance table: {{table_propotion|floatformat:4}}</p>
+    <p>Maximum distance:{{max|floatformat:4}}</p>
+    <p>Minimum distance:{{min|floatformat:4}}</p>
+    <HR>
+
+        {% for index,output_cell in user_out_group %}
+        <!--<div class="row">
+            <div class="col-md-offset-1 col-md-10">-->
+                <h2>PCA Results:{{index}} Distance</h2>
+             
+                <table id="example_user" class="display">
+                    <thead>
+                    <tr>
+                        <th>User Sample name</th>
+                        <th>Dataset</th>
+                        <th>Paired Cell Line name</th>
+                        <th>Primary site</th>
+                        <th>Primary histology</th>
+                        <th>Dataset</th>
+                        <th>distance</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!--This part need to fix with above column defined-->
+                    {% for cell_line,b in output_cell %}
+                        {% for group_cell,group_dataset,paired_cell,pcp,pch,paired_dataset,dis in b %} 
+                            <tr> 
+                                <td>{{ group_cell }}</td>
+                                <td>{{ group_dataset }}</td>
+                                <td>{{ paired_cell }}</td>
+                                <td>{{ pcp }}</td>
+                                <td>{{ pch }}</td>
+                                <td>{{ paired_dataset }}</td>
+                                <td>{{ dis|floatformat:4 }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+        
+        {% endfor %}
+   
     <HR>
 
         {% for index,output_cell in out_group %}
-        <!--<div class="row">
-            <div class="col-md-offset-1 col-md-10">-->
-                <h2>PCA Results:Group {{index}} Distance</h2>
+                <h2>PCA Results:{{index}} Distance</h2>
              
-                <table id="example" class="display">
+                <table id="example_dataset" class="display">
                     <thead>
                     <tr>
                         <th>Group Cell Line</th>
@@ -64,20 +101,14 @@
                     {% endfor %}
                     </tbody>
                 </table>
-        <!--    </div>
-        </div>-->
+
         {% endfor %}
     <HR>    
     
 {% endblock content %}
 
 {% block scripts %}
-<!--<script src="static/DataTables/meida/js/jquery.dataTables.js"></script>
-<script>
-$(document).ready(function() {
-    $('#example').DataTable();
-} );
-</script>-->
+
 <script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
@@ -89,7 +120,7 @@ $(document).ready(function() {
 <script>
  $(document).ready(function() {
  
- $('table[id="example"]').DataTable({
+ $('table[id^="example"]').DataTable({
         destroy: true,
         dom: 'lfrtBip',
         buttons: [
@@ -117,7 +148,7 @@ var trace5 = {
     opacity: 0.9
   },
   text: {{name5}},
-  name: 'Dataset Group4',
+  name: 'Dataset Group3',
   type: 'scatter3d'
 };
 var trace4 = {
@@ -136,7 +167,7 @@ var trace4 = {
     opacity: 0.9
   },
   text: {{name4}},
-  name: 'Dataset Group3',
+  name: 'Dataset Group2',
   type: 'scatter3d'
 };
 var trace3 = {
@@ -155,7 +186,7 @@ var trace3 = {
     opacity: 0.9
   },
   text: {{name3}},
-  name: 'Dataset Group2',
+  name: 'Dataset Group1',
   type: 'scatter3d'
 };
 var trace2 = {
@@ -174,7 +205,7 @@ var trace2 = {
     opacity: 0.9
   },
   text:{{name2}},  
-  name: 'Dataset Group1',
+  name: 'User Group2',
   type: 'scatter3d'
 };
 var trace1 = {

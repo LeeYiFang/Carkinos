@@ -108,32 +108,37 @@ def user_pca(request):
         gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
     
     #read the user file(suppose only one file now)    
-    text=request.FILES['user_file']
-
-    data = pd.read_csv(text)
-    data.index = data['probe']
-    data.index.name = None
-    data=data.iloc[:, 1:]
-    data=data.reindex(pd.unique(probe_list.PROBEID[:]))
-    data=data.rank(method='dense')
-    
-    #add "use_" to user's sample names
-    col_name=list(data.columns.values)   #have user's sample name list here
-    origin_name=list(data.columns.values)
-    col_name=[ "user_"+str(index)+"_"+s for index,s in enumerate(col_name)]
-    data.columns=col_name
-    
-    temp=[x for x in range(1,len(quantile)+1)]
-    t=len(temp)
-    
-    for i in col_name:
-        for j in range(0,len(data[i])):
-            if(not(np.isnan(data[i][j]))):
-                data[i][j]=quantile[int(data[i][j]-1)]
+    text=request.FILES.getlist('user_file')
+    user_counter=len(text)
+    user_dict={} #{user group number:user 2d array}
+    new_name=[]
+    origin_name=[]
+    for x in range(1,user_counter+1):
+        temp_data = pd.read_csv(text[x-1])
+        temp_data.index = temp_data['probe']
+        temp_data.index.name = None
+        temp_data=temp_data.iloc[:, 1:]
+        temp_data=temp_data.reindex(pd.unique(probe_list.PROBEID))
+        temp_data=temp_data.rank(method='dense')
+        print(len(temp_data))
+        #add "use_" to user's sample names
+        col_name=list(temp_data.columns.values)   #have user's sample name list here
+        origin_name=origin_name+list(temp_data.columns.values)
+        col_name=[ "user_"+str(index)+"_"+s for index,s in enumerate(col_name)]
+        temp_data.columns=col_name
+        new_name=new_name+col_name
         
-    print(data.head())
-    
-    data=np.array(data)
+        for i in col_name:
+            for j in range(0,len(temp_data[i])):
+                if(not(np.isnan(temp_data[i][j]))):
+                    temp_data[i][j]=quantile[int(temp_data[i][j]-1)]
+            
+        print(temp_data.head())
+        user_dict[x]=np.array(temp_data)
+        if x==1:
+            data=temp_data
+        else:
+            data=np.concatenate((data,temp_data), axis=1)
     
     propotion=0
     table_propotion=0
@@ -141,6 +146,7 @@ def user_pca(request):
     nci_size=Sample.objects.filter(dataset_id__name__in=["NCI60"]).count()
     gse_size=Sample.objects.filter(dataset_id__name__in=["GSE36133"]).count()
     group_counter=1
+    user_out_group=[]
     s_group_dict={}  #store sample
     offset_group_dict={} #store offset
     cell_line_dict={}
@@ -315,9 +321,9 @@ def user_pca(request):
 
     elif nci_flag==1:
         user_offset=len(nci_val[0])
-        comb=np.concatenate((nci_val, data), axis=1)
+        comb=np.concatenate((nci_val, data), axis=1) #need fix
         comb=comb[~np.isnan(comb).any(axis=1)]
-        nci_val=np.matrix(comb) #need fix
+        nci_val=np.matrix(comb) 
         val=np.transpose(nci_val)
     else:
         user_offset=len(gse_val[0])
@@ -442,8 +448,9 @@ def user_pca(request):
                                 all_sample[s].dataset_id.name,all_cellline[i],all_sample[i].name,cell_object[i].primary_site
                                 ,cell_object[i].primary_hist,all_sample[i].dataset_id.name,distance])
                             check[all_sample[s].name].append(all_sample[i].name)
-                    
-                for i in range(user_new_offset,user_new_offset+len(col_name)):
+                g_count=1   
+                u_count=len(user_dict[g_count][0])  #sample number in first user file
+                for i in range(user_new_offset,user_new_offset+len(origin_name)):  #remember to prevent empty file uploaded
                     distance=np.linalg.norm(Xval[i]-Xval[s])
                     if distance<min:
                         min=distance
@@ -451,24 +458,29 @@ def user_pca(request):
                         max=distance
                     output_cell[cell][1].append([all_cellline[s]+'('+str(exist_cell[cell])+')'
                                 ,all_sample[s].name,cell.primary_site,cell.primary_hist,
-                                all_sample[s].dataset_id.name,origin_name[i-user_new_offset],origin_name[i-user_new_offset]," "," ","user_group1",distance])
-                                
+                                all_sample[s].dataset_id.name," ",origin_name[i-user_new_offset]," "," ","User Group"+str(g_count),distance])
+                    if ((i-user_new_offset+1)==u_count):
+                        g_count+=1
+                        try:
+                            u_count+=len(user_dict[g_count][0])
+                        except KeyError:
+                            u_count+=0
                     
                 if(g==1):
-                    name2.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X2.append(round(Xval[s][0],5))
-                    Y2.append(round(Xval[s][1],5))
-                    Z2.append(round(Xval[s][2],5))
-                elif(g==2):
                     name3.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
                     X3.append(round(Xval[s][0],5))
                     Y3.append(round(Xval[s][1],5))
                     Z3.append(round(Xval[s][2],5))
-                elif(g==3):
+                elif(g==2):
                     name4.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
                     X4.append(round(Xval[s][0],5))
                     Y4.append(round(Xval[s][1],5))
                     Z4.append(round(Xval[s][2],5))
+                elif(g==3):
+                    name5.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
+                    X5.append(round(Xval[s][0],5))
+                    Y5.append(round(Xval[s][1],5))
+                    Z5.append(round(Xval[s][2],5))
                 
             dictlist=[]
             for key, value in output_cell.items():
@@ -477,46 +489,102 @@ def user_pca(request):
             output_cell=list(dictlist)
             out_group.append(["Dataset Group"+str(g),output_cell])
             
-            output_cell={}
-            output_cell["temp"]=[" ",[]]
+            
             if g==group_counter:
-                for i in range(user_new_offset,user_new_offset+len(col_name)):
+                output_cell={}
+                g_count=1  
+                output_cell[g_count]=[" ",[]]                
+                u_count=len(user_dict[g_count][0])
+                temp_count=u_count
+                temp_g=1
+                before=0
+                for i in range(user_new_offset,user_new_offset+len(origin_name)):
                     for x in range(0,len(all_sample)):
                         distance=np.linalg.norm(Xval[x]-Xval[i])
                         if distance<min:
                             min=distance
                         if distance>max:
                             max=distance
-                        output_cell["temp"][1].append([" ",origin_name[i-user_new_offset]," "," ","User Group1",all_cellline[x]
+                        output_cell[g_count][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count),all_cellline[x]
                                     ,all_sample[x].name,cell_object[x].primary_site,cell_object[x].primary_hist,
                                     all_sample[x].dataset_id.name,distance])
-                    for j in range(i+1,user_new_offset+len(col_name)):
+                    
+                    temp_g=1
+                    temp_count=len(user_dict[temp_g][0])
+                    for j in range(user_new_offset,user_new_offset+before):
+                        if ((j-user_new_offset)==temp_count):
+                            temp_g+=1
+                            try:
+                                temp_count+=len(user_dict[temp_g][0])
+                            except KeyError:
+                                temp_count+=0
                         distance=np.linalg.norm(Xval[j]-Xval[i])
                         if distance<min:
                             min=distance
                         if distance>max:
                             max=distance
-                        output_cell["temp"][1].append([" ",origin_name[i-user_new_offset]," "," ","User Group1"
-                        ," ",origin_name[j-user_new_offset]," "," ","User Group1",distance])
-                    name1.append(origin_name[i-user_new_offset])
-                    X1.append(round(Xval[i][0],5))
-                    Y1.append(round(Xval[i][1],5))
-                    Z1.append(round(Xval[i][2],5))                
-            dictlist=[]
-            for key, value in output_cell.items():
-                temp = [value]
-                dictlist+=temp
-            output_cell=list(dictlist)
-            out_group.append(["User Group1",output_cell])
+                        output_cell[g_count][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                        ," ",origin_name[j-user_new_offset]," "," ","User Group"+str(temp_g),distance])
+                        
+                    temp_g=g_count  
+                    temp_count=len(user_dict[g_count][0])
+                    for j in range(i+1,user_new_offset+len(origin_name)):
+                        if ((j-user_new_offset)==temp_count):
+                            temp_g+=1
+                            try:
+                                temp_count+=len(user_dict[temp_g][0])
+                            except KeyError:
+                                temp_count+=0
+                        distance=np.linalg.norm(Xval[j]-Xval[i])
+                        if distance<min:
+                            min=distance
+                        if distance>max:
+                            max=distance
+                        output_cell[g_count][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                        ," ",origin_name[j-user_new_offset]," "," ","User Group"+str(temp_g),distance])                    
+
+                    if g_count==1:
+                        name1.append(origin_name[i-user_new_offset])
+                        X1.append(round(Xval[i][0],5))
+                        Y1.append(round(Xval[i][1],5))
+                        Z1.append(round(Xval[i][2],5))
+                    else:
+                        name2.append(origin_name[i-user_new_offset])
+                        X2.append(round(Xval[i][0],5))
+                        Y2.append(round(Xval[i][1],5))
+                        Z2.append(round(Xval[i][2],5))
+                    if ((i-user_new_offset+1)==u_count):
+                        dictlist=[]
+                        for key, value in output_cell.items():
+                            temp = [value]
+                            dictlist+=temp
+                        output_cell=list(dictlist)
+                        user_out_group.append(["User Group"+str(g_count),output_cell])
+                        
+                        g_count+=1
+                        before=u_count+before
+                        print("I am here!!")
+                        try:
+                            u_count+=len(user_dict[g_count][0])
+                            output_cell={}
+                            output_cell[g_count]=[" ",[]]
+                        except KeyError:
+                            u_count+=0
+                    
         #[g,[group_cell_1 object,[[outputs paired1,......,],[paired2],[paired3]]],[group_cell_2 object,[[pair1],[pair2]]]]
-        for xx in origin_name:
-            sample_counter[xx]=1
-        print(out_group)
+        #for xx in origin_name:
+            #sample_counter[xx]=1
+        #print(out_group)
         for i in out_group:
             for temp_list in i[1]:
                 for temp in temp_list[1]:
-                    #print(temp)
-                    temp[5]=temp[5]+'('+str(sample_counter[temp[6]])+')'
+                    if(temp[5]!=" "):
+                        temp[5]=temp[5]+'('+str(sample_counter[temp[6]])+')'
+        for i in user_out_group:
+            for temp_list in i[1]:
+                for temp in temp_list[1]:
+                    if(temp[2]!=" "):
+                        temp[2]=temp[2]+'('+str(sample_counter[temp[3]])+')'
         
         return_html='user_pca.html'
     else:
@@ -612,38 +680,50 @@ def user_pca(request):
                                                     
                         exist_cell.append(cell) 
                         
-                        for i in range(user_new_offset,user_new_offset+len(col_name)):
+                        g_count=1   
+                        u_count=len(user_dict[g_count][0])  #sample number in first user file
+                        for i in range(user_new_offset,user_new_offset+len(origin_name)):
                             distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[i]))
                             if distance<min:
                                 min=distance
                             if distance>max:
                                 max=distance
                             output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist,dataset_dict[cell]
-                                        ,origin_name[i-user_new_offset]," "," ","User Group1",distance])
-                        
+                                        ,origin_name[i-user_new_offset]," "," ","User Group"+str(g_count),distance])
+                            if ((i-user_new_offset+1)==u_count):
+                                g_count+=1
+                                try:
+                                    u_count+=len(user_dict[g_count][0])
+                                except KeyError:
+                                    u_count+=0
                         if(g==1):
-                            name2.append(cell.name+'<br>'+dataset_dict[cell])
-                            X2.append(round(new_val[index_cell][0],5))
-                            Y2.append(round(new_val[index_cell][1],5))
-                            Z2.append(round(new_val[index_cell][2],5))
-                        elif(g==2):
                             name3.append(cell.name+'<br>'+dataset_dict[cell])
                             X3.append(round(new_val[index_cell][0],5))
                             Y3.append(round(new_val[index_cell][1],5))
                             Z3.append(round(new_val[index_cell][2],5))
-                        elif(g==3):
+                        elif(g==2):
                             name4.append(cell.name+'<br>'+dataset_dict[cell])
                             X4.append(round(new_val[index_cell][0],5))
                             Y4.append(round(new_val[index_cell][1],5))
                             Z4.append(round(new_val[index_cell][2],5))
+                        elif(g==3):
+                            name5.append(cell.name+'<br>'+dataset_dict[cell])
+                            X5.append(round(new_val[index_cell][0],5))
+                            Y5.append(round(new_val[index_cell][1],5))
+                            Z5.append(round(new_val[index_cell][2],5))
                         
                 out_group.append(["Dataset Group"+str(g),output_cell]) 
                 
                 
                 if g==group_counter:
                     output_cell=[]
-                    output_cell.append(["temp",[]])
-                    for i in range(user_new_offset,user_new_offset+len(col_name)):
+                    output_cell.append([" ",[]])
+                    g_count=1
+                    u_count=len(user_dict[g_count][0])
+                    temp_count=u_count
+                    temp_g=1
+                    before=0
+                    for i in range(user_new_offset,user_new_offset+len(origin_name)):
                         for c in dis_cellline:
                             index_c=np.where(np.array(dis_cellline)==c)[0][0]
                             distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[index_c]))
@@ -651,22 +731,68 @@ def user_pca(request):
                                 min=distance
                             if distance>max:
                                 max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset]," "," ","User Group1"
+                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
                             ,c.name,c.primary_site,c.primary_hist,dataset_dict[c],distance])
-                        for x in range(i+1,user_new_offset+len(col_name)):
+                        
+                        temp_g=1
+                        temp_count=len(user_dict[temp_g][0])
+                        for x in range(user_new_offset,user_new_offset+before):
+                            if ((j-user_new_offset)==temp_count):
+                                temp_g+=1
+                                try:
+                                    temp_count+=len(user_dict[temp_g][0])
+                                except KeyError:
+                                    temp_count+=0
                             distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[x]))
                             if distance<min:
                                 min=distance
                             if distance>max:
                                 max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset]," "," ","User Group1"
-                            ,origin_name[x-user_new_offset]," "," ","User Group1",distance])
-                                
-                        name1.append(origin_name[i-user_new_offset])
-                        X1.append(round(new_val[i][0],5))
-                        Y1.append(round(new_val[i][1],5))
-                        Z1.append(round(new_val[i][2],5))   
-                    out_group.append(["User Group1",output_cell])
+                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                            ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
+                        
+                        temp_g=g_count  
+                        temp_count=len(user_dict[g_count][0])
+                        for x in range(i+1,user_new_offset+len(origin_name)):
+                            if ((j-user_new_offset)==temp_count):
+                                temp_g+=1
+                                try:
+                                    temp_count+=len(user_dict[temp_g][0])
+                                except KeyError:
+                                    temp_count+=0
+                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[x]))
+                            if distance<min:
+                                min=distance
+                            if distance>max:
+                                max=distance
+                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                            ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
+                        
+                        if g_count==1:
+                            name1.append(origin_name[i-user_new_offset])
+                            X1.append(round(new_val[i][0],5))
+                            Y1.append(round(new_val[i][1],5))
+                            Z1.append(round(new_val[i][2],5)) 
+                        else:
+                            name2.append(origin_name[i-user_new_offset])
+                            X2.append(round(new_val[i][0],5))
+                            Y2.append(round(new_val[i][1],5))
+                            Z2.append(round(new_val[i][2],5)) 
+                        
+                        if ((i-user_new_offset+1)==u_count):    
+                            user_out_group.append(["User Group"+str(g_count),output_cell])
+
+                            g_count+=1
+                            before=u_count+before
+                            print("I am here!!")
+                            try:
+                                u_count+=len(user_dict[g_count][0])
+                                output_cell=[]
+                                output_cell.append([" ",[]])
+                            except KeyError:
+                                u_count+=0
+                          
+                    
         else:
         #This part is for select cell line base on dataset,count centroid base on the dataset
         #group中的cell line為單位來算重心
@@ -780,38 +906,50 @@ def user_pca(request):
                             output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
                             ,group_c[1],temp_list[0].name,temp_list[0].primary_site,temp_list[0].primary_hist,temp_list[1],distance])
                             exist_cell[key_string].append(temp_string)
-                    
-                    for i in range(user_new_offset,user_new_offset+len(col_name)):
+                    g_count=1   
+                    u_count=len(user_dict[g_count][0])  #sample number in first user file
+                    for i in range(user_new_offset,user_new_offset+len(origin_name)):
                             distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[i]))
                             if distance<min:
                                 min=distance
                             if distance>max:
                                 max=distance
                             output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist,group_c[1]
-                                        ,origin_name[i-user_new_offset]," "," ","User Group1",distance])
+                                        ,origin_name[i-user_new_offset]," "," ","User Group"+str(g_count),distance])
+                            if ((i-user_new_offset+1)==u_count):
+                                g_count+=1
+                                try:
+                                    u_count+=len(user_dict[g_count][0])
+                                except KeyError:
+                                    u_count+=0
                     if(g==1):
-                        name2.append(cell.name+'<br>'+group_c[1])
-                        X2.append(round(new_val[group_c[2]][0],5))
-                        Y2.append(round(new_val[group_c[2]][1],5))
-                        Z2.append(round(new_val[group_c[2]][2],5))
-                    elif(g==2):
                         name3.append(cell.name+'<br>'+group_c[1])
                         X3.append(round(new_val[group_c[2]][0],5))
                         Y3.append(round(new_val[group_c[2]][1],5))
                         Z3.append(round(new_val[group_c[2]][2],5))
-                    elif(g==3):
+                    elif(g==2):
                         name4.append(cell.name+'<br>'+group_c[1])
                         X4.append(round(new_val[group_c[2]][0],5))
                         Y4.append(round(new_val[group_c[2]][1],5))
                         Z4.append(round(new_val[group_c[2]][2],5))
+                    elif(g==3):
+                        name5.append(cell.name+'<br>'+group_c[1])
+                        X5.append(round(new_val[group_c[2]][0],5))
+                        Y5.append(round(new_val[group_c[2]][1],5))
+                        Z5.append(round(new_val[group_c[2]][2],5))
                     
-                out_group.append([g,output_cell])
+                out_group.append(["Dataset Group"+str(g),output_cell])
                 
 
                 if g==group_counter:
                     output_cell=[]
-                    output_cell.append(["temp",[]])
-                    for i in range(user_new_offset,user_new_offset+len(col_name)):
+                    g_count=1 
+                    output_cell.append([" ",[]])
+                    u_count=len(user_dict[g_count][0])
+                    temp_count=u_count
+                    temp_g=1
+                    before=0
+                    for i in range(user_new_offset,user_new_offset+len(origin_name)):
                         for temp_list in combined:
                             c=temp_list[0]
                             distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[temp_list[2]]))
@@ -819,27 +957,68 @@ def user_pca(request):
                                 min=distance
                             if distance>max:
                                 max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset]," "," ","User Group1"
+                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
                             ,c.name,c.primary_site,c.primary_hist,temp_list[1],distance])
-                        for x in range(i+1,user_new_offset+len(col_name)):
+                        
+                        temp_g=1
+                        temp_count=len(user_dict[temp_g][0])
+                        for j in range(user_new_offset,user_new_offset+before):
+                            if ((j-user_new_offset)==temp_count):
+                                temp_g+=1
+                                try:
+                                    temp_count+=len(user_dict[temp_g][0])
+                                except KeyError:
+                                    temp_count+=0
+                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[j]))
+                            if distance<min:
+                                min=distance
+                            if distance>max:
+                                max=distance
+                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                            ,origin_name[j-user_new_offset]," "," ","User Group"+str(temp_g),distance])
+                        
+                        temp_g=g_count  
+                        temp_count=len(user_dict[g_count][0])
+                        for x in range(i+1,user_new_offset+len(origin_name)):
+                            if ((x-user_new_offset)==temp_count):
+                                temp_g+=1
+                                try:
+                                    temp_count+=len(user_dict[temp_g][0])
+                                except KeyError:
+                                    temp_count+=0
                             distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[x]))
                             if distance<min:
                                 min=distance
                             if distance>max:
                                 max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset]," "," ","User Group1"
-                            ,origin_name[x-user_new_offset]," "," ","User Group1",distance])
-                                
-                        name1.append(origin_name[i-user_new_offset])
-                        X1.append(round(new_val[i][0],5))
-                        Y1.append(round(new_val[i][1],5))
-                        Z1.append(round(new_val[i][2],5))   
-                    out_group.append(["User Group1",output_cell])
+                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                            ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
+                        if g_count==1:        
+                            name1.append(origin_name[i-user_new_offset])
+                            X1.append(round(new_val[i][0],5))
+                            Y1.append(round(new_val[i][1],5))
+                            Z1.append(round(new_val[i][2],5))  
+                        else:
+                            name2.append(origin_name[i-user_new_offset])
+                            X2.append(round(new_val[i][0],5))
+                            Y2.append(round(new_val[i][1],5))
+                            Z2.append(round(new_val[i][2],5)) 
+                        if ((i-user_new_offset+1)==u_count):
+                            user_out_group.append(["User Group"+str(g_count),output_cell])
+                            g_count+=1
+                            before=u_count+before
+                            print("I am here!!")
+                            try:
+                                u_count+=len(user_dict[g_count][0])
+                                output_cell=[]
+                                output_cell.append([" ",[]])
+                            except KeyError:
+                                u_count+=0
                     
     return render_to_response(return_html,RequestContext(request,
     {
     'min':min,'max':max,
-    'out_group':out_group,
+    'out_group':out_group,'user_out_group':user_out_group,
     'propotion':propotion,
     'table_propotion':table_propotion,
     'X1':X1,'name1':mark_safe(json.dumps(name1)),
@@ -1075,7 +1254,9 @@ def heatmap(request):
     stop_end=pro_number+1
     for w in sortkey:     
         #print(presult[w],":",w.Probe_id)
-        expression.append(express[w])
+        express_mean=np.mean(np.array(express[w]))
+        expression.append(list((np.array(express[w]))-express_mean))
+        
         probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
         counter+=1
         if counter==stop_end:
