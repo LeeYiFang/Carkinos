@@ -1258,10 +1258,10 @@ def heatmap(request):
     
     counter=1
     pro_number=float(request.POST['probe_number'])
-    stop_end=pro_number+1
+    stop_end=500
     for w in sortkey: 
         if (presult[w]<pro_number):
-            print(presult[w],":",w.Probe_id)
+            #print(presult[w],":",w.Probe_id)
             express_mean=np.mean(np.array(express[w]))
             expression.append(list((np.array(express[w]))-express_mean))
             
@@ -1269,8 +1269,9 @@ def heatmap(request):
             counter+=1
         else:
             break
-            #if counter==stop_end:
-                #break
+        
+        if counter>=stop_end:
+            break
     
     n_counter=1
     for n in group_name:
