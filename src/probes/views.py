@@ -12,6 +12,8 @@ import sklearn
 from sklearn.decomposition import PCA
 from scipy import stats
 
+import matplotlib as mpl
+mpl.use('agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
