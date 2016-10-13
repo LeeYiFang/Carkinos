@@ -15,17 +15,13 @@
 {% block content %}
 <h1>Gene Signature Explore: Heatmap Result</h1>
 </br>
-<p>The heatmap will show the top {{pro_number}} probes that are most significant.</p> 
-<p>"SCLP" is short for Sanger Cell Line Project</p>
-<!--<style>
-img.big {
-    height: 80%;
-}
-</style>-->
-<div id="myDiv" >
-<!-- Plotly chart will be drawn inside this DIV -->
 
-</div>
+<img src="/static/heatmap/{{file_name}}">
+
+</br>
+<p>The heatmap will show the p-value > {{pro_number}} probes that are most significant.</p> 
+<p>"SCLP" is short for Sanger Cell Line Project</p>
+
 
 
 
@@ -39,48 +35,6 @@ img.big {
 
 <script>
 
-var colorscaleValue = [
-  //[0, '#19E916'],
-  //[1, '#E92B16']
-  
-    ['0.0', 'rgb(165,0,38)'],
-    ['0.111111111111', 'rgb(215,48,39)'],
-    ['0.222222222222', 'rgb(244,109,67)'],
-    ['0.333333333333', 'rgb(253,174,97)'],
-    ['0.444444444444', 'rgb(254,224,144)'],
-    ['0.555555555556', 'rgb(224,243,248)'],
-    ['0.666666666667', 'rgb(171,217,233)'],
-    ['0.777777777778', 'rgb(116,173,209)'],
-    ['0.888888888889', 'rgb(69,117,180)'],
-    ['1.0', 'rgb(49,54,149)']
-  
-];
-var data = [
-  {
-    z: {{expression}},
-    //[[1, 20, 30, 50, 1], [20, 1, 60, 80, 30], [30, 60, 1, -10, 20]], //need to be expression data
-    x: {{sample_out}},
-    //['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], // need to be cell line name
-    y: {{probe_out}},
-    //['Morning', 'Afternoon', 'Evening'], //need to be probe name(cluster with same gene names)
-    type: 'heatmap',
-    colorscale: colorscaleValue
-  }
-];
 
-var layout = {
-  title: 'Heatmap',
-  autosize: true, //false
-  width: 1140,
-  height: 1500,
-  margin: {
-    l: 200,
-    r: 40,
-    b: 200, //100 change to auto
-    t: 100,
-    pad: 4
-  },
-};
-Plotly.newPlot('myDiv', data,layout);
 </script>
 {% endblock %}

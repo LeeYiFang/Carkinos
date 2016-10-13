@@ -8,15 +8,13 @@
 </br>
 <form action="{% url 'heatmap' %}" method="post" target="_blank">{% csrf_token %}
 
-<h3>Step1 - Decide probe number:</h3>
-<p>Please decide how many probes will be shown on the result heat map.</p>
+<h3>Step1 - Decide level of significance:</h3>
+<p>Please decide what level of significance you want to use on statistic test in Step4.</p>
 <label>
-        <input type="radio" name="probe_number" value="25" checked>25</input>
-        <input type="radio" name="probe_number" value="50">50 </input>
-        <input type="radio" name="probe_number" value="75">75 </input>
-        <input type="radio" name="probe_number" value="100">100 </input>
-        <input type="radio" name="probe_number" value="250">250 </input>
-        <input type="radio" name="probe_number" value="500">500 </input>
+        <input type="radio" name="probe_number" value="0.05"checked>0.05</input>
+        <input type="radio" name="probe_number" value="0.01">0.01 </input>
+        
+        
         
 </label>
 

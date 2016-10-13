@@ -12,6 +12,11 @@ import sklearn
 from sklearn.decomposition import PCA
 from scipy import stats
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
+
+
 def generate_samples():
     samples = Sample.objects.filter(
         dataset_id__name__in=['Sanger Cell Line Project']
@@ -1247,20 +1252,23 @@ def heatmap(request):
     tempf=pd.DataFrame(list(presult.items()), columns=['probe', 'pvalue'])
     tempf=tempf.replace(to_replace=float('nan'),value=float('+inf'))
     presult=dict(zip(tempf.probe, tempf.pvalue))
-    sortkey=sorted(presult,key=presult.get)
+    sortkey=sorted(presult,key=presult.get)   #can optimize here
     
     counter=1
-    pro_number=int(request.POST['probe_number'])
+    pro_number=float(request.POST['probe_number'])
     stop_end=pro_number+1
-    for w in sortkey:     
-        #print(presult[w],":",w.Probe_id)
-        express_mean=np.mean(np.array(express[w]))
-        expression.append(list((np.array(express[w]))-express_mean))
-        
-        probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
-        counter+=1
-        if counter==stop_end:
+    for w in sortkey: 
+        if (presult[w]<pro_number):
+            #print(presult[w],":",w.Probe_id)
+            express_mean=np.mean(np.array(express[w]))
+            expression.append(list((np.array(express[w]))-express_mean))
+            
+            probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
+            counter+=1
+        else:
             break
+            #if counter==stop_end:
+                #break
     
     n_counter=1
     for n in group_name:
@@ -1274,14 +1282,51 @@ def heatmap(request):
             sample_counter+=1
         n_counter+=1
     
+    sns.set(font="monospace")
+    data=np.array(expression)
+    test=pd.DataFrame(data=expression,index=probe_out,columns=sample_out)
+    cdict = {'red':   ((0.0, 0.0, 0.0),
+                       (0.5, 0.0, 0.1),
+                       (1.0, 1.0, 1.0)),
+    
+             'blue': ((0.0, 0.0, 0.0),
+                       (1.0, 0.0, 0.0)),
+    
+             'green':  ((0.0, 0.0, 1.0),
+                       (0.5, 0.1, 0.0),
+                       (1.0, 0.0, 0.0))
+            }
+    
+    my_cmap = LinearSegmentedColormap('my_colormap',cdict,256)
+    g = sns.clustermap(test,cmap=my_cmap)
+    plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
+    
+    
+    '''hm = g.ax_heatmap.get_position()
+    plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=5)
+    g.ax_heatmap.set_position([hm.x0, hm.y0, hm.width, hm.height])
+    col = g.ax_col_dendrogram.get_position()
+    g.ax_col_dendrogram.set_position([col.x0, col.y0, col.width*0.25, col.height*0.5])'''
+    
+    
+    
+    #for x in g.ax_heatmap.get_xticklabels():
+    #    plt.setp(x,rotation=330)
+    plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
+    sid=str(request.session.session_key)+".png"
+    #sid="temp.png"
+    P=Path('../').resolve().joinpath('src','static','heatmap',sid)
+    
+    g.savefig(str(P))
 
+    file_name=sid
     return render_to_response('heatmap.html',RequestContext(request,
         {
         'pro_number':pro_number,
         'sample_out':mark_safe(json.dumps(sample_out)),
         'expression':expression,
         'probe_out':mark_safe(json.dumps(probe_out)),
-        
+        'file_name':file_name,
         }))
 
     

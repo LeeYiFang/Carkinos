@@ -156,3 +156,5 @@ src/sanger_cell_line_proj.npy
 *.ipynb
 src/nci60.npy
 src/sanger_cell_line_proj.npy
+# user static file
+src/static/heatmap/
