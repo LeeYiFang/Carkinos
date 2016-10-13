@@ -1261,7 +1261,7 @@ def heatmap(request):
     stop_end=pro_number+1
     for w in sortkey: 
         if (presult[w]<pro_number):
-            #print(presult[w],":",w.Probe_id)
+            print(presult[w],":",w.Probe_id)
             express_mean=np.mean(np.array(express[w]))
             expression.append(list((np.array(express[w]))-express_mean))
             
@@ -1316,7 +1316,7 @@ def heatmap(request):
     #    plt.setp(x,rotation=330)
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
     sid=str(request.session.session_key)+".png"
-    #sid="temp.png"
+    print(sid)
     P=Path('../').resolve().joinpath('src','static','heatmap',sid)
     
     g.savefig(str(P))
