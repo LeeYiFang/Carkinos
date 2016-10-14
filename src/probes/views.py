@@ -1258,7 +1258,7 @@ def heatmap(request):
     
     counter=1
     pro_number=float(request.POST['probe_number'])
-    stop_end=500
+    stop_end=250
     for w in sortkey: 
         if (presult[w]<pro_number):
             #print(presult[w],":",w.Probe_id)
@@ -1316,6 +1316,7 @@ def heatmap(request):
     #for x in g.ax_heatmap.get_xticklabels():
     #    plt.setp(x,rotation=330)
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
+    request.session.modified=True
     sid=str(request.session.session_key)+".png"
     print(sid)
     P=Path('../').resolve().joinpath('src','static','image',sid)
