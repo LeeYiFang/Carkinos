@@ -1318,7 +1318,7 @@ def heatmap(request):
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
     sid=str(request.session.session_key)+".png"
     print(sid)
-    P=Path('../').resolve().joinpath('src','static','heatmap',sid)
+    P=Path('../').resolve().joinpath('src','static','image',sid)
     
     g.savefig(str(P))
 
