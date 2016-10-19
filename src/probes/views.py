@@ -18,6 +18,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 
+import uuid
+import logging
+logger = logging.getLogger("Carkinos")
+
+
 
 def generate_samples():
     samples = Sample.objects.filter(
@@ -1075,6 +1080,7 @@ def heatmap(request):
     sample_out=[]
     
     ##open all the file
+    logger.info('open all the file')
     sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
     nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
     gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
@@ -1176,6 +1182,7 @@ def heatmap(request):
         
         #get binary data
         s_group_dict={}  #store sample
+        logger.info('Store sample for selection part')
         val=[] #store value get from binary data 
         group_name=[]
         for i in range(1,group_counter+1):
@@ -1217,7 +1224,7 @@ def heatmap(request):
                     gse_data=gse_val[np.ix_(probe_offset,list(goffset))]
                 
                 #append nci60 and gse36133 as g_data
-               
+                logger.info('append nci60 and gse36133 as g_data')
                 s_group_dict['g'+str(i)]=list(s_nci)+list(s_gse)
                 if(nci_flag==1 and gse_flag==1):
                     g_data=np.concatenate((nci_data,gse_data),axis=1)
@@ -1231,7 +1238,7 @@ def heatmap(request):
             
     #run the one way ANOVA test or ttest for every probe base on the platform selected    
     express={}
-    
+    logger.info('run ttest or anova')
     if group_counter<=2:
         for i in range(0,len(all_probe)):    #need to fix if try to run on laptop
             presult[all_probe[i]]=stats.ttest_ind(list(val[0][i]),list(val[1][i]),equal_var=False,nan_policy='omit')[1]
@@ -1258,7 +1265,7 @@ def heatmap(request):
     
     counter=1
     pro_number=float(request.POST['probe_number'])
-    stop_end=250
+    stop_end=100
     for w in sortkey: 
         if (presult[w]<pro_number):
             #print(presult[w],":",w.Probe_id)
@@ -1284,7 +1291,7 @@ def heatmap(request):
                 sample_out.append(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")   
             sample_counter+=1
         n_counter+=1
-    
+    logger.info('finish combine output samples')
     sns.set(font="monospace")
     data=np.array(expression)
     test=pd.DataFrame(data=expression,index=probe_out,columns=sample_out)
@@ -1303,7 +1310,7 @@ def heatmap(request):
     my_cmap = LinearSegmentedColormap('my_colormap',cdict,256)
     g = sns.clustermap(test,cmap=my_cmap)
     plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
-    
+    plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=5)
     
     '''hm = g.ax_heatmap.get_position()
     plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=5)
@@ -1316,8 +1323,8 @@ def heatmap(request):
     #for x in g.ax_heatmap.get_xticklabels():
     #    plt.setp(x,rotation=330)
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
-    request.session.modified=True
-    sid=str(request.session.session_key)+".png"
+    logger.info('plot heatmap')
+    sid=str(uuid.uuid4())+".png"
     print(sid)
     P=Path('../').resolve().joinpath('src','static','image',sid)
     
@@ -1505,12 +1512,14 @@ def pca(request):
                 
                 
                 #append nci60 and gse36133 as g_data
+                logger.info('append nci60 and gse36133 as g_data in pca')
                 s_group_dict['g'+str(i)]=list(s_nci)+list(s_gse)
                 offset_group_dict['g'+str(i)]=goffset_nci+goffset_gse
                 cell_line_dict['g'+str(i)]=cell_nci+cell_gse
                 
 
     #delete nan, transpose matrix
+    logger.info('delete nan and transpose matrix in pca')
     if pform=="U133A":
         sanger_val=sanger_val[~np.isnan(sanger_val).any(axis=1)]
         sanger_val=np.matrix(sanger_val)[:,:]#need fix
@@ -1580,7 +1589,7 @@ def pca(request):
     Y5=[]
     Z5=[]
     n=3  #need to fix to the best one #need to fix proportion 
-    
+    logger.info('pca show')
     if 'd_sample' in show:
         #count the pca first
         pca= PCA(n_components=n)
@@ -1679,6 +1688,7 @@ def pca(request):
         return_html='pca.html'
     else:
         #This part is for centroid display
+        logger.info('pca show in centroid')
         return_html='pca_center.html'
         #deal with text part first, get all cell line base on platform instead of dataset--->different group need to filter same cell line name first
         #count the centroid--->use this new data to run pca--->new location to count distance
@@ -1798,7 +1808,7 @@ def pca(request):
         else:
         #This part is for select cell line base on dataset,count centroid base on the dataset
         #group中的cell line為單位來算重心
-
+            logger.info('pca show centroid with selection')
             location_dict={} #{group number:[[cell object,dataset,new location]]}
             combined=[]
             sample_list=[]
@@ -1934,7 +1944,7 @@ def pca(request):
                         Y5.append(round(new_val[group_c[2]][1],5))
                         Z5.append(round(new_val[group_c[2]][2],5)) 
                 out_group.append([g,output_cell])
-                    
+    logger.info('end pca')    
     return render_to_response(return_html,RequestContext(request,
     {
     'min':min,'max':max,
