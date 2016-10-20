@@ -19,7 +19,8 @@
 <img src="{{STATIC_URL}}image/{{file_name}}">
 
 </br>
-<p>The heatmap will show the p-value > {{pro_number}} probes that are most significant.</p> 
+<p>The heatmap will show the most significant 100 probes with p-value < {{pro_number}}.</p> 
+<p>If it does not have 100 probes, the heatmap will just show all the probes with p-value < {{pro_number}}.</p>
 <p>"SCLP" is short for Sanger Cell Line Project</p>
 
 

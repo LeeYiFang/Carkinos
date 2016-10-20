@@ -429,7 +429,7 @@ $("#submit").click(function() {
                     $("#select_error").append('<br /><p style="color:red;">'+
                         'The cell line selection part of Sanger Cell Line Project(SCLP) in Group'+ i +' cannot be empty.</p>');
                 
-                };
+                }
             };
             if($("#nci_g"+i).is(':checked'))
             {
@@ -440,7 +440,7 @@ $("#submit").click(function() {
                     $("#select_error").append('<br /><p style="color:red;">'+
                         'The cell line selection part of NCI60 in Group'+ i +' cannot be empty.</p>');
                 
-                };
+                }
             };
             if($("#gse_g"+i).is(':checked'))
             {
@@ -451,12 +451,17 @@ $("#submit").click(function() {
                     $("#select_error").append('<br /><p style="color:red;">'+
                         'The cell line selection part of CCLE(GSE36133) in Group'+ i +' cannot be empty.</p>');
                 
-                };
+                }
+                
             };
+            
         };
+        
+        
     };    
     if ($("#text").is(':checked')) {
         var ef=0;
+        var cell_content=[];
         $("#error_display").empty();
         for (var i=1;i<=num; i++)
         {
@@ -479,6 +484,7 @@ $("#submit").click(function() {
         for (var i=1;i<=num; i++)
         {   
             var lines = $("textarea[id='cellline_g"+i+"']").val().split(/\s+/);
+            $.merge( cell_content, lines )
             var counter=0;
             for (var j=0; j < lines.length; j++) 
             {
@@ -516,6 +522,13 @@ $("#submit").click(function() {
                     'please input at least one cell line in Group' + i +'</p>');
                 ef=1;
             }
+            /*var uni=jQuery.unique(cell_content);
+            if((cell_counter<3) || (uni.length<3))
+            {
+                ef=1;
+                $("#error_display").append('<br /><p style="color:red;">' + 
+                            'please input at least three cell lines in Step4(you may have duplicate one or do not have at least three)');
+            }*/
           
         };
         

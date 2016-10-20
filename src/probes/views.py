@@ -1240,7 +1240,7 @@ def heatmap(request):
     express={}
     #logger.info('run ttest or anova')
     if group_counter<=2:
-        for i in range(0,40):#len(all_probe)):    #need to fix if try to run on laptop
+        for i in range(0,len(all_probe)):    #need to fix if try to run on laptop
             presult[all_probe[i]]=stats.ttest_ind(list(val[0][i]),list(val[1][i]),equal_var=False,nan_policy='omit')[1]
             express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
     else:
@@ -1279,7 +1279,7 @@ def heatmap(request):
         
         if counter>=stop_end:
             break
-    
+
     n_counter=1
     for n in group_name:
         sample_counter=1
@@ -1293,7 +1293,6 @@ def heatmap(request):
         n_counter+=1
     #logger.info('finish combine output samples')
     sns.set(font="monospace")
-    data=np.array(expression)
     test=pd.DataFrame(data=expression,index=probe_out,columns=sample_out)
     cdict = {'red':   ((0.0, 0.0, 0.0),
                        (0.5, 0.0, 0.1),
@@ -1308,16 +1307,21 @@ def heatmap(request):
             }
     
     my_cmap = LinearSegmentedColormap('my_colormap',cdict,256)
-    g = sns.clustermap(test,cmap=my_cmap)
+    try:
+        g = sns.clustermap(test,cmap=my_cmap)
+    
+    except ValueError:
+        return render_to_response('noprobe.html',RequestContext(request,
+        {
+        'probe_out':probe_out,
+        'pro_number':pro_number,
+        }))
+    
     plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
-    plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=5)
-    
-    '''hm = g.ax_heatmap.get_position()
-    plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=5)
-    g.ax_heatmap.set_position([hm.x0, hm.y0, hm.width, hm.height])
-    col = g.ax_col_dendrogram.get_position()
-    g.ax_col_dendrogram.set_position([col.x0, col.y0, col.width*0.25, col.height*0.5])'''
-    
+    if counter>=100:
+        plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=5)
+    else:
+        plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=6)
     
     
     #for x in g.ax_heatmap.get_xticklabels():
@@ -1333,11 +1337,8 @@ def heatmap(request):
     file_name=sid
     return render_to_response('heatmap.html',RequestContext(request,
         {
-        'pro_number':pro_number,
-        'sample_out':mark_safe(json.dumps(sample_out)),
-        'expression':expression,
-        'probe_out':mark_safe(json.dumps(probe_out)),
         'file_name':file_name,
+        'pro_number':pro_number,
         }))
 
     
@@ -1588,7 +1589,7 @@ def pca(request):
     X5=[]
     Y5=[]
     Z5=[]
-    n=3  #need to fix to the best one #need to fix proportion 
+    n=4  #need to fix to the best one #need to fix proportion 
     #logger.info('pca show')
     if 'd_sample' in show:
         #count the pca first
@@ -1729,11 +1730,13 @@ def pca(request):
             #run the pca again here and store it with new offset to get the new pca data
             print(len(X_val[0]))
             X_val=np.matrix(X_val)
-            pca= PCA(n_components=3)
+            pca= PCA(n_components=n)   #NOTICE:n or 3??
             new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
             ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[0:3])
-            table_propotion=sum(ratio_temp[0:n+1])
+            propotion=sum(ratio_temp[1:4])
+            table_propotion=sum(ratio_temp[1:n+1])
+            #propotion=sum(ratio_temp[0:3])
+            #table_propotion=sum(ratio_temp[0:n+1])
             print(new_val)
             
             out_group=[]
@@ -1779,14 +1782,14 @@ def pca(request):
                         
                         if(g==1):
                             name1.append(cell.name+'<br>'+dataset_dict[cell])
-                            X1.append(round(new_val[index_cell][0],5))
-                            Y1.append(round(new_val[index_cell][1],5))
-                            Z1.append(round(new_val[index_cell][2],5))
+                            X1.append(round(new_val[index_cell][1],5))
+                            Y1.append(round(new_val[index_cell][2],5))
+                            Z1.append(round(new_val[index_cell][3],5))
                         elif(g==2):
                             name2.append(cell.name+'<br>'+dataset_dict[cell])
-                            X2.append(round(new_val[index_cell][0],5))
-                            Y2.append(round(new_val[index_cell][1],5))
-                            Z2.append(round(new_val[index_cell][2],5))
+                            X2.append(round(new_val[index_cell][1],5))
+                            Y2.append(round(new_val[index_cell][2],5))
+                            Z2.append(round(new_val[index_cell][3],5))
                         elif(g==3):
                             name3.append(cell.name+'<br>'+dataset_dict[cell])
                             X3.append(round(new_val[index_cell][0],5))
