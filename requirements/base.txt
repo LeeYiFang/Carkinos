@@ -1,6 +1,6 @@
 # Django
 # https://www.djangoproject.com/
-Django >= 1.9, < 2.0
+Django == 1.9
 
 # Compresses linked and inline JavaScript or CSS into a single cached file.
 # https://django-compressor.readthedocs.org/en/latest/
