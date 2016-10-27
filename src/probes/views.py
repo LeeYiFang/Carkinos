@@ -1,7 +1,7 @@
 from django.shortcuts import render,render_to_response
 from django.http import HttpResponse, Http404
 from django.views.decorators.http import require_GET
-from .models import Dataset, CellLine, ProbeID, Sample, Platform
+from .models import Dataset, CellLine, ProbeID, Sample, Platform, Clinical_Dataset,Clinical_sample
 from django.template import RequestContext
 from django.utils.html import mark_safe
 import json
@@ -97,8 +97,47 @@ def generate_samples():
         'ccle':ccle,
         
     }
-
-
+    
+def sample_microarray(request):
+    
+    d=Clinical_Dataset.objects.all()
+    d_name=list(d.values_list('name',flat=True))
+    datasets=[]  #[[dataset_name,[[primary_site,[primary_histology]]]]
+    primarys=[]  #[[primary_site,[primary_hist]]]
+    for i in d_name:
+        
+        datasets.append([i,[]])
+        sample=Clinical_sample.objects.filter(dataset_id__name=i).order_by('primary_site')
+        sites=list(sample.values_list('primary_site',flat=True))
+        hists=list(sample.values_list('primary_hist',flat=True))
+        
+        dis_prim=list(sample.values_list('primary_site',flat=True).distinct())
+        hists=list(hists)
+        id_counter=0
+       
+        for p in range(0,len(dis_prim)):
+            temp=sites.count(dis_prim[p])
+            datasets[-1][1].append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
+            id_counter+=temp
+    
+    sample=Clinical_sample.objects.all().order_by('primary_site')
+    sites=list(sample.values_list('primary_site',flat=True))
+    hists=list(sample.values_list('primary_hist',flat=True))
+    dis_prim=list(sample.values_list('primary_site',flat=True).distinct())
+    hists=list(hists)
+    id_counter=0
+       
+    for p in range(0,len(dis_prim)):
+        temp=sites.count(dis_prim[p])
+        primarys.append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
+        id_counter+=temp
+    
+    return render(request, 'sample_microarray.html', {
+        'd_name': mark_safe(json.dumps(d_name)),
+        'datasets': datasets,
+        'primarys': primarys,
+        
+    })
 def user_pca(request):
 
     #load the ranking file and the table of probe first,open files
@@ -119,18 +158,39 @@ def user_pca(request):
         nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
         gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
     
+    uni_probe=pd.unique(probe_list.PROBEID)
     #read the user file(suppose only one file now)    
     text=request.FILES.getlist('user_file')
     user_counter=len(text)
+    for x in range(1,user_counter+1):
+        #check the file format and content here first        
+        filetype=str(text[x-1]).split('.')
+        if(filetype[-1]!="csv"):
+            return HttpResponse('You have the wrong file type. Please upload .csv files')
+        if(text[x-1].size>=80000000): #bytes
+            return HttpResponse('The file size is too big. Please upload .csv file with size less than 80MB.')
+        temp_data = pd.read_csv(text[x-1])
+        if(len(temp_data.index)<(len(uni_probe)/2)):
+            return HttpResponse('The file has less than 1/2 probes of the platform.')
+            
     user_dict={} #{user group number:user 2d array}
     new_name=[]
     origin_name=[]
+    return render_to_response('welcome.html',locals())
+    
     for x in range(1,user_counter+1):
+        
         temp_data = pd.read_csv(text[x-1])
+        col=list(temp_data.columns.values)
+        col[0]='probe'
+        temp_data.columns=col
         temp_data.index = temp_data['probe']
         temp_data.index.name = None
         temp_data=temp_data.iloc[:, 1:]
-        temp_data=temp_data.reindex(pd.unique(probe_list.PROBEID))
+        try:
+            temp_data=temp_data.reindex(uni_probe)
+        except ValueError:
+            return HttpResponse('The file have probes with the same names, please remove them or let them be unique.')
         temp_data=temp_data.rank(method='dense')
         print(len(temp_data))
         #add "use_" to user's sample names
@@ -140,6 +200,7 @@ def user_pca(request):
         temp_data.columns=col_name
         new_name=new_name+col_name
         
+
         for i in col_name:
             for j in range(0,len(temp_data[i])):
                 if(not(np.isnan(temp_data[i][j]))):
@@ -392,7 +453,7 @@ def user_pca(request):
     X5=[]
     Y5=[]
     Z5=[]
-    n=3  #need to fix to the best one #need to fix proportion 
+    n=4  #need to fix to the best one #need to fix proportion 
     
     if 'd_sample' in show:
         #count the pca first
@@ -402,8 +463,8 @@ def user_pca(request):
         temp_offset=all_offset+[x for x in range(user_offset,len(val))]
         Xval = pca.fit_transform(val[temp_offset,:])  #cannot get Xval with original offset any more
         ratio_temp=pca.explained_variance_ratio_
-        propotion=sum(ratio_temp[0:3])
-        table_propotion=sum(ratio_temp[0:n+1])
+        propotion=sum(ratio_temp[1:n])
+        table_propotion=sum(ratio_temp[0:n])
         user_new_offset=len(all_offset)
         print(Xval)
         
@@ -480,19 +541,19 @@ def user_pca(request):
                     
                 if(g==1):
                     name3.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X3.append(round(Xval[s][0],5))
-                    Y3.append(round(Xval[s][1],5))
-                    Z3.append(round(Xval[s][2],5))
+                    X3.append(round(Xval[s][n-3],5))
+                    Y3.append(round(Xval[s][n-2],5))
+                    Z3.append(round(Xval[s][n-1],5))
                 elif(g==2):
                     name4.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X4.append(round(Xval[s][0],5))
-                    Y4.append(round(Xval[s][1],5))
-                    Z4.append(round(Xval[s][2],5))
+                    X4.append(round(Xval[s][n-3],5))
+                    Y4.append(round(Xval[s][n-2],5))
+                    Z4.append(round(Xval[s][n-1],5))
                 elif(g==3):
                     name5.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X5.append(round(Xval[s][0],5))
-                    Y5.append(round(Xval[s][1],5))
-                    Z5.append(round(Xval[s][2],5))
+                    X5.append(round(Xval[s][n-3],5))
+                    Y5.append(round(Xval[s][n-2],5))
+                    Z5.append(round(Xval[s][n-1],5))
                 
             dictlist=[]
             for key, value in output_cell.items():
@@ -557,14 +618,14 @@ def user_pca(request):
 
                     if g_count==1:
                         name1.append(origin_name[i-user_new_offset])
-                        X1.append(round(Xval[i][0],5))
-                        Y1.append(round(Xval[i][1],5))
-                        Z1.append(round(Xval[i][2],5))
+                        X1.append(round(Xval[i][n-3],5))
+                        Y1.append(round(Xval[i][n-2],5))
+                        Z1.append(round(Xval[i][n-1],5))
                     else:
                         name2.append(origin_name[i-user_new_offset])
-                        X2.append(round(Xval[i][0],5))
-                        Y2.append(round(Xval[i][1],5))
-                        Z2.append(round(Xval[i][2],5))
+                        X2.append(round(Xval[i][n-3],5))
+                        Y2.append(round(Xval[i][n-2],5))
+                        Z2.append(round(Xval[i][n-1],5))
                     if ((i-user_new_offset+1)==u_count):
                         dictlist=[]
                         for key, value in output_cell.items():
@@ -643,11 +704,11 @@ def user_pca(request):
                 X_val.append(list(val_a[x]))
             print(len(X_val[0]))
             X_val=np.matrix(X_val)
-            pca= PCA(n_components=3)
+            pca= PCA(n_components=n)
             new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
             ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[0:3])
-            table_propotion=sum(ratio_temp[0:n+1])
+            propotion=sum(ratio_temp[1:n])
+            table_propotion=sum(ratio_temp[0:n])
             print(new_val)
             
             out_group=[]
@@ -710,19 +771,19 @@ def user_pca(request):
                                     u_count+=0
                         if(g==1):
                             name3.append(cell.name+'<br>'+dataset_dict[cell])
-                            X3.append(round(new_val[index_cell][0],5))
-                            Y3.append(round(new_val[index_cell][1],5))
-                            Z3.append(round(new_val[index_cell][2],5))
+                            X3.append(round(new_val[index_cell][n-3],5))
+                            Y3.append(round(new_val[index_cell][n-2],5))
+                            Z3.append(round(new_val[index_cell][n-1],5))
                         elif(g==2):
                             name4.append(cell.name+'<br>'+dataset_dict[cell])
-                            X4.append(round(new_val[index_cell][0],5))
-                            Y4.append(round(new_val[index_cell][1],5))
-                            Z4.append(round(new_val[index_cell][2],5))
+                            X4.append(round(new_val[index_cell][n-3],5))
+                            Y4.append(round(new_val[index_cell][n-2],5))
+                            Z4.append(round(new_val[index_cell][n-1],5))
                         elif(g==3):
                             name5.append(cell.name+'<br>'+dataset_dict[cell])
-                            X5.append(round(new_val[index_cell][0],5))
-                            Y5.append(round(new_val[index_cell][1],5))
-                            Z5.append(round(new_val[index_cell][2],5))
+                            X5.append(round(new_val[index_cell][n-3],5))
+                            Y5.append(round(new_val[index_cell][n-2],5))
+                            Z5.append(round(new_val[index_cell][n-1],5))
                         
                 out_group.append(["Dataset Group"+str(g),output_cell]) 
                 
@@ -782,14 +843,14 @@ def user_pca(request):
                         
                         if g_count==1:
                             name1.append(origin_name[i-user_new_offset])
-                            X1.append(round(new_val[i][0],5))
-                            Y1.append(round(new_val[i][1],5))
-                            Z1.append(round(new_val[i][2],5)) 
+                            X1.append(round(new_val[i][n-3],5))
+                            Y1.append(round(new_val[i][n-2],5))
+                            Z1.append(round(new_val[i][n-1],5)) 
                         else:
                             name2.append(origin_name[i-user_new_offset])
-                            X2.append(round(new_val[i][0],5))
-                            Y2.append(round(new_val[i][1],5))
-                            Z2.append(round(new_val[i][2],5)) 
+                            X2.append(round(new_val[i][n-3],5))
+                            Y2.append(round(new_val[i][n-2],5))
+                            Z2.append(round(new_val[i][n-1],5)) 
                         
                         if ((i-user_new_offset+1)==u_count):    
                             user_out_group.append(["User Group"+str(g_count),output_cell])
@@ -872,11 +933,11 @@ def user_pca(request):
             for x in range(user_offset,len(val)):
                 X_val.append(list(val_a[x]))
             X_val=np.matrix(X_val)
-            pca= PCA(n_components=3)
+            pca= PCA(n_components=n)
             new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
             ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[0:3])
-            table_propotion=sum(ratio_temp[0:n+1])
+            propotion=sum(ratio_temp[1:n])
+            table_propotion=sum(ratio_temp[0:n])
             print(new_val)
 
             out_group=[]
@@ -936,19 +997,19 @@ def user_pca(request):
                                     u_count+=0
                     if(g==1):
                         name3.append(cell.name+'<br>'+group_c[1])
-                        X3.append(round(new_val[group_c[2]][0],5))
-                        Y3.append(round(new_val[group_c[2]][1],5))
-                        Z3.append(round(new_val[group_c[2]][2],5))
+                        X3.append(round(new_val[group_c[2]][n-3],5))
+                        Y3.append(round(new_val[group_c[2]][n-2],5))
+                        Z3.append(round(new_val[group_c[2]][n-1],5))
                     elif(g==2):
                         name4.append(cell.name+'<br>'+group_c[1])
-                        X4.append(round(new_val[group_c[2]][0],5))
-                        Y4.append(round(new_val[group_c[2]][1],5))
-                        Z4.append(round(new_val[group_c[2]][2],5))
+                        X4.append(round(new_val[group_c[2]][n-3],5))
+                        Y4.append(round(new_val[group_c[2]][n-2],5))
+                        Z4.append(round(new_val[group_c[2]][n-1],5))
                     elif(g==3):
                         name5.append(cell.name+'<br>'+group_c[1])
-                        X5.append(round(new_val[group_c[2]][0],5))
-                        Y5.append(round(new_val[group_c[2]][1],5))
-                        Z5.append(round(new_val[group_c[2]][2],5))
+                        X5.append(round(new_val[group_c[2]][n-3],5))
+                        Y5.append(round(new_val[group_c[2]][n-2],5))
+                        Z5.append(round(new_val[group_c[2]][n-1],5))
                     
                 out_group.append(["Dataset Group"+str(g),output_cell])
                 
@@ -1007,14 +1068,14 @@ def user_pca(request):
                             ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
                         if g_count==1:        
                             name1.append(origin_name[i-user_new_offset])
-                            X1.append(round(new_val[i][0],5))
-                            Y1.append(round(new_val[i][1],5))
-                            Z1.append(round(new_val[i][2],5))  
+                            X1.append(round(new_val[i][n-3],5))
+                            Y1.append(round(new_val[i][n-2],5))
+                            Z1.append(round(new_val[i][n-1],5))  
                         else:
                             name2.append(origin_name[i-user_new_offset])
-                            X2.append(round(new_val[i][0],5))
-                            Y2.append(round(new_val[i][1],5))
-                            Z2.append(round(new_val[i][2],5)) 
+                            X2.append(round(new_val[i][n-3],5))
+                            Y2.append(round(new_val[i][n-2],5))
+                            Z2.append(round(new_val[i][n-1],5)) 
                         if ((i-user_new_offset+1)==u_count):
                             user_out_group.append(["User Group"+str(g_count),output_cell])
                             g_count+=1
@@ -1266,8 +1327,10 @@ def heatmap(request):
     counter=1
     pro_number=float(request.POST['probe_number'])
     stop_end=100
+    cell_probe_val=[]
     for w in sortkey: 
         if (presult[w]<pro_number):
+            cell_probe_val.append([w,presult[w]])
             #print(presult[w],":",w.Probe_id)
             express_mean=np.mean(np.array(express[w]))
             expression.append(list((np.array(express[w]))-express_mean))
@@ -1337,6 +1400,7 @@ def heatmap(request):
     file_name=sid
     return render_to_response('heatmap.html',RequestContext(request,
         {
+        'cell_probe_val':cell_probe_val,
         'file_name':file_name,
         'pro_number':pro_number,
         }))
@@ -1596,8 +1660,8 @@ def pca(request):
         pca= PCA(n_components=n)
         Xval = pca.fit_transform(val[all_offset,:])  #cannot get Xval with original offset any more
         ratio_temp=pca.explained_variance_ratio_
-        propotion=sum(ratio_temp[0:3])
-        table_propotion=sum(ratio_temp[0:n+1])
+        propotion=sum(ratio_temp[1:n])
+        table_propotion=sum(ratio_temp[0:n])
         print(Xval)
         
         max=0
@@ -1649,29 +1713,29 @@ def pca(request):
                         
                 if(g==1):
                     name1.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X1.append(round(Xval[s][0],5))
-                    Y1.append(round(Xval[s][1],5))
-                    Z1.append(round(Xval[s][2],5))
+                    X1.append(round(Xval[s][n-3],5))
+                    Y1.append(round(Xval[s][n-2],5))
+                    Z1.append(round(Xval[s][n-1],5))
                 elif(g==2):
                     name2.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X2.append(round(Xval[s][0],5))
-                    Y2.append(round(Xval[s][1],5))
-                    Z2.append(round(Xval[s][2],5))
+                    X2.append(round(Xval[s][n-3],5))
+                    Y2.append(round(Xval[s][n-2],5))
+                    Z2.append(round(Xval[s][n-1],5))
                 elif(g==3):
                     name3.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X3.append(round(Xval[s][0],5))
-                    Y3.append(round(Xval[s][1],5))
-                    Z3.append(round(Xval[s][2],5))
+                    X3.append(round(Xval[s][n-3],5))
+                    Y3.append(round(Xval[s][n-2],5))
+                    Z3.append(round(Xval[s][n-1],5))
                 elif(g==4):
                     name4.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X4.append(round(Xval[s][0],5))
-                    Y4.append(round(Xval[s][1],5))
-                    Z4.append(round(Xval[s][2],5))
+                    X4.append(round(Xval[s][n-3],5))
+                    Y4.append(round(Xval[s][n-2],5))
+                    Z4.append(round(Xval[s][n-1],5))
                 elif(g==5):
                     name5.append(all_cellline[s]+'('+str(exist_cell[cell])+')'+'<br>'+all_sample[s].name)
-                    X5.append(round(Xval[s][0],5))
-                    Y5.append(round(Xval[s][1],5))
-                    Z5.append(round(Xval[s][2],5))
+                    X5.append(round(Xval[s][n-3],5))
+                    Y5.append(round(Xval[s][n-2],5))
+                    Z5.append(round(Xval[s][n-1],5))
             dictlist=[]
             for key, value in output_cell.items():
                 temp = [value]
@@ -1733,10 +1797,8 @@ def pca(request):
             pca= PCA(n_components=n)   #NOTICE:n or 3??
             new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
             ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[1:4])
-            table_propotion=sum(ratio_temp[1:n+1])
-            #propotion=sum(ratio_temp[0:3])
-            #table_propotion=sum(ratio_temp[0:n+1])
+            propotion=sum(ratio_temp[1:n])
+            table_propotion=sum(ratio_temp[0:n])
             print(new_val)
             
             out_group=[]
@@ -1782,29 +1844,29 @@ def pca(request):
                         
                         if(g==1):
                             name1.append(cell.name+'<br>'+dataset_dict[cell])
-                            X1.append(round(new_val[index_cell][1],5))
-                            Y1.append(round(new_val[index_cell][2],5))
-                            Z1.append(round(new_val[index_cell][3],5))
+                            X1.append(round(new_val[index_cell][n-3],5))
+                            Y1.append(round(new_val[index_cell][n-2],5))
+                            Z1.append(round(new_val[index_cell][n-1],5))
                         elif(g==2):
                             name2.append(cell.name+'<br>'+dataset_dict[cell])
-                            X2.append(round(new_val[index_cell][1],5))
-                            Y2.append(round(new_val[index_cell][2],5))
-                            Z2.append(round(new_val[index_cell][3],5))
+                            X2.append(round(new_val[index_cell][n-3],5))
+                            Y2.append(round(new_val[index_cell][n-2],5))
+                            Z2.append(round(new_val[index_cell][n-1],5))
                         elif(g==3):
                             name3.append(cell.name+'<br>'+dataset_dict[cell])
-                            X3.append(round(new_val[index_cell][0],5))
-                            Y3.append(round(new_val[index_cell][1],5))
-                            Z3.append(round(new_val[index_cell][2],5))
+                            X3.append(round(new_val[index_cell][n-3],5))
+                            Y3.append(round(new_val[index_cell][n-2],5))
+                            Z3.append(round(new_val[index_cell][n-1],5))
                         elif(g==4):
                             name4.append(cell.name+'<br>'+dataset_dict[cell])
-                            X4.append(round(new_val[index_cell][0],5))
-                            Y4.append(round(new_val[index_cell][1],5))
-                            Z4.append(round(new_val[index_cell][2],5))
+                            X4.append(round(new_val[index_cell][n-3],5))
+                            Y4.append(round(new_val[index_cell][n-2],5))
+                            Z4.append(round(new_val[index_cell][n-1],5))
                         elif(g==5):
                             name5.append(cell.name+'<br>'+dataset_dict[cell])
-                            X5.append(round(new_val[index_cell][0],5))
-                            Y5.append(round(new_val[index_cell][1],5))
-                            Z5.append(round(new_val[index_cell][2],5)) 
+                            X5.append(round(new_val[index_cell][n-3],5))
+                            Y5.append(round(new_val[index_cell][n-2],5))
+                            Z5.append(round(new_val[index_cell][n-1],5)) 
                 out_group.append([g,output_cell]) 
                            
 
@@ -1872,11 +1934,11 @@ def pca(request):
             #run the pca
             print(len(X_val[0]))
             X_val=np.matrix(X_val)
-            pca= PCA(n_components=3)
+            pca= PCA(n_components=n)
             new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
             ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[0:3])
-            table_propotion=sum(ratio_temp[0:n+1])
+            propotion=sum(ratio_temp[1:n])
+            table_propotion=sum(ratio_temp[0:n])
             print(new_val)
 
 
@@ -1923,29 +1985,29 @@ def pca(request):
                             exist_cell[key_string].append(temp_string)
                     if(g==1):
                         name1.append(cell.name+'<br>'+group_c[1])
-                        X1.append(round(new_val[group_c[2]][0],5))
-                        Y1.append(round(new_val[group_c[2]][1],5))
-                        Z1.append(round(new_val[group_c[2]][2],5))
+                        X1.append(round(new_val[group_c[2]][n-3],5))
+                        Y1.append(round(new_val[group_c[2]][n-2],5))
+                        Z1.append(round(new_val[group_c[2]][n-1],5))
                     elif(g==2):
                         name2.append(cell.name+'<br>'+group_c[1])
-                        X2.append(round(new_val[group_c[2]][0],5))
-                        Y2.append(round(new_val[group_c[2]][1],5))
-                        Z2.append(round(new_val[group_c[2]][2],5))
+                        X2.append(round(new_val[group_c[2]][n-3],5))
+                        Y2.append(round(new_val[group_c[2]][n-2],5))
+                        Z2.append(round(new_val[group_c[2]][n-1],5))
                     elif(g==3):
                         name3.append(cell.name+'<br>'+group_c[1])
-                        X3.append(round(new_val[group_c[2]][0],5))
-                        Y3.append(round(new_val[group_c[2]][1],5))
-                        Z3.append(round(new_val[group_c[2]][2],5))
+                        X3.append(round(new_val[group_c[2]][n-3],5))
+                        Y3.append(round(new_val[group_c[2]][n-2],5))
+                        Z3.append(round(new_val[group_c[2]][n-1],5))
                     elif(g==4):
                         name4.append(cell.name+'<br>'+group_c[1])
-                        X4.append(round(new_val[group_c[2]][0],5))
-                        Y4.append(round(new_val[group_c[2]][1],5))
-                        Z4.append(round(new_val[group_c[2]][2],5))
+                        X4.append(round(new_val[group_c[2]][n-3],5))
+                        Y4.append(round(new_val[group_c[2]][n-2],5))
+                        Z4.append(round(new_val[group_c[2]][n-1],5))
                     elif(g==5):
                         name5.append(cell.name+'<br>'+group_c[1])
-                        X5.append(round(new_val[group_c[2]][0],5))
-                        Y5.append(round(new_val[group_c[2]][1],5))
-                        Z5.append(round(new_val[group_c[2]][2],5)) 
+                        X5.append(round(new_val[group_c[2]][n-3],5))
+                        Y5.append(round(new_val[group_c[2]][n-2],5))
+                        Z5.append(round(new_val[group_c[2]][n-1],5)) 
                 out_group.append([g,output_cell])
     #logger.info('end pca')    
     return render_to_response(return_html,RequestContext(request,
@@ -2045,11 +2107,8 @@ def cellline_microarray(request):
         'sanger':sanger,
         'ccle':ccle,
         'samples': samples,
-        #'primary_sites': primary_sites,
         'ncisamples': ncisamples,
-        #'nciprimary_sites': nciprimary_sites,
         'CCsamples': CCsamples,
-        #'CCprimary_sites': CCprimary_sites,
         
     })
 
@@ -2088,7 +2147,83 @@ def cell_lines(request):
     context['val_pairs']=val_pairs
     return render_to_response('cell_line.html', RequestContext(request, context))
     
+def clinical_search(request):
 
+    norm_name=[request.POST['normalize']]  #get the normalize gene name
+    #get the probe/gene/id keywords
+    if 'keyword' in request.POST and request.POST['keyword'] != '':
+        words = request.POST['keyword']
+        words = list(set(words.split()))
+    else:
+        return HttpResponse("<p>where is your keyword?</p>")
+    
+    plus2_rank=np.load('ranking_u133plus2.npy')   #open only plus2 platform rank
+    sample_probe_val_pairs=[]  #for output
+    
+    if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
+        gene = ProbeID.objects.filter(platform__name__in=["PLUS2"]).filter(Probe_id__in=words).order_by('id') 
+        probe=list(gene.values_list('offset',flat=True))
+        #print(gene)
+    elif 'gtype' in request.POST and request.POST['gtype'] == 'symbol':
+        gene = ProbeID.objects.filter(platform__name__in=["PLUS2"]).filter(Gene_symbol__in=words).order_by('id') 
+        probe=list(gene.values_list('offset',flat=True))
+    else:
+        gene = ProbeID.objects.filter(platform__name__in=["PLUS2"]).filter(Entrez_id__in=words).order_by('id') 
+        probe=list(gene.values_list('offset',flat=True))
+           
+    
+    if request.POST['clinical_method'] == 'prim_dataset':
+        if 'dataset' in request.POST and request.POST['dataset'] != '':
+            datas=request.POST.getlist('dataset')
+            
+    else:
+        d=Clinical_Dataset.objects.all()
+        datas=d.values_list('name',flat=True)
+        com_hists=list(set(request.POST.getlist('primhist')))
+        com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
+        prims=com_hists[0::2]
+        hists=com_hists[1::2]
+    
+    for sets in datas:
+        samples=[]
+        offset=[]        
+        if request.POST['clinical_method'] == 'prim_dataset':
+            com_hists=list(set(request.POST.getlist('primd_'+sets)))
+            com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
+            prims=com_hists[0::2]
+            hists=com_hists[1::2]
+        for i in range(0,len(prims)):
+            s=Clinical_sample.objects.filter(dataset_id__name=sets,primary_site=prims[i],primary_hist=hists[i]).select_related('dataset_id').order_by('id')
+            samples+=list(s) 
+            offset+=list(s.values_list('offset',flat=True))
+
+        pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=sets).data_path)
+        val=np.load(pth.as_posix(),mmap_mode='r')
+        
+        norm_probe=ProbeID.objects.filter(platform__name__in=["PLUS2"]).filter(Gene_symbol__in=norm_name).order_by('id') 
+        probe_offset=list(norm_probe.values_list('offset',flat=True))
+        temp=val[np.ix_(probe_offset,offset)]
+        norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
+        
+        
+        # Make a generator to generate all (cell, probe, val) pairs
+        if(len(gene)!=0 and len(samples)!=0):
+            raw_test=val[np.ix_(probe,offset)]
+            normalize=np.subtract(raw_test,norm)#dimension different!!!!
+           
+            sample_probe_val_pairs += [
+                (c, p, raw_test[probe_ix, cell_ix],54676-np.where(plus2_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
+                for probe_ix, p in enumerate(gene)
+                for cell_ix, c in enumerate(samples)
+            ]
+            
+               
+    return render(request, 'clinical_search.html', {
+        'sample_probe_val_pairs': sample_probe_val_pairs,
+        
+    })
+    
+    
 def data(request):
     SANGER=[]
     sanger_flag=0
@@ -2132,21 +2267,21 @@ def data(request):
                 samples=Sample.objects.filter(dataset_id__name__in=['Sanger Cell Line Project']).order_by('id')       
                 cell=samples.select_related('cell_line_id','dataset_id').filter(cell_line_id__name__in=SANGER).order_by('id') 
                 offset=list(cell.values_list('offset',flat=True))
-                ps_id='1'
+                ps_id=str(Platform.objects.filter(name__in=["U133A"])[0].id)
             if 'NCI60' in datas:
                 nci_flag=1
                 NCI=list(set(request.POST.getlist('select_nci')))
                 ncisamples=Sample.objects.filter(dataset_id__name__in=['NCI60']).select_related('cell_line_id','dataset_id').order_by('id') 
                 ncicell=ncisamples.filter(cell_line_id__name__in=NCI).order_by('id') 
                 ncioffset=list(ncicell.values_list('offset',flat=True))
-                pn_id='3'
+                pn_id=str(Platform.objects.filter(name__in=["PLUS2"])[0].id)
             if 'GSE36133' in datas:
                 gse_flag=1
                 GSE=list(set(request.POST.getlist('select_gse')))
                 CCsamples=Sample.objects.filter(dataset_id__name__in=['GSE36133']).select_related('cell_line_id','dataset_id').order_by('id') 
                 CCcell=CCsamples.filter(cell_line_id__name__in=GSE).order_by('id') 
                 CCoffset=list(CCcell.values_list('offset',flat=True))
-                pn_id='3'
+                pn_id=str(Platform.objects.filter(name__in=["PLUS2"])[0].id)
             if len(SANGER)==0 and len(NCI)==0 and len(GSE)==0:
                 return HttpResponse("<p>please select primary sites.</p>" )
         else:

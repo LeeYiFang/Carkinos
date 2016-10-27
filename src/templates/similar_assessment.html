@@ -79,7 +79,7 @@
 <p>The following input of the groups should be based on the platform you select in Step3.</p>
 <p>Press "Add group" to add more group, and press "Delete group" to delete the last group.</p>
 <p style="color:blue;">Notice: You can have at most 5 groups.</p>
-<p style="color:blue;">Notice: You have to at least input or select three cell line in groups.</p>
+<p style="color:blue;">Notice: You have to at least input or select 4 cell line in groups.</p>
 <p style="color:blue;">Notice: If you input the same cell line in different groups, it will has the color of the first group you input it.</p>
 <div  id="group1">
     
@@ -412,12 +412,12 @@ $("#submit").click(function() {
         //$("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
         //$("#select_error").append('<br /><p>nci:'+(uni_nci.length)+'</p>');
         //$("#select_error").append('<br /><p>total:'+(total_cell)+'</p>');
-        if(total_cell<3)
+        if(total_cell<4)
         {
             //alert("I am here!!");
             ef=1;
             $("#select_error").append('<br /><p style="color:red;">' + 
-                        'please select at least three cell lines in Step4(you may have duplicate one or do not have at least three)');
+                        'please select at least four cell lines in Step4(you may have duplicate one or do not have at least four)');
         }
     };    
     if ($("#text").is(':checked')) {
@@ -497,11 +497,11 @@ $("#submit").click(function() {
           
         };
         var uni=jQuery.unique(cell_content);
-        if((cell_counter<3) || (uni.length<3))
+        if((cell_counter<4) || (uni.length<4))
         {
             ef=1;
             $("#error_display").append('<br /><p style="color:red;">' + 
-                        'please input at least three cell lines in Step4(you may have duplicate one or do not have at least three)');
+                        'please input at least four cell lines in Step4(you may have duplicate one or do not have at least four)');
         }
         
     };

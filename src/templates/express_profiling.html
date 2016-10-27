@@ -50,7 +50,7 @@
 <!--TODO:1.more files can be uploaded with different colors. -->
 <h3>User Group1:Red</h3>
 <p style="color:blue;">Notice:only accept .csv file now</p>
-<input type="file" name="user_file" size="chars"></input>
+<input type="file" name="user_file" size="chars" required="required"></input>
 
 <div id="upload_div"></div>
 
@@ -81,7 +81,7 @@
 <p>Each group of cell lines you define will have different colors.</p>
 <p>Press "Add group" to add more group and "Delete group" to delete the last group below.</p>
 <p style="color:blue;">You can at most have 3 groups.</p>  
-<p style="color:blue;">You need to have at least 3 cell lines in groups.</p>
+<p style="color:blue;">You need to have at least 4 cell lines in groups.</p>
 <div  id="group1">
     
     <div name="select_g1" id="select_g1">
@@ -411,12 +411,12 @@ $("#submit").click(function() {
         //$("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
         //$("#select_error").append('<br /><p>nci:'+(uni_nci.length)+'</p>');
         //$("#select_error").append('<br /><p>total:'+(total_cell)+'</p>');
-        if(total_cell<3)
+        if(total_cell<4)
         {
             //alert("I am here!!");
             ef=1;
             $("#select_error").append('<br /><p style="color:red;">' + 
-                        'please select at least three cell lines in Step4(you may have duplicate one or do not have at least three)');
+                        'please select at least four cell lines in Step4(you may have duplicate one or do not have at least four)');
         }
     };    
     if ($("#text").is(':checked')) {
@@ -496,11 +496,11 @@ $("#submit").click(function() {
           
         };
         var uni=jQuery.unique(cell_content);
-        if((cell_counter<3) || (uni.length<3))
+        if((cell_counter<4) || (uni.length<4))
         {
             ef=1;
             $("#error_display").append('<br /><p style="color:red;">' + 
-                        'please input at least three cell lines in Step4(you may have duplicate one or do not have at least three)');
+                        'please input at least four cell lines in Step4(you may have duplicate one or do not have at least four)');
         }
         
     };
@@ -610,7 +610,7 @@ $(document).on('click', '#user_add', function() {
             $("#upload_div").append(
                 '<div id="upload_user'+index+'">'+
                 '<h3 id="user_group'+index+'">User Group 2: Blue</h3>'+
-                '<input type="file" name="user_file" size="chars"></input>'+
+                '<input type="file" name="user_file" size="chars" required="required"></input>'+
                 '</div>'
             );
 });
