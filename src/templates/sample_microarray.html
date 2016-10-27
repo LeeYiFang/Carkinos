@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block title %}Sample Microarray Data{% endblock title %}
+
+{% block content %}
+    <h1>Sample Microarray Data</h1>
+    <p></p>
+    <form action="{% url 'clinical_search' %}" method="post" target="_blank">{% csrf_token %}
+    
+    <h3>Step1 - Choose type of keywords (gene name or platform identifier):</h3>
+        <h4>Gene:</h4>
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="symbol" checked>Gene symbol
+        </label>
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="entrez">Entrez Gene ID
+        </label>
+        <h4>Platform identifier:</h4>
+        <label class="radio-inline">
+            <input type="radio" name="gtype" value="probeid">Probe ID
+        </label>
+
+    <h3>Step2 - Input keywords:</h3>
+        <p>For more than one keywords, please separate with space or new line</p><!--grammar problem,need fix later-->
+        <p>Example(probe id):1007_s_at 1053_at</p>
+        <p>Suggestion:if you want to search all cell lines in Step3,<br />
+        instead of searching your keywords at once,<br />
+        separate in several searches will be quicker.
+        </p>
+        <style type="text/css">  
+                    .help {display: none}
+        </style> 
+        <div class="form-group">
+                 
+                <label for="keyword">Keyword:</label>
+                <textarea class="form-control" rows="5" id="keyword" name="keyword"
+                style="width:300px;height:100px;" required="required" 
+                placeholder="Enter keyword"/></textarea> 
+                <span class="help" style="color:red;" name="needed1">*Please fill in this part</span>  
+        </div>
+    
+    <h3>Step3 - Enter the clinical sample:</h3>
+        <div class="radio">
+            <label>
+                <input type="radio" name="clinical_method" value="prim_dataset" id="clinical_dataset" >
+                Select by datasets and primary sites
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="clinical_method" value="prim_hist" id="clinical_histology" checked>
+                Select by primary sites and histology
+            </label>
+        </div>
+        
+        <div id="multiple_select">
+            <div id="prim_dataset">  <!--This part is for dataset and primary sites-->
+                <div style="text-indent : 2em ;" id="dataset_check">
+                <p>First choose the dataset, then select the primary site you want for each dataset.</p>
+                <p>Please select dataset(s):</p>        
+                <span class="help" style="color:red;" name="needed">*Please check at least one dataset and primary histology.<br /></span>
+                
+                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="Roth" value="Roth">Roth normal dataset</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset" id="expO" value="expO">Expression Project for Oncology (expO)</label>
+                
+
+                </div>
+                <div id="checking"></div>
+                
+                <!--This part need to be fixed!!!!-->
+                {% with needed="needed_" primd="primd_" primh="primh_" test="test_"%} 
+                {% for name,dataset in datasets %}
+                <div class="panel panel-default" id="{{name}}">
+                  <span class="help" style="color:red;text-indent : 1em ;" name="{{needed}}{{name}}">*The primary histology selection part of {{name}} cannot be empty.<br /></span>
+                  <div class="panel-heading">{{name}}:</div>
+                  <div class="panel-body">
+                    <p>Please select the primary site or primary histology you want.</p>
+                    <select multiple="multiple" id="{{primd}}{{name}}" name="{{primd}}{{name}}">
+                    {% for prim,hist in dataset %}
+                    <optgroup label="{{prim}}" id="optgroup">
+                            {% for h in hist %}
+                            <option value="{{prim}}/{{ h }}">{{ h }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
+                             
+                    </select>
+                  </div>
+                  <div id="{{test}}{{name}}"></div>
+                  </br>
+                  <div id="additional_filter_primd">
+                  
+                  
+                  </div>
+                
+                </div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+            
+            <div id="prim_hist">
+                
+                <div class="panel panel-warning">
+                  <span class="help" style="color:red;text-indent : 1em ;" name="needed_hist">*The primary histology selection part cannot be empty.<br /></span>
+                  <div class="panel-heading">Please select the primary site or primary histology you want:</div>
+                  <div class="panel-body">
+                        <select multiple="multiple" id="primhist" name="primhist">
+                        {% for prim,hist in primarys %}
+                        <optgroup label="{{prim}}" id="optgroup">
+                                {% for h in hist %}
+                                <option value="{{prim}}/{{ h }}">{{ h }}</option>
+                                {% endfor %}
+                        </optgroup>     
+                        {% endfor %}
+                                 
+                        </select>
+                   </div>
+                   <div id="test_hist"></div>
+                   </br>
+                   <div id="additional_filter_primh">
+                  
+                  
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        
+    <h3>Step4 - Normalize method:</h3>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="RPL41" >
+                CV: minimum coefficient of variance(gene:RPL41)
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="GAPDH" checked>
+                GAPDH
+            </label>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="normalize" value="ACTB">
+                ACTB(beta-actin)
+            </label>
+        </div>
+        <div id="select_error"></div>
+    <button class="btn btn-default" type="submit" id="submit">Submit</button>
+    </form>
+{% endblock content %}
+
+{% block scripts %}
+<script src="static/css/multiple-select.js"></script>
+
+<script>
+        $("select").multipleSelect({
+            filter: true,
+            multiple: true,
+            //multipleWidth:100,
+            width: '100%'
+        });
+</script>
+<script>
+$("#submit").click(function() {  
+  if ($("#keyword").val() == "") 
+  {
+    $("span[name='needed1']").show();
+    return false;
+    
+  }
+  else
+  {
+    $("span[name='needed1']").hide();
+  }
+  if($("#clinical_histology").is(':checked'))
+  {
+    if( !$("#primhist").val() ) 
+    {
+        $("span[name='needed_hist']").show();
+        return false;
+    }
+    else
+    {
+        $("span[name='needed_hist']").hide();
+    }
+  }
+  else
+  {
+    if($( "input[name='dataset']:checked" ).length==0)
+    {
+        $("span[name='needed']").css('display', 'block');
+        return false;
+    }
+    
+    var name={{d_name}}//['Roth', 'expO'] 
+    num=name.length
+    for (var i=0;i<num; i++)
+    if($("#"+name[i]).is(':checked'))
+    {
+        if( !$("#primd_"+name[i]).val() ) 
+        {
+            $("span[name='needed_"+name[i]+"']").show();
+            
+            return false;
+        }
+        else
+        {
+            $("span[name='needed_"+name[i]+"']").hide();
+        }
+    }
+    
+    
+  }
+});
+</script>
+<script>
+$(document).ready(function () {
+    $("div[id='prim_dataset']").hide();
+    
+    $("input[name='clinical_method']").change(function(){
+        if ($("#clinical_dataset").is(':checked')) {
+                
+                $("div[class='panel panel-default']").hide();
+                $("div[id='dataset_check']").show();
+                $("div[id='prim_dataset']").show();
+                $("div[id='prim_hist']").hide();
+                
+            }
+        if ($("#clinical_histology").is(':checked'))
+        {   
+                $("div[id='dataset_check']").hide();
+                $("div[id='prim_dataset']").hide();
+                $("div[id='prim_hist']").show();
+                
+        }
+    });
+    $("input:checkbox").change(function(){
+        var id=$(this).attr("id");
+        
+        if ($("#"+id).is(':checked')) {
+            
+            $("div[id='"+id+"']").show();
+        }
+        else
+        {   
+            $("div[id='"+id+"']").hide();
+        }
+        
+        
+    });
+});
+</script>
+<script>
+$( "select[name^='primd']" ).change(function () {
+    var str = "The primary histology you selected: ";
+    var id=$(this).attr("id");
+    id=id.replace('primd_', '');
+    //$("#select_error").append("<p>"+ id +"</p>");
+    $( "select[name='primd_"+id+"'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test_"+id ).text( str ).css("text-indent","1em");
+  }).change();
+  
+$( "select[name='primhist']" ).change(function () {
+    var str = "The primary histology you selected: ";
+    $( "select[name='primhist'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test_hist" ).text( str ).css("text-indent","1em");
+  }).change();
+</script>
+{% endblock %}

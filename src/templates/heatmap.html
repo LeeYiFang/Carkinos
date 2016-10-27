@@ -23,19 +23,78 @@
 <p>If it does not have 100 probes, the heatmap will just show all the probes with p-value < {{pro_number}}.</p>
 <p>"SCLP" is short for Sanger Cell Line Project</p>
 
+<table id="example" class="display">
+    <thead>
+        <tr>
+            <th>No.</th>
+            <th>Probe</th>
+            <th>Gene</th>
+            <th>p-value</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <th>No.</th>
+            <th>Probe</th>
+            <th>Gene</th>
+            <th>p-value</th>
+        </tr>
+    </tfoot>
 
+	<tbody>
+		{% for p,val in cell_probe_val %}
+		<tr>
+            <td></td>
+			<td>{{ p.Probe_id }}</td>
+			<td>{{ p.Gene_symbol }}</td>
+			<td>{{ val|floatformat:5 }}</td>
+		</tr>
+		{% endfor %}
+    </tbody>
+</table>
 
+<div class="bottom"></div>
 
 {% endblock content %}
 
 {% block scripts %}
 <script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.flash.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
+<!--<script type="text/javascript" 
+src="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1.0,b-colvis-1.1.0,b-flash-1.1.0,bhtml5-1.1.0,b-print-1.1.0/datatables.min.js">
+</script>-->
 
 <script>
+ $(document).ready(function() {
+ //$('table[id="example"]').DataTable();
 
-
+ var t = $('table[id="example"]').DataTable( {
+        
+        "columnDefs": [ {
+            "searchable": false,
+            "orderable": false,
+            "targets": 0
+        } ],
+        "order": [[ 1, 'asc' ]]
+    } );
+ 
+    t.on( 'order.dt search.dt', function () {
+        t.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+            cell.innerHTML = i+1;
+        } );
+    } ).draw();
+    $('table[id="example"]').DataTable({
+        destroy: true,
+        dom: 'lfrtBip',
+        buttons: [
+            'excel'
+        ]
+    } );
+        
+ } );
 </script>
 {% endblock %}

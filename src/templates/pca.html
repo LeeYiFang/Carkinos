@@ -20,10 +20,11 @@
     
     
     </div>
-    <p>Percentage of variance explained by 3D pca plot: {{propotion}}</p>
+    <p>Percentage of variance explained by 3D PCA plot: {{propotion}}</p>
     <p>Percentage of variance explained by distance table: {{table_propotion}}</p>
     <p>Maximum distance:{{max}}</p>
     <p>Minimum distance:{{min}}</p>
+    <p>Because of the batch effect, we remove the first dimension of PCA and just use the following three to draw the 3D PCA plot.</p>
     <HR>
     
         {% for index,output_cell in out_group %}

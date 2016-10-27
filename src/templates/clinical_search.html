@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Clinical Sample Microarray Search Results{% endblock title %}
+{% block extra_css %}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.11/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/buttons/1.1.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/select/1.1.0/css/select.dataTables.min.css">
+
+{% endblock extra_css %}
+{% block content %}
+<table id="example" class="display" cellspacing="0">
+    <thead>
+        <tr>
+            <th>No.</th>
+            <th>Dataset</th>
+            <th>Sample name</th>
+            <th>Primary site</th>
+            <th>Primary histology</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Ethnic</th>
+            <th>T</th>
+            <th>N</th>
+            <th>M</th>
+            <th>Stage</th>
+            <th>Grade</th>
+            <th>Metastatic</th>
+            <th>Probe_id</th>
+            <th>Gene_symbol</th>
+            <th>Entrez_id</th>
+            <th>Gene_name</th>
+            <th>value</th>
+            <th>ranking</th>
+            <th>normalized</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <th>No.</th>
+            <th>Dataset</th>
+            <th>Sample name</th>
+            <th>Primary site</th>
+            <th>Primary histology</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Ethnic</th>
+            <th>T</th>
+            <th>N</th>
+            <th>M</th>
+            <th>Stage</th>
+            <th>Grade</th>
+            <th>Metastatic</th>
+            <th>Probe_id</th>
+            <th>Gene_symbol</th>
+            <th>Entrez_id</th>
+            <th>Gene_name</th>
+            <th>value</th>
+            <th>ranking</th>
+            <th>normalized</th>
+        </tr>
+    </tfoot>
+
+	<tbody>
+		{% for c, p, val,rank, norm in sample_probe_val_pairs %}
+		<tr>
+            <td></td>
+			<td>{{ c.dataset_id.name }}</td>
+			<td>{{ c.name }}</td>
+			<td>{{ c.primary_site }}</td>
+			<td>{{ c.primary_hist }}</td>
+            <td>{{ c.age }}</td>
+            <td>{{ c.gender }}</td>
+            <td>{{ c.ethnic }}</td>
+            <td>{{ c.stageT }}</td>
+            <td>{{ c.stageN }}</td>
+            <td>{{ c.stageM }}</td>
+            <td>{{ c.stage }}</td>
+            <td>{{ c.grade }}</td>
+            <td>{{ c.metastatic }}</td>
+			<td>{{ p.Probe_id }}</td>
+			<td>{{ p.Gene_symbol }}</td>
+			<td>{{ p.Entrez_id }}</td>
+			<td>{{ p.Gene_name }}</td>
+			<td>{{ val|floatformat:4 }}</td>
+            {% for i in rank%}
+                <td>{{i}}</td>
+            {% empty %}
+                <td>nan</td>
+            {% endfor %}
+            <td>{{norm|floatformat:4}}</td>
+		</tr>
+		{% endfor %}
+    </tbody>
+    </table>
+   
+    <div class="bottom"></div>
+
+{% endblock content %}
+
+{% block scripts %}
+
+<script src="//cdn.datatables.net/1.10.8/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" language="javascript" src="//cdn.datatables.net/buttons/1.1.1/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" language="javascript" src="//cdn.datatables.net/select/1.1.0/js/dataTables.select.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.flash.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.1.2/js/buttons.html5.min.js"></script>
+<script src="//cdn.datatables.net/buttons/1.2.2/js/buttons.colVis.min.js"></script>
+
+<script>
+ $(document).ready(function() {
+
+ var t = $('table[id="example"]').DataTable( {
+        
+        "columnDefs": [ {
+            "searchable": false,
+            "orderable": false,
+            "targets": 0,
+            
+        }, 
+        //{"visible": false,  "targets": [ 1 ]}
+        ],
+        "order": [[ 1, 'asc' ]]
+    } );
+
+    t.on( 'order.dt search.dt', function () {
+        t.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+            cell.innerHTML = i+1;
+        } );
+    } ).draw();
+    $('table[id="example"]').DataTable(
+    {
+        destroy: true,
+        dom: 'lfrtBip',
+        buttons: [
+            'excel',
+            {
+                extend: 'colvis',
+                columns: [':gt(0)']//':not(:first-child)'
+            }
+        ]
+        
+            
+
+    });
+ } );     
+
+</script>
+
+{% endblock %}
