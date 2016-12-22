@@ -60,6 +60,7 @@
                 <p>Please select dataset(s):</p>        
                 <span class="help" style="color:red;" name="needed">*Please check at least one dataset and primary histology.<br /></span>
                 
+                
                 <label class="checkbox-inline"><input type="checkbox" name="dataset" id="Roth" value="Roth">Roth normal dataset</label>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset" id="expO" value="expO">Expression Project for Oncology (expO)</label>
                 
@@ -69,7 +70,7 @@
                 
                 <!--This part need to be fixed!!!!-->
                 {% with needed="needed_" primd="primd_" primh="primh_" test="test_"%} 
-                {% for name,dataset in datasets %}
+                {% for name,dataset,filter in datasets %}
                 <div class="panel panel-default" id="{{name}}">
                   <span class="help" style="color:red;text-indent : 1em ;" name="{{needed}}{{name}}">*The primary histology selection part of {{name}} cannot be empty.<br /></span>
                   <div class="panel-heading">{{name}}:</div>
@@ -85,14 +86,25 @@
                     {% endfor %}
                              
                     </select>
-                  </div>
-                  <div id="{{test}}{{name}}"></div>
-                  </br>
-                  <div id="additional_filter_primd">
                   
-                  
+                    <div id="{{test}}{{name}}"></div>
+                    </br>
+                    <div name="filter_primd">
+                    <p>Additional filter:(default is "All Selected")</p>
+                            <select multiple="multiple" id="filter_{{name}}" name="filter_{{name}}">
+                                {% for item,choice in filter %}
+                                <optgroup label="{{item}}" id="optgroup">
+                                        {% for h in choice %}
+                                        <option value="{{item}}/{{ h }}">{{ h }}</option>
+                                        {% endfor %}
+                                </optgroup>     
+                                {% endfor %}
+                                     
+                            </select>
+                      
+                    </div>
+                    </br>
                   </div>
-                
                 </div>
                 {% endfor %}
                 {% endwith %}
@@ -114,13 +126,25 @@
                         {% endfor %}
                                  
                         </select>
-                   </div>
+                   
                    <div id="test_hist"></div>
                    </br>
-                   <div id="additional_filter_primh">
-                  
-                  
+                   <div name="filter_primh">
+                   <p>Additional filter:(default is "All Selected")</p>
+                        <select multiple="multiple" id="filter_primh" name="filter_primh">
+                            {% for item,choice in primh_filter %}
+                            <optgroup label="{{item}}" id="optgroup">
+                                    {% for h in choice %}
+                                    <option value="{{item}}/{{ h }}">{{ h }}</option>
+                                    {% endfor %}
+                            </optgroup>     
+                            {% endfor %}
+                                 
+                        </select>
+
                     </div>
+                    </br>
+                  </div>
                 </div>
             </div>
         </div>
@@ -162,6 +186,9 @@
             //multipleWidth:100,
             width: '100%'
         });
+        $("select[name^='filter']").multipleSelect("checkAll");
+        //$("select[id='primh_filter']").multipleSelect("checkAll");
+        
 </script>
 <script>
 $("#submit").click(function() {  
@@ -195,23 +222,24 @@ $("#submit").click(function() {
         return false;
     }
     
-    var name={{d_name}}//['Roth', 'expO'] 
-    num=name.length
+    var name={{d_name}};//['Roth', 'expO'] 
+    num=name.length;
     for (var i=0;i<num; i++)
-    if($("#"+name[i]).is(':checked'))
     {
-        if( !$("#primd_"+name[i]).val() ) 
+        if($("#"+name[i]).is(':checked'))
         {
-            $("span[name='needed_"+name[i]+"']").show();
-            
-            return false;
-        }
-        else
-        {
-            $("span[name='needed_"+name[i]+"']").hide();
+            if( !$("#primd_"+name[i]).val() ) 
+            {
+                $("span[name='needed_"+name[i]+"']").show();
+                
+                return false;
+            }
+            else
+            {
+                $("span[name='needed_"+name[i]+"']").hide();
+            }
         }
     }
-    
     
   }
 });
@@ -227,6 +255,19 @@ $(document).ready(function () {
                 $("div[id='dataset_check']").show();
                 $("div[id='prim_dataset']").show();
                 $("div[id='prim_hist']").hide();
+                var name={{d_name}};//['Roth', 'expO'] 
+                num=name.length;
+                for (var i=0;i<num; i++)
+                {
+                    if($("#"+name[i]).is(':checked'))
+                    {
+                        $("div[id='"+name[i]+"']").show();
+                    }
+                    else
+                    {
+                        $("div[id='"+name[i]+"']").hide();
+                    }
+                }
                 
             }
         if ($("#clinical_histology").is(':checked'))

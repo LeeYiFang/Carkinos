@@ -9,16 +9,6 @@
 </br>
 <form action="{% url 'pca' %}" method="post" target="_blank">{% csrf_token %}
 
-<!--<h3>Step1 - Enter the cell line name:</h3>
-<p><a href="{% url 'cell_lines' %}" target="_blank">See All</a></p>
-<div id="t_cellline">
-    <p>For more than one cell lines, please separate with space or new line</p>
-    <span class="help" style="color:red;" name="needed">*Please enter at least one cell line <br /></span>
-    <textarea class="form-control" rows="5" id="cellline" 
-    style="width:300px;height:100px;" required="required"
-    type="text" name="cellline" placeholder="Enter cell line name"/></textarea> 
-</div>-->
-
 
 <h3>Step1 - Select the PCA display method:</h3>
     <div class="radio">
@@ -41,7 +31,6 @@
 </style> 
 <div id="platform_type">
     <p>Please choose the platform:</p>
-    <p>The cell lines input in Step4 should be based on the platform you select.</p>
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
@@ -58,40 +47,24 @@
     
 </div>
 </br>
-<h3>Step3 - Select the method used in Step4</h3>
-<div class="radio">
-    <label>
-        <input type="radio" name="cell_line_method" value="text" id="text" checked>
-        Select by input cell line names
-    </label>
-</div>
-<div class="radio">
-    <label>
-        <input type="radio" name="cell_line_method" value="select" id="select" >
-        Select by dataset and cell lines
-    </label>
-</div>
 
-</br>
 
-<h3>Step4 - Define Groups:</h3>
+<h3>Step3 - Define Groups:</h3>
 <p>Each group will have different color.</p>
-<p>The following input of the groups should be based on the platform you select in Step3.</p>
 <p>Press "Add group" to add more group, and press "Delete group" to delete the last group.</p>
 <p style="color:blue;">Notice: You can have at most 5 groups.</p>
 <p style="color:blue;">Notice: You have to at least input or select 4 cell line in groups.</p>
 <p style="color:blue;">Notice: If you input the same cell line in different groups, it will has the color of the first group you input it.</p>
-<div  id="group1">
+<div  id="group1">    
     
-    <div name="select_g1" id="select_g1">
         <h3>Group 1: Red</h3>
         <div name="select_platform_g1" id="select_platform_g1">
             <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
             
             
             <div id="select_a_g1">
-                <p>please select the data set(s) you want to compare:</p>
                 <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
+                <p>Cell line datasets:</p>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="sanger_g1" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>
             </div>
         
@@ -99,128 +72,100 @@
         
             <div id="select_plus2_g1">
                 <span class="help" style="color:red;" name="needed1">*Please check at least one dataset<br /></span>
-                <p>please select the data set(s) you want to compare:</p>
+                <p>Cell line datasets:</p>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="nci_g1" value="NCI60">NCI60</label>
-                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="gse_g1" value="GSE36133">CCLE(GSE36133)</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="ccle_g1" value="GSE36133">CCLE(GSE36133)</label>
                 
+            
+            
+                <p>Clinical datasets:</p>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="Roth_g1" value="Roth">Roth normal dataset</label>
+                <label class="checkbox-inline"><input type="checkbox" name="dataset_g1" id="expO_g1" value="expO">Expression Project for Oncology (expO)</label>
+            
             </div>
-        
         </div>
-        
-        <div class="panel panel-default" id="sanger_table_g1">
-          <!-- Default panel contents -->
-            <div class="panel-heading">
-                Sanger Cell Line Project(SCLP):
-            </div>
-            <div class="panel-body">
+    <div name="select_g1" id="select_g1">
+        {% for name,alias,samples,dataset in cell_datasets %}
+            <div class="panel panel-default" id="{{alias}}_table_g1">              
+              <div class="panel-heading">{{name}}:</div>
+              <div class="panel-body">
                 <p>please select the cell lines you want:</p>
-                <div id="test_g1"></div>
-                <select multiple="multiple" id="select_sanger_g1" name="select_sanger_g1">
-                <!--    <optgroup label="ALL" id="optgroup1">
-                        {% for s in celllines %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}
-                    </optgroup>
-                -->
-                {% for p,cell in sanger %}
+                <select multiple="multiple" id="select_{{alias}}_g1" name="select_{{alias}}_g1">
+                
+                {% for p,cell in dataset %}
                 <optgroup label="{{p}}" id="optgroup1">
                         {% for c in cell %}
                         <option value="{{ c }}">{{ c }}</option>
                         {% endfor %}
                 </optgroup>     
                 {% endfor %}
+                         
                 </select>
+              </div>
+              <div id="test_{{alias}}_g1"></div>
+              <br />
+
             </div>
-            
-            <br />
-          
-        </div>
+        {% endfor %}
         
-        <div class="panel panel-default" id="nci_table_g1">
-          <!-- Default panel contents -->
-            <div class="panel-heading">
-                NCI60:
-            </div>
-            <div class="panel-body">
-                <p>please select the cell lines you want:</p>
-                <div id="test_nci_g1"></div>
-                <select multiple="multiple" id="select_nci_g1" name="select_nci_g1">
-                    <!--<optgroup label="ALL" id="optgroup2">
-                        {% for s in ncicelllines %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}
-                    </optgroup>
-                    -->
-                   {% for p,cell in nci %}
-                    <optgroup label="{{p}}" id="optgroup2">
-                            {% for c in cell %}
-                            <option value="{{ c }}">{{ c }}</option>
-                            {% endfor %}
-                    </optgroup>     
+        <!--The clinical sample part-->
+        {% with needed="needed_" primd="primd_" primh="primh_" test="test_"%} 
+        {% for name,dataset,filter in datasets %}
+        <div class="panel panel-default" id="{{name}}_table_g1">
+          <span class="help" style="color:red;text-indent : 1em ;" name="{{needed}}{{name}}">*The primary histology selection part of {{name}} cannot be empty.<br /></span>
+          <div class="panel-heading">{{name}}:</div>
+          <div class="panel-body">
+            <p>Please select the primary site or primary histology you want.</p>
+            <select multiple="multiple" id="{{primd}}{{name}}_g1" name="{{primd}}{{name}}_g1">
+            {% for prim,hist in dataset %}
+            <optgroup label="{{prim}}" id="optgroup">
+                    {% for h in hist %}
+                    <option value="{{prim}}/{{ h }}">{{ h }}</option>
                     {% endfor %}
-                </select>
-            </div>
-            
-            <br />
+            </optgroup>     
+            {% endfor %}
+                     
+            </select>
           
+            <div id="{{test}}{{name}}_g1"></div>
+            </br>
+            <div name="filter_primd_g1">
+            <p>Additional filter:(default is "All Selected")</p>
+                    <select multiple="multiple" id="filter_{{name}}_g1" name="filter_{{name}}_g1">
+                        {% for item,choice in filter %}
+                        <optgroup label="{{item}}" id="optgroup">
+                                {% for h in choice %}
+                                <option value="{{item}}/{{ h }}">{{ h }}</option>
+                                {% endfor %}
+                        </optgroup>     
+                        {% endfor %}
+                             
+                    </select>
+              
+            </div>
+            </br>
+          </div>
         </div>
+        {% endfor %}
+        {% endwith %}
         
-        <div class="panel panel-default" id="ccle_table_g1">
-          <!-- Default panel contents -->
-            <div class="panel-heading">
-                CCLE(GSE36133):
-            </div>
-            <div class="panel-body">
-                <p>please select the cell lines you want:</p>
-                <div id="test_ccle_g1"></div>
-                <select multiple="multiple" id="select_ccle_g1" name="select_ccle_g1">
-                    <!--<optgroup label="ALL" id="optgroup3">
-                        {% for s in CCcelllines %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}
-                    </optgroup>
-                     -->
-                    {% for p,cell in ccle %}
-                    <optgroup label="{{p}}" id="optgroup3">
-                            {% for c in cell %}
-                            <option value="{{ c }}">{{ c }}</option>
-                            {% endfor %}
-                    </optgroup>     
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <br />
-          
-        </div>
     </div>
 
-    <div name="input_g1" id="input_g1">
-        <h3>Group 1: Red</h3>
-        <p>Input the cell lines you want:</p>
-        <p>For more than one cell lines, please separate with space or new line</p>
-        <div class="form-group">
-            <span class="help" style="color:red;" name="needed_group1">*Please enter at least one cell line <br /></span>
-            <textarea class="form-control" rows="5" id="cellline_g1" 
-                style="width:300px;height:100px;" required="required"
-                type="text" name="cellline_g1" placeholder="Enter cell line name"/></textarea> 
-        </div>
-    </div>
 </div>
 
 <div id="more_group"></div>    
     
     
     
-    <div id="error_display"></div>
-    <div id="select_error"></div>
-    </br>
-    <button type="button" class="btn btn-info" id="add_group">Add Group</button>
-    <button type="button" class="btn btn-info" id="delete_group">Delete Group</button>
-    </br>
-    <button class="btn btn-default" type="submit" id="submit">Submit</button>
-    
-    </form>
+<div id="error_display"></div>
+<div id="select_error"></div>
+</br>
+<button type="button" class="btn btn-info" id="add_group">Add Group</button>
+<button type="button" class="btn btn-info" id="delete_group">Delete Group</button>
+</br>
+<button class="btn btn-default" type="submit" id="submit">Submit</button>
+
+</form>
 
 {% endblock content %}
 
@@ -230,281 +175,140 @@
         $("select").multipleSelect({
             filter: true,
             multiple: true,
-            //multipleWidth:100,
             width: '100%'
         });
+        $("select[name^='filter']").multipleSelect("checkAll");
 </script>
 <script>
 $(document).ready(function () {
-    $("div[id^='select_g']").hide();
-    $("div[id^='input_g']").show();
-    $("div[id^='select_platform_g']").hide();
+    $("div[id*='_table_g']").hide();  
+    $("div[id^='select_platform_g']").show();
     $("div[id^='select_a_g']").show();
     $("div[id^='select_plus2_g']").hide();
- 
 });  
-$(document).on('change', 'input[name="cell_line_method"]',function(){
-        if ($("#text").is(':checked')) {
-                //alert("I am in text!!");
-                $("div[id^='select_g']").hide();
-                $("div[id^='select_platform_g']").hide();
-                $("div[id^='input_g']").show();
-                $("textarea").attr('required', '');
-                $("#error_display").show();
-                $("#select_error").hide();
-                
-                
-            }
-        if($("#select").is(':checked')){
-            //alert("I am in select!!");
-            $("div[id^='select_g']").show();
-            $("div[id^='select_platform_g']").show();
-            $("div[id^='input_g']").hide();
-            $("div[id^='sanger_table_g']").hide();
-            $("div[id^='nci_table_g']").hide();
-            $("div[id^='ccle_table_g']").hide();
-            $("textarea").removeAttr('required');
-            $("#error_display").hide();
-            $("#select_error").show();
-            var $div = $('div[id^="group"]:last');
-        var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
-             
-       
-            for (var i=1;i<=num; i++)
-            {   
-                if($("#sanger_g"+i).is(':checked'))
-                {                    
-                    $("#sanger_table_g"+i).show() ;          
-                }
-                else
-                {
-                    $("#sanger_table_g"+i).hide();
-                }
-                if($("#nci_g"+i).is(':checked'))
-                {
-                    $("#nci_table_g"+i).show();           
-                }
-                else
-                {
-                    $("#nci_table_g"+i).hide();
-                }
-                if($("#gse_g"+i).is(':checked'))
-                {
-                    $("#ccle_table_g"+i).show();           
-                }
-                else
-                {
-                    $("#ccle_table_g"+i).hide();
-                }
-                
-            }
-
-        } 
-}); 
 $("#submit").click(function() { 
     var $div = $('div[id^="group"]:last');
     var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
     //var cell_counter=0;
     
-    if ($("#select").is(':checked'))
+
+    var cell_counter=0;
+    var ef=0;
+    $("#select_error").empty();
+    for (var i=1;i<=num; i++)
     {
-        var cell_counter=0;
-        var ef=0;
-        $("#select_error").empty();
-        for (var i=1;i<=num; i++)
-        {
-            //alert("I am in select check!!");
-            if($( "input[name='dataset_g"+i+"']:checked" ).length==0)
-            {
-                ef=1;
-                $("span[name='needed"+i+"']").css('display', 'block');
-            }
-            else
-            {
-                $("span[name='needed"+i+"']").css('display', 'none');
-            };
-            
-        };
-        if(ef==1)
-        {
-            return false;
-        };
-        
-        for (var i=1;i<=num; i++)
-        {
-            if($("#sanger_g"+i).is(':checked'))
-            {
-                if( !$("#select_sanger_g"+i).val() ) 
-                {
-                    //alert("error!!");
-                    ef=1;
-                    $("#select_error").append('<br /><p style="color:red;">'+
-                        'The cell line selection part of Sanger Cell Line Project(SCLP) in Group'+ i +' cannot be empty.</p>');
-                
-                }
-            };
-            if($("#nci_g"+i).is(':checked'))
-            {
-                if( !$("#select_nci_g"+i).val() ) 
-                {
-                    //alert("error!!");
-                    ef=1;
-                    $("#select_error").append('<br /><p style="color:red;">'+
-                        'The cell line selection part of NCI60 in Group'+ i +' cannot be empty.</p>');
-                
-                }
-            };
-            if($("#gse_g"+i).is(':checked'))
-            {
-                if( !$("#select_ccle_g"+i).val() ) 
-                {
-                    //alert("error!!");
-                    ef=1;
-                    $("#select_error").append('<br /><p style="color:red;">'+
-                        'The cell line selection part of CCLE(GSE36133) in Group'+ i +' cannot be empty.</p>');
-                
-                }
-                
-            };
-            
-        };
-        var cell_content_sanger=[];
-        var cell_content_nci=[];
-        var cell_content_ccle=[];
-        var total_cell=0;
-        var uni_sanger=[];
-        var uni_nci=[];
-        var uni_ccle=[];
-        for (var i=1;i<=num; i++)
-        {
-            if($("#sanger_g"+i).is(':checked'))
-            {
-                //alert("I am in sanger checked!");
-                $("select[name='select_sanger_g"+i+"'] option:selected").each(function() {
-                              var indata=$( this ).text();
-                              cell_content_sanger.push(indata);
-                });
-                uni_sanger=jQuery.unique(cell_content_sanger);
-                //total_cell=total_cell+parseInt(uni_sanger.length,10);
-            }
-            if($("#nci_g"+i).is(':checked'))
-            {
-                $("select[name='select_nci_g"+i+"'] option:selected").each(function() {
-                              var indata=$( this ).text();
-                              cell_content_nci.push(indata);
-                });
-                uni_nci=jQuery.unique(cell_content_nci);
-                //total_cell=total_cell+parseInt(uni_nci.length,10);
-            }
-            if($("#gse_g"+i).is(':checked'))
-            {
-                $("select[name='select_ccle_g"+i+"'] option:selected").each(function() {
-                              var indata=$( this ).text();
-                              cell_content_ccle.push(indata);
-                });
-                uni_ccle=jQuery.unique(cell_content_ccle);
-                //total_cell=total_cell+parseInt(uni_ccle.length,10);
-            }
-            
-        }
-        total_cell=total_cell+parseInt(uni_ccle.length,10)+parseInt(uni_nci.length,10)+parseInt(uni_sanger.length,10);
-        //$("#select_error").append('<br /><p>sanger:'+(uni_sanger.length)+'</p>');
-        //$("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
-        //$("#select_error").append('<br /><p>nci:'+(uni_nci.length)+'</p>');
-        //$("#select_error").append('<br /><p>total:'+(total_cell)+'</p>');
-        if(total_cell<4)
-        {
-            //alert("I am here!!");
-            ef=1;
-            $("#select_error").append('<br /><p style="color:red;">' + 
-                        'please select at least four cell lines in Step4(you may have duplicate one or do not have at least four)');
-        }
-    };    
-    if ($("#text").is(':checked')) {
-        var ef=0;
-        var cell_counter=0;
-        var cell_content=[];
-        $("#error_display").empty();
-        for (var i=1;i<=num; i++)
-        {
-            if ($("textarea[id='cellline_g"+i+"']").val() == "") 
-            {
-                ef=1;
-                $("span[name='needed_group"+i+"']").show(); 
-                
-            }
-            else
-            {
-                $("span[name='needed_group"+i+"']").hide();
-            };
-        };
-        if(ef==1)
-        {
-            //alert("I am in return false");
-            return false;
-        };
-        for (var i=1;i<=num; i++)
-        {   
-            
-            var lines = $("textarea[id='cellline_g"+i+"']").val().split(/\s+/);
-            $.merge( cell_content, lines )
-            var counter=0;  //counter for white space
-            for (var j=0; j < lines.length; j++) 
-            {
-               //長度不為0才往下做(或內容為空白)
-              if(lines[j].length==0)
-              {
-                counter=counter+1;
-                continue;
-              }
-              
-              //if not found will equal -1
-              if($("#U133A-id").is(':checked'))
-              {
-                  if(jQuery.inArray(lines[j], {{check_celllines}}) == -1)
-                  {
-                    $("#error_display").append('<br /><p style="color:red;">' + lines[j] +
-                    ' of Group'+ i +' is not in the platform you selected.</p>');
-
-                    ef=1;
-                  }
-                  else
-                  {
-                    cell_counter=cell_counter+1;
-                  }
-              };
-              if($("#PLUS2-id").is(':checked'))
-              {
-                if(jQuery.inArray(lines[j], {{plus2_celllines}}) == -1)
-                  {
-                    $("#error_display").append('<br /><p style="color:red;">' + lines[j] +
-                    ' of Group'+ i +' is not in the platform you selected.</p>');
-
-                    ef=1;
-                  }
-                  else
-                  {
-                    cell_counter=cell_counter+1;
-                  }
-              };
-            };
-            if(counter==lines.length)
-            {
-                $("#error_display").append('<br /><p style="color:red;">' + 
-                    'please input at least one cell line in Group' + i +'</p>');
-                ef=1;
-            }
-          
-        };
-        var uni=jQuery.unique(cell_content);
-        if((cell_counter<4) || (uni.length<4))
+        //alert("I am in select check!!");
+        if($( "input[name='dataset_g"+i+"']:checked" ).length==0)
         {
             ef=1;
-            $("#error_display").append('<br /><p style="color:red;">' + 
-                        'please input at least four cell lines in Step4(you may have duplicate one or do not have at least four)');
+            $("span[name='needed"+i+"']").css('display', 'block');
         }
+        else
+        {
+            $("span[name='needed"+i+"']").css('display', 'none');
+        };
         
     };
+    if(ef==1)
+    {
+        return false;
+    };
+    
+    for (var i=1;i<=num; i++)
+    {
+        var name={{same_name}}; 
+        l=name.length;
+        var cli_name={{d_name}}; 
+        ll=cli_name.length;
+        var full_name={{all_full_name}};
+        for(var j=0;j<l-ll;j++)
+        {
+            if($("#"+name[j]+"_g"+i).is(':checked'))
+            {
+                if( !$("#select_"+name[j]+"_g"+i).val() ) 
+                {
+                    //alert("error!!");
+                    ef=1;
+                    $("#select_error").append('<br /><p style="color:red;">'+
+                        'The cell line selection part of '+full_name[j]+' in Group'+ i +' cannot be empty.</p>');
+                
+                }
+            };
+        };
+       
+        for(var j=0;j<ll;j++)
+        {
+            if($("#"+cli_name[j]+"_g"+i).is(':checked'))
+            {
+                if( !$("#primd_"+cli_name[j]+"_g"+i).val() ) 
+                {
+                    //alert("error!!");
+                    ef=1;
+                    $("#select_error").append('<br /><p style="color:red;">'+
+                        'The histology selection part of '+cli_name[j]+' in Group'+ i +' cannot be empty.</p>');
+                
+                }
+            };
+        };
+    };
+    //fix this part!!!!
+    /*
+    var cell_content_sanger=[];
+    var cell_content_nci=[];
+    var cell_content_ccle=[];
+    var total_cell=0;
+    var uni_sanger=[];
+    var uni_nci=[];
+    var uni_ccle=[];
+    var name={{same_name}}
+    l=name.length;
+        
+    for (var i=1;i<=num; i++)
+    {
+        if($("#sanger_g"+i).is(':checked'))
+        {
+            //alert("I am in sanger checked!");
+            $("select[name='select_sanger_g"+i+"'] option:selected").each(function() {
+                          var indata=$( this ).text();
+                          cell_content_sanger.push(indata);
+            });
+            uni_sanger=jQuery.unique(cell_content_sanger);
+            //total_cell=total_cell+parseInt(uni_sanger.length,10);
+        }
+        if($("#nci_g"+i).is(':checked'))
+        {
+            $("select[name='select_nci_g"+i+"'] option:selected").each(function() {
+                          var indata=$( this ).text();
+                          cell_content_nci.push(indata);
+            });
+            uni_nci=jQuery.unique(cell_content_nci);
+            //total_cell=total_cell+parseInt(uni_nci.length,10);
+        }
+        if($("#ccle_g"+i).is(':checked'))
+        {
+            $("select[name='select_ccle_g"+i+"'] option:selected").each(function() {
+                          var indata=$( this ).text();
+                          cell_content_ccle.push(indata);
+            });
+            uni_ccle=jQuery.unique(cell_content_ccle);
+            //total_cell=total_cell+parseInt(uni_ccle.length,10);
+        }
+        
+    }
+    total_cell=total_cell+parseInt(uni_ccle.length,10)+parseInt(uni_nci.length,10)+parseInt(uni_sanger.length,10);
+    //$("#select_error").append('<br /><p>sanger:'+(uni_sanger.length)+'</p>');
+    //$("#select_error").append('<br /><p>ccle:'+(uni_ccle.length)+'</p>');
+    //$("#select_error").append('<br /><p>nci:'+(uni_nci.length)+'</p>');
+    //$("#select_error").append('<br /><p>total:'+(total_cell)+'</p>');
+    if(total_cell<4)
+    {
+        //alert("I am here!!");
+        ef=1;
+        $("#select_error").append('<br /><p style="color:red;">' + 
+                    'please select at least four cell lines in Step4(you may have duplicate one or do not have at least four)');
+    }
+    */
+    
     
     if(ef==1)
     {
@@ -516,71 +320,57 @@ $("#submit").click(function() {
 <script type="text/javascript">
 //$(document).on('change', 'input[name="data_platform"]',function(){
 $("input[name='data_platform']").change(function(){
+    $("#select_error").empty();
+    if($("#U133A-id").is(':checked')){
+        $("div[id^='select_a_g']").show();
+        $("div[id^='select_plus2_g']").hide();
+        var name={{same_name}}; 
+        l=name.length;
+        for(var j=0;j<l;j++)
+        {
+            $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+        };
+        $("select option").removeProp('selected').removeAttr('selected');
+        $("select").multipleSelect("setSelects", []);
+        $("select[name^='filter']").multipleSelect("checkAll");
+        $("div[id*='_table_g']").hide();
         
-        $("#select_error").empty();
-        if($("#U133A-id").is(':checked')){
-            //alert("in A now");
-            $("div[id^='select_a_g']").show();
-            $("div[id^='select_plus2_g']").hide();
-            $("input[id^='sanger_g']").removeAttr('checked');
-            $("input[id^='nci_g']").removeAttr('checked');
-            $("input[id^='gse_g']").removeAttr('checked');
-            $("select option").removeProp('selected').removeAttr('selected');
-            $("select").multipleSelect("setSelects", []);
-            $("div[id^='sanger_table_g']").hide();
-            $("div[id^='nci_table_g']").hide();
-            $("div[id^='ccle_table_g']").hide();
-            
-            
-        }
-        if($("#PLUS2-id").is(':checked')){
-            $("div[id^='select_a_g']").hide();
-            $("div[id^='select_plus2_g']").show();
-            $("input[id^='sanger_g']").removeAttr('checked');
-            $("input[id^='nci_g']").removeAttr('checked');
-            $("input[id^='gse_g']").removeAttr('checked');
-            $("select option").removeProp('selected').removeAttr('selected');
-            $("select").multipleSelect("setSelects", []);
-            $("div[id^='sanger_table_g']").hide();
-            $("div[id^='nci_table_g']").hide();
-            $("div[id^='ccle_table_g']").hide();
-            
-           
-        }
+        
+    }
+    if($("#PLUS2-id").is(':checked')){
+        $("div[id^='select_a_g']").hide();
+        $("div[id^='select_plus2_g']").show();
+        var name={{same_name}}; 
+        l=name.length;
+        for(var j=0;j<l;j++)
+        {
+            $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+        };
+        $("select option").removeProp('selected').removeAttr('selected');
+        $("select").multipleSelect("setSelects", []);
+        $("select[name^='filter']").multipleSelect("checkAll");
+        $("div[id*='_table_g']").hide();
+    }
     });
 $(document).on('change',"input[name^='dataset_g']",function(){
-        //alert("changed!!");
         var $div = $('div[id^="group"]:last');
         var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
-             
-       
             for (var i=1;i<=num; i++)
-            {   
-                if($("#sanger_g"+i).is(':checked'))
-                {                    
-                    $("#sanger_table_g"+i).show() ;          
-                }
-                else
+            {
+                var name={{same_name}}; 
+                l=name.length;
+                for(var j=0;j<l;j++)
                 {
-                    $("#sanger_table_g"+i).hide();
-                }
-                if($("#nci_g"+i).is(':checked'))
-                {
-                    $("#nci_table_g"+i).show();           
-                }
-                else
-                {
-                    $("#nci_table_g"+i).hide();
-                }
-                if($("#gse_g"+i).is(':checked'))
-                {
-                    $("#ccle_table_g"+i).show();           
-                }
-                else
-                {
-                    $("#ccle_table_g"+i).hide();
-                }
-                
+                    if($("#"+name[j]+"_g"+i).is(':checked'))
+                    {               
+                        //alert("show!!!!");
+                        $("#"+name[j]+"_table_g"+i).show() ;  
+                    }
+                    else
+                    {
+                        $("#"+name[j]+"_table_g"+i).hide();
+                    }               
+                };
             }
 
     
@@ -602,111 +392,102 @@ $(document).on('click', '#add_group', function() {
                 return false;
             };
             $("#more_group").append(
-                '<div id="group'+index+'">'+
-                '<h3 id="gname'+index+'">Group 2: Green</h3>'+
+            '<div id="group'+index+'">'+
+                '<h3 id="gname'+index+'">Group 2:</h3>'+
                 '<div name="select_platform_g'+index+'" id="select_platform_g'+index+'">'+
-                        '<p>Please select the datasets and related cell lines you want in each of the datasets.</p>'+
-                        
+                        '<p>Please select the datasets and related cell lines you want in each of the datasets.</p>'+                        
                         
                         '<div id="select_a_g'+index+'">'+
-                            '<p>please select the data set(s) you want to compare:</p>'+
                             '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
+                            '<p>Cell line datasets:</p>'+
                             '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="sanger_g'+index+'" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>'+
                         '</div>'+
                     
                         
                     
                         '<div id="select_plus2_g'+index+'">'+
-                            '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
+                        '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
+                            '<p>Cell line datasets:</p>'+
                             '<p>please select the data set(s) you want to compare:</p>'+
                             '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="nci_g'+index+'" value="NCI60">NCI60</label>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="gse_g'+index+'" value="GSE36133">CCLE(GSE36133)</label>'+
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="ccle_g'+index+'" value="GSE36133">CCLE(GSE36133)</label>'+
+                            '<p>Clinical datasets:</p>'+
                             
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="Roth_g'+index+'" value="Roth">Roth normal dataset</label>'+
+                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="expO_g'+index+'" value="expO">Expression Project for Oncology (expO)</label>'+
                         '</div>'+
                     
                 '</div>'+
                 '<script src="static/css/multiple-select.js"><\/script>'+
 
-
-                '<div id="select_g'+index+'">'+
-                    '<div class="panel panel-default" id="sanger_table_g'+index+'">'+
-                        '<div class="panel-heading">Sanger Cell Line Project(SCLP):</div>'+
-                        '<div class="panel-body">'+
-                            '<p>please select the cell lines you want:</p>'+
-                            '<div id="test_g'+index+'"></div>'+
-                            '<select multiple="multiple" id="select_sanger_g'+index+'" name="select_sanger_g'+index+'">'+
-                                '{% for p,cell in sanger %}'+
-                                '<optgroup label="{{p}}">'+
-                                        '{% for c in cell %}'+
-                                        '<option value="{{ c }}">{{ c }}</option>'+
-                                        '{% endfor %}'+
-                                '</optgroup>'+     
+                '{% for name,alias,samples,dataset in cell_datasets %}'+
+                    '<div class="panel panel-default" id="{{alias}}_table_g'+index+'">'+              
+                      '<div class="panel-heading">{{name}}:</div>'+
+                      '<div class="panel-body">'+
+                        '<p>please select the cell lines you want:</p>'+
+                        '<select multiple="multiple" id="select_{{alias}}_g'+index+'" name="select_{{alias}}_g'+index+'">'+
+                        
+                        '{% for p,cell in dataset %}'+
+                        '<optgroup label="{{p}}" id="optgroup1">'+
+                                '{% for c in cell %}'+
+                                '<option value="{{ c }}">{{ c }}</option>'+
                                 '{% endfor %}'+
-                            '</select>'+
-                        '</div>'+
-                
-                        '<br />'+
-              
-                    '</div>'+
-                
-                
-                
-                    '<div class="panel panel-default" id="nci_table_g'+index+'">'+
-              
-                        '<div class="panel-heading">NCI60:</div>'+
-                        '<div class="panel-body">'+
-                            '<p>please select the cell lines you want:</p>'+
-                            '<div id="test_nci_g'+index+'"></div>'+
-                            '<select multiple="multiple" id="select_nci_g'+index+'" name="select_nci_g'+index+'">'+
-                                '{% for p,cell in nci %}'+
-                                '<optgroup label="{{p}}">'+
-                                        '{% for c in cell %}'+
-                                        '<option value="{{ c }}">{{ c }}</option>'+
-                                        '{% endfor %}'+
-                                '</optgroup>'+     
-                                '{% endfor %}'+
+                        '</optgroup>'+     
+                        '{% endfor %}'+
                                  
-                            '</select>'+
-                        '</div>'+
-                        
-                        '<br />'+
-                      
+                        '</select>'+
+                      '</div>'+
+                      '<div id="test_{{alias}}_g'+index+'"></div>'+
+                      '<br />'+
+
                     '</div>'+
-                    
-                    '<div class="panel panel-default" id="ccle_table_g'+index+'">'+
-                        '<div class="panel-heading">CCLE(GSE36133):</div>'+
-                        '<div class="panel-body">'+
-                            '<p>please select the cell lines you want:</p>'+
-                            '<div id="test_ccle_g'+index+'"></div>'+
-                            '<select multiple="multiple" id="select_ccle_g'+index+'" name="select_ccle_g'+index+'">'+
-                                '{% for p,cell in ccle %}'+
-                                '<optgroup label="{{p}}">'+
-                                        '{% for c in cell %}'+
-                                        '<option value="{{ c }}">{{ c }}</option>'+
+                '{% endfor %}'+
+        
+                
+                '{% with needed="needed_" primd="primd_" primh="primh_" test="test_"%}'+ 
+                '{% for name,dataset,filter in datasets %}'+
+                
+                '<div class="panel panel-default" id="{{name}}_table_g'+index+'">'+
+                
+                  '<span class="help" style="color:red;text-indent : 1em ;" name="{{needed}}{{name}}">*The primary histology selection part of {{name}} cannot be empty.<br /></span>'+
+                  '<div class="panel-heading">{{name}}:</div>'+
+                  '<div class="panel-body">'+
+                    '<p>Please select the primary site or primary histology you want.</p>'+
+                    '<select multiple="multiple" id="{{primd}}{{name}}_g'+index+'" name="{{primd}}{{name}}_g'+index+'">'+
+                    '{% for prim,hist in dataset %}'+
+                    '<optgroup label="{{prim}}" id="optgroup">'+
+                            '{% for h in hist %}'+
+                            '<option value="{{prim}}/{{ h }}">{{ h }}</option>'+
+                            '{% endfor %}'+
+                    '</optgroup>'+     
+                    '{% endfor %}'+
+                             
+                    '</select>'+
+                  
+                    '<div id="{{test}}{{name}}_g'+index+'"></div>'+
+                    '</br>'+
+                    '<div name="filter_primd_g'+index+'">'+
+                    '<p>Additional filter:(default is "All Selected")</p>'+
+                            '<select multiple="multiple" id="filter_{{name}}_g'+index+'" name="filter_{{name}}_g'+index+'">'+
+                                '{% for item,choice in filter %}'+
+                                '<optgroup label="{{item}}" id="optgroup">'+
+                                        '{% for h in choice %}'+
+                                        '<option value="{{item}}/{{ h }}">{{ h }}</option>'+
                                         '{% endfor %}'+
                                 '</optgroup>'+     
                                 '{% endfor %}'+
+                                     
                             '</select>'+
-                        '</div>'+
-                        
-                        '<br />'+
                       
                     '</div>'+
-
+                    '</br>'+
+                  '</div>'+
                 '</div>'+
-                
-                '<div id="input_g'+index+'">'+
-                    '<p>Input the cell lines you want:</p>'+
-                    '<p>For more than one cell lines, please separate with space or new line</p>'+
-                    '<div class="form-group">'+
-                        '<span class="help" style="color:red;" name="needed_group'+index+'">*Please enter at least one cell line <br /></span>'+
-                        '<textarea class="form-control" rows="5" id="cellline_g'+index+'" '+
-                            'style="width:300px;height:100px;" required="required"'+
-                            'type="text" name="cellline_g'+index+'" placeholder="Enter cell line name"/></textarea> '+
-                    '</div>'+
-                '</div>'+
+                '{% endfor %}'+
+                '{% endwith %}'+
                 
             '</div>'
+               
 
             );
             var $head = $('h3[id^="gname"]:last');
@@ -718,93 +499,60 @@ $(document).on('click', '#add_group', function() {
                 $head.text("Group "+index+": Black");}
             if(index==5){
                 $head.text("Group "+index+": Green");}
-            $("#select_sanger_g" + index).multipleSelect({
-            filter: true,
-            multiple: true,
-            //multipleWidth:100,
-            width: '100%'
-            });
-            $("#select_nci_g" + index).multipleSelect({
-            filter: true,
-            multiple: true,
-            //multipleWidth:100,
-            width: '100%'
-            });
-            $("#select_ccle_g" + index).multipleSelect({
-            filter: true,
-            multiple: true,
-            //multipleWidth:100,
-            width: '100%'
-            });
-            if ($("#text").is(':checked')) {
-                //alert("I am in text!!");
-                $("div[id='select_g"+index+"']").hide();
-                $("div[id='select_platform_g"+index+"']").hide();
-                $("div[id='input_g"+index+"']").show();
-                $("textarea").attr('required', '');
-                
-            };
-            if($("#select").is(':checked')){
-            //alert("I am in select!!");
-                $("div[id='select_g"+index+"']").show();
-                $("div[id='select_platform_g"+index+"']").show();
-                $("div[id='input_g"+index+"']").hide();
-                $("div[id='sanger_table_g"+index+"']").hide();
-                $("div[id='nci_table_g"+index+"']").hide();
-                $("div[id='ccle_table_g"+index+"']").hide();
-                $("textarea").removeAttr('required');
-            } ;
+            
+            var name={{same_name}};
+            l=name.length;
+            for(var j=0;j<l;j++)
+            {
+                $("select[id*='_"+name[j]+"_g"+index+"']").multipleSelect({
+                filter: true,
+                multiple: true,
+                width: '100%'
+                });
+                $("select[name='filter_"+name[j]+"_g"+index+"']").multipleSelect("checkAll");
+            }
+            
+            
             if($("#U133A-id").is(':checked')){
             $("div[id='select_a_g"+index+"']").show();
             $("div[id='select_plus2_g"+index+"']").hide();
-            
-            $("div[id='sanger_table_g"+index+"']").hide();
-            $("div[id='nci_table_g"+index+"']").hide();
-            $("div[id='ccle_table_g"+index+"']").hide();
-            
+            $("div[id*='_table_g"+index+"']").hide();
             
             };
             if($("#PLUS2-id").is(':checked')){
             $("div[id='select_a_g"+index+"']").hide();
-            $("div[id='select_plus2_g"+index+"']").show();
+            $("div[id='select_plus2_g"+index+"']").show();            
+            $("div[id*='_table_g"+index+"']").hide();
             
-            $("div[id='sanger_table_g"+index+"']").hide();
-            $("div[id='nci_table_g"+index+"']").hide();
-            $("div[id='ccle_table_g"+index+"']").hide();
             };
         });
     //});
 </script>
 <script>
 //this part is to show the selected cell lines
-$(document).on('change',"select[name^='select_sanger_g']",function(){
+$(document).on('change',"select[name^='select_']",function(){
     var str = "The cell line(s) you selected: ";
-    var num = parseInt( $(this).prop("id").match(/\d+/g), 10 );
-    $("option:selected", this).each(function() {
+    var id=$(this).attr("id");
+    id=id.replace('select_', '');
+    //$("#select_error").append("<p>"+ id +"</p>");
+    $("select[name='select_"+id+"'] option:selected").each(function() {
       var indata=$( this ).text();
       str += $( this ).text() + " ,";
     });
-    $( "#test_g"+num ).text( str );
-  }).change(); 
-$(document).on('change',"select[name^='select_nci_g']",function(){
-    var str = "The cell line(s) you selected: ";
-    var num = parseInt( $(this).prop("id").match(/\d+/g), 10 );
-    $("option:selected", this).each(function() {
-      var indata=$( this ).text();
-      str += $( this ).text() + " ,";
-    });
-    $( "#test_nci_g"+num ).text( str );
-  }).change(); 
-$(document).on('change',"select[name^='select_ccle_g']",function(){
-    var str = "The cell line(s) you selected: ";
-    var num = parseInt( $(this).prop("id").match(/\d+/g), 10 );
-    $("option:selected", this).each(function() {
-      var indata=$( this ).text();
-      str += $( this ).text() + " ,";
-    });
-    $( "#test_ccle_g"+num ).text( str );
+    $( "#test_"+id ).text( str ).css("text-indent","1em");
   }).change(); 
 
+$(document).on('change',"select[name^='primd_']",function(){
+    var str = "The primary histology you selected: ";
+    var id=$(this).attr("id");
+    id=id.replace('primd_', '');
+    //$("#select_error").append("<p>"+ id +"</p>");
+    $( "select[name='primd_"+id+"'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      str += $( this ).text() + " ,";
+    });
+    $( "#test_"+id ).text( str ).css("text-indent","1em");
+  }).change();
 </script>
 {%endblock%}
 

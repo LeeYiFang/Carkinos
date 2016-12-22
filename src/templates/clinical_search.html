@@ -6,9 +6,200 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.11/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css" />
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/buttons/1.1.1/css/buttons.dataTables.min.css">
 <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/select/1.1.0/css/select.dataTables.min.css">
-
+<style>
+ul, li {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.abgne_tab {
+	clear: left;
+	width: 100%;
+	margin: 10px 0;
+}
+ul.tabs {
+	width: 100%;
+	height: 32px;
+	border-bottom: 2px solid #999;
+	border-left: 1px solid #999;
+}
+ul.tabs li {
+	float: left;
+	height: 31px;
+	line-height: 31px;
+	overflow: hidden;
+	position: relative;
+	margin-bottom: -1px;	/* 讓 li 往下移來遮住 ul 的部份 border-bottom */
+	border: 1px solid #999;
+	border-left: none;
+	background: #e1e1e1;
+}
+ul.tabs li a {
+	display: block;
+	padding: 0 20px;
+	color: #000;
+	border: 1px solid #fff;
+	text-decoration: none;
+}
+ul.tabs li a:hover {
+	background: #ccc;
+}
+ul.tabs li.active  {
+	background: #fff;
+	border-bottom: 1px solid#fff;
+}
+ul.tabs li.active a:hover {
+	background: #fff;
+}
+div.tab_container {
+	clear: left;
+	width: 100%;
+	//border: 1px solid #999;
+	border-top: none;
+	background: #fff;
+}
+div.tab_container .tab_content {
+	padding: 2px;
+}
+div.tab_container .tab_content h2 {
+	margin: 0 0 20px;
+}
+</style>
 {% endblock extra_css %}
 {% block content %}
+<div class="abgne_tab">
+		<ul class="tabs">
+			<li><a href="#tab1">Expression Data</a></li>
+			<li><a href="#tab2">Detail About Sample</a></li>
+		</ul>
+ 
+		<div class="tab_container">
+			<div id="tab1" class="tab_content">
+				<table id="example1" class="display" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Dataset</th>
+                            <th>Sample name</th>
+                            <th>Primary site</th>
+                            <th>Primary histology</th>
+                            <th>Probe_id</th>
+                            <th>Gene_symbol</th>
+                            <th>Entrez_id</th>
+                            <th>Gene_name</th>
+                            <th>value</th>
+                            <th>ranking</th>
+                            <th>normalized</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>No.</th>
+                            <th>Dataset</th>
+                            <th>Sample name</th>
+                            <th>Primary site</th>
+                            <th>Primary histology</th>
+                            <th>Probe_id</th>
+                            <th>Gene_symbol</th>
+                            <th>Entrez_id</th>
+                            <th>Gene_name</th>
+                            <th>value</th>
+                            <th>ranking</th>
+                            <th>normalized</th>
+                        </tr>
+                    </tfoot>
+
+                    <tbody>
+                        {% for c, p, val,rank, norm in sample_probe_val_pairs %}
+                        <tr>
+                            <td></td>
+                            <td>{{ c.dataset_id.name }}</td>
+                            <td>{{ c.name }}</td>
+                            <td>{{ c.primary_site }}</td>
+                            <td>{{ c.primary_hist }}</td>                    
+                            <td>{{ p.Probe_id }}</td>
+                            <td>{{ p.Gene_symbol }}</td>
+                            <td>{{ p.Entrez_id }}</td>
+                            <td>{{ p.Gene_name }}</td>
+                            <td>{{ val|floatformat:4 }}</td>
+                            {% for i in rank%}
+                                <td>{{i}}</td>
+                            {% empty %}
+                                <td>nan</td>
+                            {% endfor %}
+                            <td>{{norm|floatformat:4}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+                   
+                    <div class="bottom"></div>
+
+			</div>
+			<div id="tab2" class="tab_content">
+				<table id="example2" class="display" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Dataset</th>
+                            <th>Sample name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Ethnic</th>
+                            <th>T</th>
+                            <th>N</th>
+                            <th>M</th>
+                            <th>Stage</th>
+                            <th>Grade</th>
+                            <th>Metastatic</th>
+                            
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>No.</th>
+                            <th>Dataset</th>
+                            <th>Sample name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Ethnic</th>
+                            <th>T</th>
+                            <th>N</th>
+                            <th>M</th>
+                            <th>Stage</th>
+                            <th>Grade</th>
+                            <th>Metastatic</th>
+                        </tr>
+                    </tfoot>
+
+                    <tbody>
+                        {% for c, p, val,rank, norm in sample_probe_val_pairs %}
+                        <tr>
+                            <td></td>
+                            <td>{{ c.dataset_id.name }}</td>
+                            <td>{{ c.name }}</td>
+                            <td>{{ c.age }}</td>
+                            <td>{{ c.gender }}</td>
+                            <td>{{ c.ethnic }}</td>
+                            <td>{{ c.stageT }}</td>
+                            <td>{{ c.stageN }}</td>
+                            <td>{{ c.stageM }}</td>
+                            <td>{{ c.stage }}</td>
+                            <td>{{ c.grade }}</td>
+                            <td>{{ c.metastatic }}</td>
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+                   
+                    <div class="bottom"></div>
+
+			</div>
+            
+		</div>
+</div>
+<!--
 <table id="example" class="display" cellspacing="0">
     <thead>
         <tr>
@@ -95,7 +286,7 @@
     </table>
    
     <div class="bottom"></div>
-
+-->
 {% endblock content %}
 
 {% block scripts %}
@@ -111,7 +302,7 @@
 <script>
  $(document).ready(function() {
 
- var t = $('table[id="example"]').DataTable( {
+ var t = $('table[id="example1"]').DataTable( {
         
         "columnDefs": [ {
             "searchable": false,
@@ -129,7 +320,40 @@
             cell.innerHTML = i+1;
         } );
     } ).draw();
-    $('table[id="example"]').DataTable(
+    $('table[id="example1"]').DataTable(
+    {
+        destroy: true,
+        dom: 'lfrtBip',
+        buttons: [
+            'excel',
+            {
+                extend: 'colvis',
+                columns: [':gt(0)']//':not(:first-child)'
+            }
+        ]
+        
+            
+
+    });
+    var t = $('table[id="example2"]').DataTable( {
+        
+        "columnDefs": [ {
+            "searchable": false,
+            "orderable": false,
+            "targets": 0,
+            
+        }, 
+        //{"visible": false,  "targets": [ 1 ]}
+        ],
+        "order": [[ 1, 'asc' ]]
+    } );
+
+    t.on( 'order.dt search.dt', function () {
+        t.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+            cell.innerHTML = i+1;
+        } );
+    } ).draw();
+    $('table[id="example2"]').DataTable(
     {
         destroy: true,
         dom: 'lfrtBip',
@@ -145,7 +369,34 @@
 
     });
  } );     
-
+$(function(){
+	// 預設顯示第一個 Tab
+	var _showTab = 0;
+	$('.abgne_tab').each(function(){
+		// 目前的頁籤區塊
+		var $tab = $(this);
+ 
+		var $defaultLi = $('ul.tabs li', $tab).eq(_showTab).addClass('active');
+		$($defaultLi.find('a').attr('href')).siblings().hide();
+ 
+		// 當 li 頁籤被點擊時...
+		// 若要改成滑鼠移到 li 頁籤就切換時, 把 click 改成 mouseover
+		$('ul.tabs li', $tab).click(function() {
+			// 找出 li 中的超連結 href(#id)
+			var $this = $(this),
+				_clickTab = $this.find('a').attr('href');
+			// 把目前點擊到的 li 頁籤加上 .active
+			// 並把兄弟元素中有 .active 的都移除 class
+			$this.addClass('active').siblings('.active').removeClass('active');
+			// 淡入相對應的內容並隱藏兄弟元素
+			$(_clickTab).stop(false, true).fadeIn().siblings().hide();
+ 
+			return false;
+		}).find('a').focus(function(){
+			this.blur();
+		});
+	});
+});
 </script>
 
 {% endblock %}

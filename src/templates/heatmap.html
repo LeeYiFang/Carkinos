@@ -22,7 +22,56 @@
 <p>The heatmap will show the most significant 100 probes with p-value < {{pro_number}}.</p> 
 <p>If it does not have 100 probes, the heatmap will just show all the probes with p-value < {{pro_number}}.</p>
 <p>"SCLP" is short for Sanger Cell Line Project</p>
+<!--
+<div class="abgne_tab">
+        <ul class="tabs">
+			<li><a href="#tab1">Clinical Sample Info</a></li>
+			<li><a href="#tab2">More Detail About Sample</a></li>
+		</ul>
+ 
+		<div class="tab_container">
+			<div id="tab1" class="tab_content">
+				<table id="example1" class="display" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Dataset</th>
+                            <th>Sample name</th>
+                            <th>Primary site</th>
+                            <th>Primary histology</th>
+                            
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>No.</th>
+                            <th>Dataset</th>
+                            <th>Sample name</th>
+                            <th>Primary site</th>
+                            <th>Primary histology</th>
+                            
+                        </tr>
+                    </tfoot>
 
+                    <tbody>
+                        {% for c, p, val,rank, norm in sample_probe_val_pairs %}
+                        <tr>
+                            <td></td>
+                            <td>{{ c.dataset_id.name }}</td>
+                            <td>{{ c.name }}</td>
+                            <td>{{ c.primary_site }}</td>
+                            <td>{{ c.primary_hist }}</td>                    
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+                   
+                    <div class="bottom"></div>
+
+			</div>
+        </div>
+</div>
+-->
 <table id="example" class="display">
     <thead>
         <tr>

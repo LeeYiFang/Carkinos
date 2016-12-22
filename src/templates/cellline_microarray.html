@@ -81,21 +81,19 @@
         </div>
         <div id="checking"></div>
         
-        <div class="panel panel-default" name="sanger_table" >
-          <!-- Default panel contents -->
-          <span class="help" style="color:red;text-indent : 1em ;" name="sanger_needed">*The cell line selection part of Sanger Cell Line Project(SCLP) cannot be empty.<br /></span>
-          <div class="panel-heading">Sanger Cell Line Project:</div>
+        
+        
+        {% for name,alias,samples,dataset in datasets %}
+        <div class="panel panel-default" name="{{alias}}_table">
+        <span class="help" style="color:red;text-indent : 1em ;" name="{{alias}}_needed">*The cell line selection part of {{name}} cannot be empty.<br /></span>
+          
+          <div class="panel-heading">{{name}}:</div>
           <div class="panel-body">
-            <p>please select the primary site you want</p>
-            <select multiple="multiple" id="select_sanger" name="select_sanger">
-            <!--        <optgroup label="Sanger cell line project" id="optgroup1">
-                        {% for s in primary_sites %}
-                            <option value="{{ s }}">{{ s }}</option>
-                        {% endfor %}
-                    </optgroup>
-            -->
-            {% for p,cell in sanger %}
-            <optgroup label="{{p}}" id="optgroup1">
+            <p>please select the cell line you want</p>
+            <select multiple="multiple" id="select_{{alias}}" name="select_{{alias}}">
+            
+            {% for p,cell in dataset %}
+            <optgroup label="{{p}}" id="optgroup3">
                     {% for c in cell %}
                     <option value="{{ c }}">{{ c }}</option>
                     {% endfor %}
@@ -104,12 +102,12 @@
                      
             </select>
           </div>
-          <div id="test"></div>
+          <div id="test_{{alias}}"></div>
           <br />
           <p style="text-indent : 1em ;">If you don't want to see all the cell line you selected, press "Hide All" to hide them</p>
           <p style="text-indent : 1em ;">Press "Show" to see them again</p>
-          <input type="button" class="btn btn-default" value="Hide All" id="hide_sanger">
-          <input type="button" class="btn btn-default" value="Show" id="show_sanger">
+          <input type="button" class="btn btn-default" value="Hide All" id="hide_{{alias}}">
+          <input type="button" class="btn btn-default" value="Show" id="show_{{alias}}">
           <!-- Table -->
             <table class="table table-striped">
                 <thead>
@@ -123,121 +121,17 @@
                 <tbody>
                 {% for l in samples %}
                     {# Add display:none to increase HTML DOM loading #}
-                    <tr name="{{l.cell_line_id.name}}" class="class1" style="display:none">
+                    <tr name="{{l.cell_line_id.name}}" class="class_{{alias}}" style="display:none">
                         <td>{{ l.cell_line_id.name }}</td>
                         <td>{{ l.cell_line_id.primary_site }}</td>
                         <td>{{ l.cell_line_id.primary_hist }}</td>
-                        <td>Sanger Cell Line Project</td>
+                        <td>{{name}}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
-        <div class="panel panel-default" name="nci_table">
-        <span class="help" style="color:red; text-indent : 1em ;" name="nci_needed">*The cell line selection part of NCI60 cannot be empty.<br /></span>
-          <!-- Default panel contents -->
-          <div class="panel-heading">NCI-60:</div>
-          <div class="panel-body">
-            <p>please select the primary site you want</p>
-            <select multiple="multiple" id="select_nci" name="select_nci">
-            <!--
-                    <optgroup label="nci60" id="optgroup2">
-                            {% for ncip in nciprimary_sites %}
-                            <option value="{{ ncip }}">{{ ncip }}</option>
-                            {% endfor %}
-                    </optgroup>
-            -->
-                    {% for p,cell in nci %}
-                    <optgroup label="{{p}}" id="optgroup2">
-                            {% for c in cell %}
-                            <option value="{{ c }}">{{ c }}</option>
-                            {% endfor %}
-                    </optgroup>     
-                    {% endfor %}
-            </select>
-          </div>
-          <div id="test_nci"></div>
-          <br />
-          <p style="text-indent : 1em ;">If you don't want to see all the cell line you selected, press "Hide All" to hide them</p>
-          <p style="text-indent : 1em ;">Press "Show" to see them again</p>
-          <input type="button" class="btn btn-default" value="Hide All" id="hide_nci">
-          <input type="button" class="btn btn-default" value="Show" id="show_nci">
-          <!-- Table -->
-            <table class="table table-striped">
-                <thead>
-                <tr>
-                    <th>Cell Line name</th>
-                    <th>Primary site</th>
-                    <th>Primary histology</th>
-                    <th>dataset</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for l in ncisamples %}
-                    {# Add display:none to increase HTML DOM loading #}
-                    <tr name="{{l.cell_line_id.name}}" class="class2" style="display:none">
-                        <td>{{ l.cell_line_id.name }}</td>
-                        <td>{{ l.cell_line_id.primary_site }}</td>
-                        <td>{{ l.cell_line_id.primary_hist }}</td>
-                        <td>NCI60</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="panel panel-default" name="gse_table">
-        <span class="help" style="color:red;text-indent : 1em ;" name="ccle_needed">*The cell line selection part of CCLE(GSE36133) cannot be empty.<br /></span>
-          <!-- Default panel contents -->
-          <div class="panel-heading">GSE36133:</div>
-          <div class="panel-body">
-            <p>please select the primary site you want</p>
-            <select multiple="multiple" id="select_gse" name="select_gse">
-            <!--        <optgroup label="gse36133" id="optgroup3">
-                            {% for cc in CCprimary_sites %}
-                            <option value="{{ cc }}">{{ cc }}</option>
-                            {% endfor %}
-                    </optgroup>
-            -->
-            {% for p,cell in ccle %}
-            <optgroup label="{{p}}" id="optgroup3">
-                    {% for c in cell %}
-                    <option value="{{ c }}">{{ c }}</option>
-                    {% endfor %}
-            </optgroup>     
-            {% endfor %}
-                     
-            </select>
-          </div>
-          <div id="test_gse"></div>
-          <br />
-          <p style="text-indent : 1em ;">If you don't want to see all the cell line you selected, press "Hide All" to hide them</p>
-          <p style="text-indent : 1em ;">Press "Show" to see them again</p>
-          <input type="button" class="btn btn-default" value="Hide All" id="hide_gse">
-          <input type="button" class="btn btn-default" value="Show" id="show_gse">
-          <!-- Table -->
-            <table class="table table-striped">
-                <thead>
-                <tr>
-                    <th>Cell Line name</th>
-                    <th>Primary site</th>
-                    <th>Primary histology</th>
-                    <th>dataset</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for l in CCsamples %}
-                    {# Add display:none to increase HTML DOM loading #}
-                    <tr name="{{l.cell_line_id.name}}" class="class3" style="display:none">
-                        <td>{{ l.cell_line_id.name }}</td>
-                        <td>{{ l.cell_line_id.primary_site }}</td>
-                        <td>{{ l.cell_line_id.primary_hist }}</td>
-                        <td>GSE36133</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        {% endfor %}
         </div>
         
         
@@ -304,42 +198,26 @@ $("#submit").click(function() {
     {
         $("span[name='needed2']").hide();
     };
-    if($("#sanger").is(':checked'))
+    var name={{an}};
+    l=name.length;
+    for(var j=0;j<l;j++)
     {
-        if( !$("#select_sanger").val() ) 
+        if( !$("#select_"+name[j]).val() ) 
         {
-            $("span[name='sanger_needed']").show();
-            return false;
+            $("span[name='"+name[j]+"_needed']").show();
+            ef=1;
         }
         else
         {
-            $("span[name='sanger_needed']").hide();
+            $("span[name='"+name[j]+"_needed']").hide();
         }
-    };
-    if($("#nci").is(':checked'))
+        
+    }
+    if(ef==1)
     {
-        if( !$("#select_nci").val() ) 
-        {
-            $("span[name='nci_needed']").show();
-            return false;
-        }
-        else
-        {
-            $("span[name='nci_needed']").hide();
-        }
-    };
-    if($("#gse").is(':checked'))
-    {
-        if( !$("#select_gse").val() ) 
-        {
-            $("span[name='ccle_needed']").show(); 
-            return false;
-        }
-        else
-        {
-            $("span[name='ccle_needed']").hide();
-        }
-    };
+        return false;
+    }
+    
    };   
   
   
@@ -347,37 +225,21 @@ $("#submit").click(function() {
 }); 
 </script>
 <script>
+$("input[id^='hide_']").click(function() {
+    var id=$(this).attr("id");
+    id=id.replace('hide_', '');
+    
+    $("tr[class='class_"+id+"']").hide(); 
+}); 
+$("input[id^='show_']").click(function() { 
+    var id=$(this).attr("id");
+    id=id.replace('show_', '');
+    $( "select[name='select_"+id+"'] option:selected" ).each(function() {
+      var indata=$( this ).text();
+      $("tr[class='class_"+id+"'][name='"+indata+"']").show();
+    }); 
+}); 
 
-$("#hide_sanger").click(function() {    
-    $("tr[class='class1']").hide(); 
-}); 
-$("#show_sanger").click(function() {    
-    $( "select[name='select_sanger'] option:selected" ).each(function() {
-      var indata=$( this ).text();
-      $("tr[class='class1'][name='"+indata+"']").show();
-    }); 
-}); 
-$("#hide_nci").click(function() {    
-    $("tr[class='class2']").hide(); 
-}); 
-$("#show_nci").click(function() { 
-    //alert("i am here!!");
-    $( "select[name='select_nci'] option:selected" ).each(function() {
-      var indata=$( this ).text();
-      //$("#t_try").append('<p>'+ indata +'</p>')
-      $("tr[class='class2'][name='"+indata+"']").show();
-      //alert("checked!!");
-    }); 
-}); 
-$("#hide_gse").click(function() {    
-    $("tr[class='class3']").hide(); 
-}); 
-$("#show_gse").click(function() {    
-    $( "select[name='select_gse'] option:selected" ).each(function() {
-      var indata=$( this ).text();
-      $("tr[class='class3'][name='"+indata+"']").show();
-    }); 
-}); 
 </script>
 <script>
 $(document).ready(function () {
@@ -401,66 +263,38 @@ $(document).ready(function () {
         }
     });
     $("input:checkbox").change(function(){
-        if ($("#sanger").is(':checked')) {
+        var name={{an}};
+        l=name.length;
+        for(var j=0;j<l;j++)
+        {
+            if ($("#"+name[j]).is(':checked')) 
+            {
             
-            $("div[name='sanger_table']").show();
-        }
-        else
-        {   
-            $("div[name='sanger_table']").hide();
-        }
-        if ($("#nci").is(':checked')) {
-            $("div[name='nci_table']").show();
-        }
-        else
-        {           
-            $("div[name='nci_table']").hide();
-        }
-        if ($("#gse").is(':checked')) {
+                $("div[name='"+name[j]+"_table']").show();
+            }
+            else
+            {   
+                $("div[name='"+name[j]+"_table']").hide();
+            }
             
-            $("div[name='gse_table']").show();
         }
-        else
-        {   
-            $("div[name='gse_table']").hide();
-        }
-        
     });
     
-    $( "select[name='select_sanger']" ).change(function () {
-    var str = "The primary site you selected: ";
-    $("tr[class='class1']").hide();
-    $( "select[name='select_sanger'] option:selected" ).each(function() {
-      var indata=$( this ).text();
-      $("tr[class='class1'][name='"+indata+"']").show();
-      str += $( this ).text() + " ,";
-    });
-    $( "#test" ).text( str ).css("text-indent","1em");
-  }).change();
- 
-   $( "select[name='select_nci']" ).change(function () {
-    var str = "The primary site you selected: ";
-    $("tr[class='class2']").hide();
-    $( "select[name='select_nci'] option:selected" ).each(function() {
-      var indata=$( this ).text();
-      $("tr[class='class2'][name='"+indata+"']").show();
-      str += $( this ).text() + " ,";
-    });
-    $( "#test_nci" ).text( str ).css("text-indent","1em");
-  }).change();
 
-  $( "select[name='select_gse']" ).change(function () {
-    var str = "The primary site you selected: ";
-    $("tr[class='class3']").hide();
-    $( "select[name='select_gse'] option:selected" ).each(function() {
+$(document).on('change',"select[name^='select_']",function(){
+    var str = "The cell line(s) you selected: ";
+    var id=$(this).attr("id");
+    id=id.replace('select_', '');
+    $("tr[class='class_"+id+"']").hide();
+    //$("#select_error").append("<p>"+ id +"</p>");
+    $("select[name='select_"+id+"'] option:selected").each(function() {
       var indata=$( this ).text();
-      $("tr[class='class3'][name='"+indata+"']").show();
+      $("tr[class='class_"+id+"'][name='"+indata+"']").show();
       str += $( this ).text() + " ,";
     });
-    $( "#test_gse" ).text( str ).css("text-indent","1em");
-  }).change();   
- 
-}); 
+    $( "#test_"+id ).text( str ).css("text-indent","1em");
+  }).change(); 
+});
 </script>
 
 

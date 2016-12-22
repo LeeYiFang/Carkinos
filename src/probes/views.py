@@ -25,88 +25,52 @@ import uuid
 
 
 def generate_samples():
-    samples = Sample.objects.filter(
-        dataset_id__name__in=['Sanger Cell Line Project']
-    ).select_related('cell_line_id')
-    ncisamples = Sample.objects.filter(
-        dataset_id__name__in=['NCI60']
-    ).select_related('cell_line_id')
-    CCsamples = Sample.objects.filter(
-        dataset_id__name__in=['GSE36133']
-    ).select_related('cell_line_id')
-    # Get all distinct primary sites from selected samples
-    celllines = sorted(
-        samples.values_list('cell_line_id__name', flat=True).distinct()
-    )
-    ncicelllines = sorted(
-        ncisamples.values_list('cell_line_id__name', flat=True).distinct()
-    )
-    CCcelllines = sorted(
-        CCsamples.values_list('cell_line_id__name', flat=True).distinct()
-    )
-    nci=[]
-    nciprime=Sample.objects.filter(dataset_id__name="NCI60").order_by('cell_line_id__primary_site').select_related('cell_line_id')
-    ncisites=list(nciprime.values_list('cell_line_id__primary_site',flat=True))
-    ncicells=list(nciprime.values_list('cell_line_id__name',flat=True))
-    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
-    ncidi=list(nciprime.values_list('cell_line_id__primary_site',flat=True).distinct())
-    ncicells=list(ncicells)
-    id_counter=0
-   
-    for p in range(0,len(ncidi)):
-        temp=ncisites.count(ncidi[p])
-        nci.append((ncidi[p],list(set(ncicells[id_counter:id_counter+temp]))))
-        id_counter+=temp
-        
-    sanger=[]
-    sangerprime=Sample.objects.filter(dataset_id__name="Sanger Cell Line Project").order_by('cell_line_id__primary_site').select_related('cell_line_id')
-    sangersites=list(sangerprime.values_list('cell_line_id__primary_site',flat=True))
-    sangercells=list(sangerprime.values_list('cell_line_id__name',flat=True))
-    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
-    sangerdi=list(sangerprime.values_list('cell_line_id__primary_site',flat=True).distinct())
-    sangercells=list(sangercells)
-    id_counter=0
-   
-    for p in range(0,len(sangerdi)):
-        temp=sangersites.count(sangerdi[p])
-        sanger.append((sangerdi[p],list(set(sangercells[id_counter:id_counter+temp]))))
-        id_counter+=temp
-        
-    ccle=[]
-    ccleprime=Sample.objects.filter(dataset_id__name="GSE36133").order_by('cell_line_id__primary_site').select_related('cell_line_id')
-    cclesites=list(ccleprime.values_list('cell_line_id__primary_site',flat=True))
-    cclecells=list(ccleprime.values_list('cell_line_id__name',flat=True))
-    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
-    ccledi=list(ccleprime.values_list('cell_line_id__primary_site',flat=True).distinct())
-    cclecells=list(cclecells)
-    id_counter=0
-   
-    for p in range(0,len(ccledi)):
-        temp=cclesites.count(ccledi[p])
-        ccle.append((ccledi[p],list(set(cclecells[id_counter:id_counter+temp]))))
-        id_counter+=temp
-        
-    check_celllines=list(celllines) #all U133A cell lines
-    plus2_celllines=list(ncicelllines)+list(CCcelllines)
-
-    return  {
-        'check_celllines': mark_safe(json.dumps(check_celllines)),
-        'plus2_celllines': mark_safe(json.dumps(plus2_celllines)),
-        'nci':nci,
-        'sanger':sanger,
-        'ccle':ccle,
-        
-    }
+    d=Dataset.objects.all()
+    cell_d_name=list(d.values_list('name',flat=True))
+    same_name=[]
+    cell_datasets=[]  #[[dataset_name,[[primary_site,[cell line]]]]
     
-def sample_microarray(request):
+    for i in cell_d_name:
+        
+        if i=="Sanger Cell Line Project":
+            alias='sanger'
+            same_name.append('sanger')
+        elif i=="NCI60":
+            alias='nci'
+            same_name.append('nci')
+        elif i=="GSE36133":
+            alias='ccle'
+            same_name.append('ccle')
+        else:
+            alias=i
+            same_name.append(i)
+        
+        
+        sample=Sample.objects.filter(dataset_id__name=i).order_by('cell_line_id__primary_site').select_related('cell_line_id')
+        cell_datasets.append([i,alias,list(sample),[]])
+        sites=list(sample.values_list('cell_line_id__primary_site',flat=True))
+        hists=list(sample.values_list('cell_line_id__name',flat=True))
+        
+        dis_prim=list(sample.values_list('cell_line_id__primary_site',flat=True).distinct())
+        hists=list(hists)
+        id_counter=0
+       
+        for p in range(0,len(dis_prim)):
+            temp=sites.count(dis_prim[p])
+            cell_datasets[-1][3].append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
+            id_counter+=temp
+    
     
     d=Clinical_Dataset.objects.all()
     d_name=list(d.values_list('name',flat=True))
-    datasets=[]  #[[dataset_name,[[primary_site,[primary_histology]]]]
+    datasets=[]  #[[dataset_name,[[primary_site,[primary_histology]]],[[filter_type,[filter_choice]]]]
     primarys=[]  #[[primary_site,[primary_hist]]]
+    primh_filter=[] #[[filter_type,[filter_choice]]]
+    f_type=['age','gender','ethnic','grade','stage','stageT','stageN','stageM','metastatic']
     for i in d_name:
         
-        datasets.append([i,[]])
+        same_name.append(i)
+        datasets.append([i,[],[]])
         sample=Clinical_sample.objects.filter(dataset_id__name=i).order_by('primary_site')
         sites=list(sample.values_list('primary_site',flat=True))
         hists=list(sample.values_list('primary_hist',flat=True))
@@ -119,6 +83,10 @@ def sample_microarray(request):
             temp=sites.count(dis_prim[p])
             datasets[-1][1].append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
             id_counter+=temp
+        
+        for f in f_type:
+            temp=list(set(sample.values_list(f,flat=True)))
+            datasets[-1][2].append([f,temp])
     
     sample=Clinical_sample.objects.all().order_by('primary_site')
     sites=list(sample.values_list('primary_site',flat=True))
@@ -132,10 +100,74 @@ def sample_microarray(request):
         primarys.append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
         id_counter+=temp
     
+    s=Clinical_sample.objects.all()
+    for f in f_type:
+        temp=list(set(s.values_list(f,flat=True)))
+        primh_filter.append([f,temp])
+    
+    all_full_name=cell_d_name+d_name
+    return  {
+        'all_full_name':mark_safe(json.dumps(all_full_name)),  #full name of all datasets
+        'same_name':mark_safe(json.dumps(same_name)),  #short name for all datasets
+        'cell_d_name':mark_safe(json.dumps(cell_d_name)),  #cell line dataset name(full)
+        'cell_datasets':cell_datasets, 
+        'd_name': mark_safe(json.dumps(d_name)),  #clinical dataset name
+        'datasets': datasets,
+        'primarys': primarys,
+        'primh_filter':primh_filter,
+        
+    }
+    
+def sample_microarray(request):
+    
+    d=Clinical_Dataset.objects.all()
+    d_name=list(d.values_list('name',flat=True))
+    datasets=[]  #[[dataset_name,[[primary_site,[primary_histology]]],[[filter_type,[filter_choice]]]]
+    primarys=[]  #[[primary_site,[primary_hist]]]
+    primh_filter=[] #[[filter_type,[filter_choice]]]
+    f_type=['age','gender','ethnic','grade','stage','stageT','stageN','stageM','metastatic']
+    for i in d_name:
+        
+        datasets.append([i,[],[]])
+        sample=Clinical_sample.objects.filter(dataset_id__name=i).order_by('primary_site')
+        sites=list(sample.values_list('primary_site',flat=True))
+        hists=list(sample.values_list('primary_hist',flat=True))
+        
+        dis_prim=list(sample.values_list('primary_site',flat=True).distinct())
+        hists=list(hists)
+        id_counter=0
+       
+        for p in range(0,len(dis_prim)):
+            temp=sites.count(dis_prim[p])
+            datasets[-1][1].append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
+            id_counter+=temp
+        
+        for f in f_type:
+            temp=list(set(sample.values_list(f,flat=True)))
+            datasets[-1][2].append([f,temp])
+    
+    sample=Clinical_sample.objects.all().order_by('primary_site')
+    sites=list(sample.values_list('primary_site',flat=True))
+    hists=list(sample.values_list('primary_hist',flat=True))
+    dis_prim=list(sample.values_list('primary_site',flat=True).distinct())
+    hists=list(hists)
+    id_counter=0
+       
+    for p in range(0,len(dis_prim)):
+        temp=sites.count(dis_prim[p])
+        primarys.append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
+        id_counter+=temp
+    
+    s=Clinical_sample.objects.all()
+    for f in f_type:
+        temp=list(set(s.values_list(f,flat=True)))
+        primh_filter.append([f,temp])
+    
     return render(request, 'sample_microarray.html', {
         'd_name': mark_safe(json.dumps(d_name)),
         'datasets': datasets,
         'primarys': primarys,
+        'primh_filter':primh_filter,
         
     })
 def user_pca(request):
@@ -1126,8 +1158,10 @@ def help_similar_assessment(request):
 def similar_assessment(request):   
     return render(request, 'similar_assessment.html', generate_samples())
     
-def gene_signature(request):    
+def gene_signature(request):  
     return render(request, 'gene_signature.html', generate_samples())
+
+    
     
 
 def heatmap(request):   
@@ -1139,169 +1173,163 @@ def heatmap(request):
     expression=[]
     probe_out=[]
     sample_out=[]
-    
-    ##open all the file
-    #logger.info('open all the file')
-    sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
-    nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
-    gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
-    sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
-    nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
-    gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
-    
-    
-    if request.POST['cell_line_method'] == 'text':
-        #this part is for input cell line
 
-        pform=request.POST['data_platform']
-        
-        group_counter=1
-        while True:
-            temp_name='cellline_g'+str(group_counter)
-            if temp_name in request.POST:
-                #print(group_counter)
-                group_counter=group_counter+1
-            else:
-                group_counter=group_counter-1
-                break
-        
-        #text part with more than two group need to use one way ANOVA
-        s_group_dict={}  #store sample
-        offset_group_dict={} #store offset
-        for i in range(1,group_counter+1):
-            c='cellline_g'+str(i)
-            if request.POST[c] !='':
-                s=Sample.objects.filter(cell_line_id__name__in=(request.POST[c].split()),platform_id__name=pform).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
-                s_group_dict['g'+str(i)]=s
+    #get probe from different platform
+    pform=request.POST['data_platform']
+    all_probe=ProbeID.objects.filter(platform__name=pform).order_by('offset')
+    probe_offset=list(all_probe.values_list('offset',flat=True))
+    
+    all_probe=list(all_probe)
+    #deal with "nan" in Sanger dataset
+    if pform=="U133A":
+        for x in range(22275,22281):
+            all_probe.pop(probe_offset.index(x))
+            probe_offset.remove(x)
+    
+    #count the number of group 
+    group_counter=1
+    check_set=[]
+    while True:
+        temp_name='dataset_g'+str(group_counter)
+        if temp_name in request.POST:
+            group_counter=group_counter+1
+        else:
+            group_counter=group_counter-1
+            break
+    
+    #get binary data
+    s_group_dict={}  #store sample
+    val=[] #store value get from binary data 
+    group_name=[]
+    clinic=list(Clinical_Dataset.objects.all().values_list('name',flat=True))
+    clline=list(Dataset.objects.all().values_list('name',flat=True))
+    print(clline)
+    
+    opened_name=[]
+    opened_val=[]
+    for i in range(1,group_counter+1):
+        s_group_dict['g'+str(i)]=[]
+        dname='dataset_g'+str(i)
+        datasets=request.POST.getlist(dname)
+        temp_name='g'+str(i)
+        group_name.append(temp_name)  
+        a_data=np.array([])
+        for dn in datasets:
+            if dn=='Sanger Cell Line Project':
+                c='select_sanger_g'+str(i)
+            elif dn=='NCI60':
+                c='select_nci_g'+str(i)
+            elif dn=='GSE36133':
+                c='select_ccle_g'+str(i)
+
+            if dn in clline:
+                ACELL=request.POST.getlist(c)
+                s=Sample.objects.filter(dataset_id__name__in=[dn],cell_line_id__name__in=ACELL).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
+                s_group_dict['g'+str(i)]=list(s)+s_group_dict['g'+str(i)]
                 goffset=list(s.values_list('offset',flat=True))
-                offset_group_dict['g'+str(i)]=goffset
-        
-        #get probe from different platform
-        all_probe=ProbeID.objects.filter(platform__name=pform).order_by('offset')
-        probe_offset=list(all_probe.values_list('offset',flat=True))
+                if dn not in opened_name:  #check if the file is opened
+                    print("opend file!!")
+                    opened_name.append(dn)
+                    pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=dn).data_path)
+                    raw_val=np.load(pth.as_posix(),mmap_mode='r')
+                    opened_val.append(raw_val)
+                    temp=raw_val[np.ix_(probe_offset,list(goffset))]
+                    if (len(a_data)!=0 ) and (len(temp)!=0):
+                        a_data=np.concatenate((a_data,temp),axis=1)
+                    elif (len(temp)!=0):
+                        a_data=raw_val[np.ix_(probe_offset,list(goffset))]
                     
-        #deal with "nan" in Sanger dataset
-        if pform=="U133A":
-            all_probe=list(all_probe)
-            for x in range(22275,22281):
-                all_probe.pop(probe_offset.index(x))
-                probe_offset.remove(x)
-                
-            
-        #for more than two datasets
-        gseindex=-1
-        
-        val=[] #store value get from binary data 
-        group_name=[]
-        for i in range(1,group_counter+1):
-            nci_data=[]
-            gse_data=[]
-            temp_name='g'+str(i)
-            group_name.append(temp_name)
-            if pform=="PLUS2":
-                listg=list(s_group_dict[temp_name].values('dataset_id'))
-                if {'dataset_id':3} in listg:
-                    gseindex=listg.index({'dataset_id':3})
-                    nci_data=nci_val[np.ix_(probe_offset,offset_group_dict[temp_name][:gseindex])]
-                    gse_data=gse_val[np.ix_(probe_offset,offset_group_dict[temp_name][gseindex:])]
-                    g_data=np.concatenate((nci_data,gse_data),axis=1)
-                    val.append(g_data.tolist())
                 else:
-                    g_data=nci_val[np.ix_(probe_offset,offset_group_dict[temp_name])]
-                    val.append(g_data.tolist())
-            else:
-                g_data=sanger_val[np.ix_(probe_offset,offset_group_dict[temp_name])]
-                val.append(g_data.tolist())
+                    temp=opened_val[opened_name.index(dn)][np.ix_(probe_offset,list(goffset))]
+                    if (len(a_data)!=0 ) and (len(temp)!=0):
+                        a_data=np.concatenate((a_data,temp),axis=1)
+                    elif (len(temp)!=0):
+                        a_data=opened_val[opened_name.index(dn)][np.ix_(probe_offset,list(goffset))]
+
                 
-        
-          
-    else:#this part is for select cell line
-        pform=request.POST['data_platform']
-        
-        #get probe from different platform
-        all_probe=ProbeID.objects.filter(platform__name=pform).order_by('offset')
-        probe_offset=list(all_probe.values_list('offset',flat=True))
-        
-        all_probe=list(all_probe)
-        #deal with "nan" in Sanger dataset
-        if pform=="U133A":
-            #all_probe=list(all_probe)
-            for x in range(22275,22281):
-                all_probe.pop(probe_offset.index(x))
-                probe_offset.remove(x)
-        
-        #count the number of group 
-        group_counter=1
-        while True:
-            temp_name='dataset_g'+str(group_counter)
-            if temp_name in request.POST:
-                #print(group_counter)
-                group_counter=group_counter+1
-            else:
-                group_counter=group_counter-1
-                break
-        
-        #get binary data
-        s_group_dict={}  #store sample
-        #logger.info('Store sample for selection part')
-        val=[] #store value get from binary data 
-        group_name=[]
-        for i in range(1,group_counter+1):
-            
-            dname='dataset_g'+str(i)
-            datasets=request.POST.getlist(dname)
-            sanger_data=[]
-            nci_data=[]
-            gse_data=[]
-            temp_name='g'+str(i)
-            group_name.append(temp_name)
-            if pform=="U133A":
-                csanger='select_sanger_g'+str(i)
-                if 'Sanger Cell Line Project' in datasets:
-                    SANGER=request.POST.getlist(csanger)
-                    s=Sample.objects.filter(cell_line_id__name__in=SANGER,platform_id__name=pform).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
-                    goffset=list(s.values_list('offset',flat=True))
-                    sanger_data=sanger_val[np.ix_(probe_offset,list(goffset))]
-                    s_group_dict['g'+str(i)]=s
-                    val.append(sanger_data.tolist())
-            else:
-                cnci='select_nci_g'+str(i)
-                cgse='select_ccle_g'+str(i)
-                s_nci=[]
-                s_gse=[]
-                nci_flag=0
-                gse_flag=0
-                if 'NCI60' in datasets:
-                    nci_flag=1
-                    NCI=request.POST.getlist(cnci)
-                    s_nci=Sample.objects.filter(cell_line_id__name__in=NCI,dataset_id__name__in=['NCI60']).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
-                    goffset=list(s_nci.values_list('offset',flat=True))
-                    nci_data=nci_val[np.ix_(probe_offset,list(goffset))]
-                if 'GSE36133' in datasets:
-                    gse_flag=1
-                    GSE=request.POST.getlist(cgse)
-                    s_gse=Sample.objects.filter(cell_line_id__name__in=GSE,dataset_id__name__in=['GSE36133']).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
-                    goffset=list(s_gse.values_list('offset',flat=True))
-                    gse_data=gse_val[np.ix_(probe_offset,list(goffset))]
-                
-                #append nci60 and gse36133 as g_data
-                #logger.info('append nci60 and gse36133 as g_data')
-                s_group_dict['g'+str(i)]=list(s_nci)+list(s_gse)
-                if(nci_flag==1 and gse_flag==1):
-                    g_data=np.concatenate((nci_data,gse_data),axis=1)
-                elif(nci_flag==1):
-                    g_data=nci_data
+            elif dn in clinic:
+                print("I am in clinical part")
+                com_hists=list(set(request.POST.getlist('primd_'+dn+'_g'+str(i))))    #can I get this by label to reduce number of queries?
+                com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
+                prims=com_hists[0::2]
+                hists=com_hists[1::2]
+                temp=request.POST.getlist('filter_'+dn+'_g'+str(i))
+                age=[]
+                gender=[]
+                ethnic=[]
+                grade=[]
+                stage=[]
+                T=[]
+                N=[]
+                M=[]
+                metas=[]
+                for t in temp:
+                    if 'stage/' in t:
+                        stage.append(t[6:])
+                    elif 'gender/' in t:
+                        gender.append(t[7:])
+                    elif 'ethnic/' in t:
+                        ethnic.append(t[7:])
+                    elif 'grade/' in t:
+                        grade.append(t[6:])
+                    elif 'stageT/' in t:
+                        T.append(t[7:])
+                    elif 'stageN/' in t:
+                        N.append(t[7:])
+                    elif 'stageM/' in t:
+                        M.append(t[7:])
+                    elif 'metastatic/' in t:
+                        if t[11:]=='False':
+                            metas.append(0)
+                        else:
+                            metas.append(1)
+                    else:  #"age/"
+                        age.append(t[4:])
+                cgoffset=[]
+                for x in range(0,len(prims)):
+                    s=Clinical_sample.objects.filter(dataset_id__name=dn,primary_site=prims[x],
+                    primary_hist=hists[x],
+                    age__in=age,
+                    gender__in=gender,
+                    ethnic__in=ethnic,
+                    stage__in=stage,
+                    grade__in=grade,
+                    stageT__in=T,
+                    stageN__in=N,
+                    stageM__in=M,
+                    metastatic__in=metas,
+                    ).select_related('dataset_id').order_by('id')
+                    s_group_dict['g'+str(i)]=list(s)+s_group_dict['g'+str(i)]
+                    cgoffset+=list(s.values_list('offset',flat=True))
+                if dn not in opened_name:  #check if the file is opened
+                    print("opend file!!")
+                    opened_name.append(dn)
+                    pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=dn).data_path)
+                    raw_val=np.load(pth.as_posix(),mmap_mode='r')
+                    opened_val.append(raw_val)
+                    temp=raw_val[np.ix_(probe_offset,list(cgoffset))]
+                    print(temp)
+                    if (len(a_data)!=0 ) and (len(temp)!=0):
+                        a_data=np.concatenate((a_data,temp),axis=1)
+                    elif (len(temp)!=0):
+                        a_data=raw_val[np.ix_(probe_offset,list(cgoffset))]
                 else:
-                    g_data=gse_data
-                val.append(g_data.tolist())
-            
-            
+                    temp=opened_val[opened_name.index(dn)][np.ix_(probe_offset,list(cgoffset))]
+                    if (len(a_data)!=0 ) and (len(temp)!=0):
+                        a_data=np.concatenate((a_data,temp),axis=1)
+                    elif (len(temp)!=0):
+                        a_data=opened_val[opened_name.index(dn)][np.ix_(probe_offset,list(cgoffset))]
+        val.append(a_data.tolist())
+        print(len(val))
+        print(len(val[0]))
+        #print(val)
+        
             
     #run the one way ANOVA test or ttest for every probe base on the platform selected    
     express={}
     #logger.info('run ttest or anova')
     if group_counter<=2:
-        for i in range(0,len(all_probe)):    #need to fix if try to run on laptop
+        for i in range(0,500):#len(all_probe)):    #need to fix if try to run on laptop
             presult[all_probe[i]]=stats.ttest_ind(list(val[0][i]),list(val[1][i]),equal_var=False,nan_policy='omit')[1]
             express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
     else:
@@ -1329,9 +1357,11 @@ def heatmap(request):
     stop_end=100
     cell_probe_val=[]
     for w in sortkey: 
+        print(presult[w],":",w.Probe_id)
+        
         if (presult[w]<pro_number):
             cell_probe_val.append([w,presult[w]])
-            #print(presult[w],":",w.Probe_id)
+            
             express_mean=np.mean(np.array(express[w]))
             expression.append(list((np.array(express[w]))-express_mean))
             
@@ -1350,8 +1380,12 @@ def heatmap(request):
             dataset_n=s.dataset_id.name
             if dataset_n=="Sanger Cell Line Project":
                 sample_out.append(s.cell_line_id.name+"(SCLP)(group"+str(n_counter)+"-"+str(sample_counter)+")")   
-            else:
+            elif dataset_n in clline:
+                print(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
                 sample_out.append(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")   
+            else:  #what to output for clinical part?
+                print(s.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
+                sample_out.append(s.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
             sample_counter+=1
         n_counter+=1
     #logger.info('finish combine output samples')
@@ -1387,10 +1421,9 @@ def heatmap(request):
         plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=6)
     
     
-    #for x in g.ax_heatmap.get_xticklabels():
-    #    plt.setp(x,rotation=330)
+    
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
-    #logger.info('plot heatmap')
+    
     sid=str(uuid.uuid4())+".png"
     print(sid)
     P=Path('../').resolve().joinpath('src','static','image',sid)
@@ -1408,205 +1441,141 @@ def heatmap(request):
     
 def pca(request):
     
-    ##open all the file
-    sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
-    nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
-    gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
-    sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
-    nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
-    gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
+    
     
     propotion=0
     table_propotion=0
     pform=request.POST['data_platform'] #get the platform
     show=request.POST['show_type']      #get the pca show type
-    nci_size=Sample.objects.filter(dataset_id__name__in=["NCI60"]).count()
     group_counter=1
-    s_group_dict={}  #store sample
-    offset_group_dict={} #store offset
     cell_line_dict={}
-    if request.POST['cell_line_method'] == 'text':
-        
-        #count how many group
-        group_counter=1
-        while True:
-            temp_name='cellline_g'+str(group_counter)
-            if temp_name in request.POST:
-                group_counter=group_counter+1
-            else:
-                group_counter=group_counter-1
-                break
     
-        group_name=[]
-        s_group_dict={}  #store sample
-        offset_group_dict={} #store offset
-        gse_flag=0
-        nci_flag=0
-        all_c=[]
-        for i in range(1,group_counter+1):
-            c='cellline_g'+str(i)
-            if request.POST[c] !='':
-                temp_name='g'+str(i)
-                group_name.append(temp_name)
-                
-                temp=list(set(request.POST[c].split()))
-                if all_c==[]:
-                    all_c=all_c+temp
-                    uni=temp
-                else:
-                    uni=list(set(temp)-set(all_c))
-                    all_c=all_c+uni
-                    
-                s=Sample.objects.filter(cell_line_id__name__in=(uni),platform_id__name=pform).order_by('dataset_id'
-                ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                s_group_dict['g'+str(i)]=s
-                goffset=list(s.values_list('offset',flat=True))
-                offset_group_dict['g'+str(i)]=goffset
-                
-                cell_line_dict['g'+str(i)]=list(s.values_list('cell_line_id__name',flat=True))
-                
-                #deal with offset, because we have to combine u133plus2 data together PROBLEM!!!sample
-                gseindex=-1
-                if pform=="PLUS2":
-                    listg=list(s_group_dict[temp_name].values('dataset_id'))
-                    if {'dataset_id':3} in listg:
-                        nci_flag=1
-                    if {'dataset_id':3} in listg:
-                        gse_flag=1
-                        gseindex=listg.index({'dataset_id':3})
-                        offset_group_dict['g'+str(i)]=offset_group_dict['g'+str(i)][:gseindex]+list(np.add(offset_group_dict['g'+str(i)][gseindex:],nci_size))
-                
-                s_group_dict['g'+str(i)]=list(s)        
-        
-        
-    else:
-        #this part is for selecting cell lines base on dataset
-        #count how many group
-        group_counter=1
-        while True:
-            temp_name='dataset_g'+str(group_counter)
-            if temp_name in request.POST:
-                group_counter=group_counter+1
-            else:
-                group_counter=group_counter-1
-                break
     
-        s_group_dict={}  #store sample
-        group_name=[]
-        offset_group_dict={} #store offset
-        gse_flag=0
-        nci_flag=0
-        all_c=[]
-        all_c_nci=[]
-        all_c_gse=[]
-        for i in range(1,group_counter+1):
-            
-            dname='dataset_g'+str(i)
-            datasets=request.POST.getlist(dname)
-            sanger_data=[]
-            nci_data=[]
-            gse_data=[]
-            temp_name='g'+str(i)
-            group_name.append(temp_name)
-            if pform=="U133A":
-                csanger='select_sanger_g'+str(i)
-                if 'Sanger Cell Line Project' in datasets:
-                    SANGER=request.POST.getlist(csanger)
-                    temp=list(set(SANGER))
+    #count how many group
+    group_counter=1
+    while True:
+        temp_name='dataset_g'+str(group_counter)
+        if temp_name in request.POST:
+            group_counter=group_counter+1
+        else:
+            group_counter=group_counter-1
+            break
+
+    s_group_dict={}  #store sample
+    group_name=[]
+    offset_group_dict={} #store offset
+
+    clinic=list(Clinical_Dataset.objects.all().values_list('name',flat=True))
+    clline=list(Dataset.objects.all().values_list('name',flat=True))
+    
+    all_exist_dataset=[]
+    for i in range(1,group_counter+1):
+        dname='dataset_g'+str(i)
+        all_exist_dataset=all_exist_dataset+request.POST.getlist(dname)
+    all_exist_dataset=list(set(all_exist_dataset))
+    
+    all_base=[0]
+    for i in range(0,len(all_exist_dataset)-1):
+        if all_exist_dataset[i] in clline:
+            all_base.append(all_base[i]+Sample.objects.filter(dataset_id__name__in=[all_exist_dataset[i]]).count())
+        else:
+            all_base.append(all_base[i]+Clinical_sample.objects.filter(dataset_id__name__in=[all_exist_dataset[i]]).count())
+    
+    all_c=[]
+    for i in range(1,group_counter+1):
+        s_group_dict['g'+str(i)]=[]
+        offset_group_dict['g'+str(i)]=[]
+        cell_line_dict['g'+str(i)]=[]
+        dname='dataset_g'+str(i)
+        datasets=request.POST.getlist(dname)
+        group_name.append('g'+str(i))
+
+        goffset_nci=[]
+        goffset_gse=[]
+        
+        for dn in datasets:
+            if dn=='Sanger Cell Line Project':
+                c='select_sanger_g'+str(i)
+            elif dn=='NCI60':
+                c='select_nci_g'+str(i)
+            elif dn=='GSE36133':
+                c='select_ccle_g'+str(i)
+
+            if dn in clline:
+                temp=list(set(request.POST.getlist(c)))
+                if 'd_sample' in show:
                     if all_c==[]:
                         all_c=all_c+temp
                         uni=temp
                     else:
                         uni=list(set(temp)-set(all_c))
                         all_c=all_c+uni
-                    s=Sample.objects.filter(cell_line_id__name__in=uni,platform_id__name=pform).order_by('dataset_id'
-                    ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                    goffset=list(s.values_list('offset',flat=True))
-                    s_group_dict['g'+str(i)]=list(s)
-                    offset_group_dict['g'+str(i)]=goffset
-                    cell_line_dict['g'+str(i)]=list(s.values_list('cell_line_id__name',flat=True))
-            else:
-                cnci='select_nci_g'+str(i)
-                cgse='select_ccle_g'+str(i)
-                s_nci=[]
-                s_gse=[]
-                cell_gse=[]
-                cell_nci=[]
-                goffset_nci=[]
-                goffset_gse=[]
-                if 'NCI60' in datasets:
-                    nci_flag=1
-                    NCI=request.POST.getlist(cnci)
-                    
-                    
-                    temp_nci=list(set(NCI))
-                    if 'd_sample' in show:
-                        if all_c_nci==[]:
-                            all_c_nci=all_c_nci+temp_nci
-                            uni_nci=temp_nci
-                        else:
-                            uni_nci=list(set(temp_nci)-set(all_c_nci))
-                            all_c_nci=all_c_nci+uni_nci
-                    else:
-                        uni_nci=list(temp_nci)          #do not filter duplicate input only when select+centroid
-                    s_nci=Sample.objects.filter(cell_line_id__name__in=uni_nci,dataset_id__name__in=['NCI60']).order_by('dataset_id'
-                    ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                    goffset_nci=list(s_nci.values_list('offset',flat=True))
-                    cell_nci=list(s_nci.values_list('cell_line_id__name',flat=True))
-                if 'GSE36133' in datasets:
-                    gse_flag=1
-                    GSE=request.POST.getlist(cgse)
-                    temp_gse=list(set(GSE))
-                    
-                    if 'd_sample' in show:
-                        if all_c_gse==[]:
-                            all_c_gse=all_c_gse+temp_gse
-                            uni_gse=temp_gse
-                        else:
-                            uni_gse=list(set(temp_gse)-set(all_c_gse))
-                            all_c_gse=all_c_gse+uni_gse
-                    else:
-                        uni_gse=list(temp_gse)
-                    s_gse=Sample.objects.filter(cell_line_id__name__in=uni_gse,dataset_id__name__in=['GSE36133']).order_by('dataset_id'
-                    ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                    cell_gse=list(s_gse.values_list('cell_line_id__name',flat=True))
-                    if(nci_flag==1):
-                        goffset_gse=list(np.add(list(s_gse.values_list('offset',flat=True)),nci_size))
-                    else:
-                        goffset_gse=list(s_gse.values_list('offset',flat=True))
+                else:
+                    uni=list(temp)          #do not filter duplicate input only when select+centroid
+                s=Sample.objects.filter(cell_line_id__name__in=uni,dataset_id__name__in=[dn]).order_by('dataset_id'
+                ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
                 
-                
-                #append nci60 and gse36133 as g_data
-                #logger.info('append nci60 and gse36133 as g_data in pca')
-                s_group_dict['g'+str(i)]=list(s_nci)+list(s_gse)
-                offset_group_dict['g'+str(i)]=goffset_nci+goffset_gse
-                cell_line_dict['g'+str(i)]=cell_nci+cell_gse
+                cell_line_dict['g'+str(i)]=cell_line_dict['g'+str(i)]+list(s.values_list('cell_line_id__name',flat=True))
+                s_group_dict['g'+str(i)]=s_group_dict['g'+str(i)]+list(s)
+                offset_group_dict['g'+str(i)]=offset_group_dict['g'+str(i)]+list(np.add(list(s.values_list('offset',flat=True)),all_base[all_exist_dataset.index(dn)]))
                 
 
-    #delete nan, transpose matrix
-    #logger.info('delete nan and transpose matrix in pca')
-    if pform=="U133A":
-        sanger_val=sanger_val[~np.isnan(sanger_val).any(axis=1)]
-        sanger_val=np.matrix(sanger_val)[:,:]#need fix
-        val=np.transpose(sanger_val)
-        #dataset_size=[0,Sample.objects.filter(dataset_id__name__in=["Sanger Cell Line Project"]).count()]
-    elif((nci_flag==1) and (gse_flag==1)):
-        ##PROBLEM:should we always use combined one to run pca?
-        nci_val=np.matrix(nci_val)[:,:] #need fix
-        tnci_val=np.transpose(nci_val)
-        gse_val=np.matrix(gse_val)[:,:] #need fix
-        tgse_val=np.transpose(gse_val)
-        val=np.concatenate((tnci_val, tgse_val))#combine together  
-        #dataset_size=[0,nci_size,nci_size+Sample.objects.filter(dataset_id__name__in=["GSE36133"]).count()]
-    elif nci_flag==1:
-        nci_val=np.matrix(nci_val)[:,:] #need fix
-        val=np.transpose(nci_val)
-    else:
-        gse_val=np.matrix(gse_val)[:,:] #need fix
-        val=np.transpose(gse_val)
-        
+            else: #dealing with clinical sample datasets
+                com_hists=list(set(request.POST.getlist('primd_'+dn+'_g'+str(i))))    #can I get this by label to reduce number of queries?
+                com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
+                prims=com_hists[0::2]
+                hists=com_hists[1::2]
+                temp=request.POST.getlist('filter_'+dn+'_g'+str(i))
+                age=[]
+                gender=[]
+                ethnic=[]
+                grade=[]
+                stage=[]
+                T=[]
+                N=[]
+                M=[]
+                metas=[]
+                for t in temp:
+                    if 'stage/' in t:
+                        stage.append(t[6:])
+                    elif 'gender/' in t:
+                        gender.append(t[7:])
+                    elif 'ethnic/' in t:
+                        ethnic.append(t[7:])
+                    elif 'grade/' in t:
+                        grade.append(t[6:])
+                    elif 'stageT/' in t:
+                        T.append(t[7:])
+                    elif 'stageN/' in t:
+                        N.append(t[7:])
+                    elif 'stageM/' in t:
+                        M.append(t[7:])
+                    elif 'metastatic/' in t:
+                        if t[11:]=='False':
+                            metas.append(0)
+                        else:
+                            metas.append(1)
+                    else:  #"age/"
+                        age.append(t[4:])
+                for x in range(0,len(prims)):
+                    s=Clinical_sample.objects.filter(dataset_id__name=dn,primary_site=prims[x],
+                    primary_hist=hists[x],
+                    age__in=age,
+                    gender__in=gender,
+                    ethnic__in=ethnic,
+                    stage__in=stage,
+                    grade__in=grade,
+                    stageT__in=T,
+                    stageN__in=N,
+                    stageM__in=M,
+                    metastatic__in=metas,
+                    ).select_related('dataset_id').order_by('id')
+                    s_group_dict['g'+str(i)]=s_group_dict['g'+str(i)]+list(s)
+                    cell_line_dict['g'+str(i)]=cell_line_dict['g'+str(i)]+list(s.values_list('name',flat=True))
+                    offset_group_dict['g'+str(i)]=offset_group_dict['g'+str(i)]+list(np.add(list(s.values_list('offset',flat=True)),all_base[all_exist_dataset.index(dn)]))
+
     
-    
+
     all_sample=[]
     all_cellline=[]
     cell_object=[]
@@ -1623,14 +1592,33 @@ def pca(request):
     
     for i in all_sample:
         sample_counter[i.name]=1
-        cell_object.append(i.cell_line_id)
+        if str(type(i))=="<class 'probes.models.Sample'>":
+            print("i am sample!!")
+            cell_object.append(i.cell_line_id)
+        else:
+            print("i am clinical!!")
+            cell_object.append(i)
+    #delete nan, transpose matrix
+    ##open file
     
-     
-          
+    for x in range(0,len(all_exist_dataset)):
+        if all_exist_dataset[x] in clline:
+            pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+        else:
+            pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+        if x==0:
+            val=np.load(pth.as_posix())
+        else:
+            val=np.hstack((val, np.load(pth.as_posix())))#combine together
+    if 'd_sample' in show:
+        val=val[:,all_offset]
+        val=val[~np.isnan(val).any(axis=1)]
+        val=np.transpose(val)
+   
+        
     pca_index=[]
     dis_offset=[]
       
-
     
     #PREMISE:same dataset same cell line will have only one type of primary site and primary histology
     name1=[]
@@ -1658,12 +1646,13 @@ def pca(request):
     if 'd_sample' in show:
         #count the pca first
         pca= PCA(n_components=n)
-        Xval = pca.fit_transform(val[all_offset,:])  #cannot get Xval with original offset any more
+        Xval = pca.fit_transform(val[:,:])  #cannot get Xval with original all_offset any more
         ratio_temp=pca.explained_variance_ratio_
         propotion=sum(ratio_temp[1:n])
         table_propotion=sum(ratio_temp[0:n])
         print(Xval)
-        
+        #print(all_cellline)
+        #print(all_sample)
         max=0
         min=10000000000
         out_group=[]
@@ -1673,8 +1662,11 @@ def pca(request):
             output_cell={}
             check={}
             for s in range(g_s_counter[g-1],g_s_counter[g]):
-                  
-                cell=all_sample[s].cell_line_id
+                
+                if str(type(all_sample[s]))=="<class 'probes.models.Sample'>":
+                    cell=all_sample[s].cell_line_id
+                else:
+                    cell=all_sample[s]
                 try: 
                     counter=exist_cell[cell]
                     exist_cell[cell]=counter+1
@@ -1693,7 +1685,7 @@ def pca(request):
                     if i!=s:
                         try:
                             if(all_sample[s].name not in check[all_sample[i].name]):
-                                distance=np.linalg.norm(Xval[i]-Xval[s])
+                                distance=np.linalg.norm(Xval[i][n-3:n]-Xval[s][n-3:n])
                                 if distance<min:
                                     min=distance
                                 if distance>max:
@@ -1702,7 +1694,7 @@ def pca(request):
                                 ,all_sample[s].name,all_sample[s].dataset_id.name,all_cellline[i],all_sample[i].name,all_sample[i].dataset_id.name,distance,cell_object[i]])
                                 check[all_sample[s].name].append(all_sample[i].name)
                         except KeyError:
-                            distance=np.linalg.norm(Xval[i]-Xval[s])
+                            distance=np.linalg.norm(Xval[i][n-3:n]-Xval[s][n-3:n])
                             if distance<min:
                                 min=distance
                             if distance>max:
@@ -1753,228 +1745,91 @@ def pca(request):
         return_html='pca.html'
     else:
         #This part is for centroid display
-        #logger.info('pca show in centroid')
+        
         return_html='pca_center.html'
-        #deal with text part first, get all cell line base on platform instead of dataset--->different group need to filter same cell line name first
-        #count the centroid--->use this new data to run pca--->new location to count distance
-        if request.POST['cell_line_method'] == 'text':
-            dis_cellline=list(set(cell_object))
-            #location_dict={} #{cell object:new location}
-            dataset_dict={}  #{cell object:dataset combined}
+        
+        val=val[~np.isnan(val).any(axis=1)]  #bottle neck???
+        
+        #This part is for select cell line base on dataset,count centroid base on the dataset
+        #group中的cell line為單位來算重心
+        #logger.info('pca show centroid with selection')
+        location_dict={} #{group number:[[cell object,dataset,new location]]}
+        combined=[]
+        sample_list=[]
+        pca_index=np.array(pca_index)
+        X_val=[]
+        a_all_offset=np.array(all_offset)
+        for i in range(1,group_counter+1):
+            dis_cellline=list(set(cell_object[g_s_counter[i-1]:g_s_counter[i]]))  #cell object may have duplicate cell line since:NCI A + CCLE A===>[A,A]
+            location_dict['g'+str(i)]=[]
+            dataset_dict={}
             a_cell_object=np.array(cell_object)
-            X_val=[]
             
-            for c in dis_cellline:
-                total_offset=np.where(a_cell_object==c)[0]
-                val_a=np.array(val)
-                a_all_offset=np.array(all_offset)
-                selected_val=val_a[a_all_offset[total_offset]]
+            for c in dis_cellline:    #dis_cellline may not have the same order as cell_object
+                
+                temp1=np.where((a_cell_object==c))[0]
+                
+                temp2=np.where((temp1>=g_s_counter[i-1])&(temp1<g_s_counter[i]))
+                total_offset=temp1[temp2]
+                selected_val=val[:,a_all_offset[total_offset]]
+                selected_val=np.transpose(selected_val)
                 new_loca=(np.mean(selected_val,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
-                #location_dict[c]=new_loca
-                X_val.append(new_loca)   #in the order of dis_cellline
+                
                 
                 a_sample=np.array(all_sample)
                 selected_sample=a_sample[total_offset]
                 
+                if list(selected_sample) in sample_list:   #to prevent two different colors in different group
+                    continue
+                else:
+                    sample_list.append(list(selected_sample))
+                
+                
+                #print(selected_sample)
+                
+                
+                
+                d_temp=[]
                 for s in selected_sample:
-                    
-                    dataset=s.dataset_id.name
+                    d_temp.append(s.dataset_id.name)
+                dataset_dict[c]="/".join(list(set(d_temp)))    
+                print(dataset_dict[c])
+                X_val.append(new_loca)
+                location_dict['g'+str(i)].append([c,dataset_dict[c],len(X_val)-1])  #the last part is the index to get pca result from new_val
+                combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
+        
+        #run the pca
+        print(len(X_val[0]))
+        X_val=np.matrix(X_val)
+        pca= PCA(n_components=n)
+        new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
+        ratio_temp=pca.explained_variance_ratio_
+        propotion=sum(ratio_temp[1:n])
+        table_propotion=sum(ratio_temp[0:n])
+        print(new_val)
+
+
+        
+        out_group=[]
+        min=10000000000
+        max=0
+        for g in range(1,group_counter+1):
+            output_cell=[]
+            exist_cell={}
+            
+            for group_c in location_dict['g'+str(g)]:  #a list of [c,dataset_dict[c],new_val index] in group one
+                cell=group_c[0]
+                key_string=cell.name+'/'+cell.primary_site+'/'+cell.primary_hist+'/'+group_c[1]
+                exist_cell[key_string]=[]
+                output_cell.append([cell,[]])
+                
+                #count the distance
+                for temp_list in combined:
+                    c=temp_list[0]
+                    temp_string=c.name+'/'+c.primary_site+'/'+c.primary_hist+'/'+temp_list[1]
                     try:
-                        sets=dataset_dict[c]
-                        if (("NCI60" in sets) and ("GSE36133" in sets)):
-                            break
-                        if ("Sanger Cell Line Project" in sets):
-                            break
-                        if( dataset not in sets):
-                            dataset_dict[c]=dataset+"/"+sets
-                    except KeyError: 
-                        dataset_dict[c]=dataset
-            
-            
-            #run the pca again here and store it with new offset to get the new pca data
-            print(len(X_val[0]))
-            X_val=np.matrix(X_val)
-            pca= PCA(n_components=n)   #NOTICE:n or 3??
-            new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
-            ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[1:n])
-            table_propotion=sum(ratio_temp[0:n])
-            print(new_val)
-            
-            out_group=[]
-            min=10000000000
-            max=0
-            #count distance base on X_val
-            for g in range(1,group_counter+1):
-                output_cell=[]
-                exist_cell=[]
-                check={} #to remove A-B and B-A
-                for s in range(g_s_counter[g-1],g_s_counter[g]):
-                    cell=all_sample[s].cell_line_id
-                    index_cell=np.where(np.array(dis_cellline)==cell)[0][0]
-                    if (cell not in exist_cell):
-                        output_cell.append([cell,[]])
-                        check[cell]=[]  
-                        #count the distance
-                        for c in dis_cellline:
-                            if c != cell:
-                                index_c=np.where(np.array(dis_cellline)==c)[0][0]
-                                
-                                try:
-                                    if(cell not in check[c]):
-                                        distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[index_c]))
-                                        if distance<min:
-                                            min=distance
-                                        if distance>max:
-                                            max=distance
-                                        output_cell[len(output_cell)-1][1].append([cell,dataset_dict[cell],c,dataset_dict[c],distance])
-                                        check[cell].append(c)
-                                except KeyError:
-                                    
-                                    distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[index_c]))
-                                    if distance<min:
-                                        min=distance
-                                    if distance>max:
-                                        max=distance
-                                    output_cell[len(output_cell)-1][1].append([cell,dataset_dict[cell],c,dataset_dict[c],distance])
-                                    check[cell].append(c)
-                                                    
-                        exist_cell.append(cell) 
-                        
-                        
-                        if(g==1):
-                            name1.append(cell.name+'<br>'+dataset_dict[cell])
-                            X1.append(round(new_val[index_cell][n-3],5))
-                            Y1.append(round(new_val[index_cell][n-2],5))
-                            Z1.append(round(new_val[index_cell][n-1],5))
-                        elif(g==2):
-                            name2.append(cell.name+'<br>'+dataset_dict[cell])
-                            X2.append(round(new_val[index_cell][n-3],5))
-                            Y2.append(round(new_val[index_cell][n-2],5))
-                            Z2.append(round(new_val[index_cell][n-1],5))
-                        elif(g==3):
-                            name3.append(cell.name+'<br>'+dataset_dict[cell])
-                            X3.append(round(new_val[index_cell][n-3],5))
-                            Y3.append(round(new_val[index_cell][n-2],5))
-                            Z3.append(round(new_val[index_cell][n-1],5))
-                        elif(g==4):
-                            name4.append(cell.name+'<br>'+dataset_dict[cell])
-                            X4.append(round(new_val[index_cell][n-3],5))
-                            Y4.append(round(new_val[index_cell][n-2],5))
-                            Z4.append(round(new_val[index_cell][n-1],5))
-                        elif(g==5):
-                            name5.append(cell.name+'<br>'+dataset_dict[cell])
-                            X5.append(round(new_val[index_cell][n-3],5))
-                            Y5.append(round(new_val[index_cell][n-2],5))
-                            Z5.append(round(new_val[index_cell][n-1],5)) 
-                out_group.append([g,output_cell]) 
-                           
-
-        else:
-        #This part is for select cell line base on dataset,count centroid base on the dataset
-        #group中的cell line為單位來算重心
-            #logger.info('pca show centroid with selection')
-            location_dict={} #{group number:[[cell object,dataset,new location]]}
-            combined=[]
-            sample_list=[]
-            pca_index=np.array(pca_index)
-            X_val=[]
-            val_a=np.array(val)
-            a_all_offset=np.array(all_offset)
-            for i in range(1,group_counter+1):
-                dis_cellline=list(set(cell_object[g_s_counter[i-1]:g_s_counter[i]]))  #cell object may have duplicate cell line since:NCI A + CCLE A===>[A,A]
-                location_dict['g'+str(i)]=[]
-                dataset_dict={}
-                a_cell_object=np.array(cell_object)
-                
-                for c in dis_cellline:    #dis_cellline may not have the same order as cell_object
-                    
-                    temp1=np.where((a_cell_object==c))[0]
-                    
-                    temp2=np.where((temp1>=g_s_counter[i-1])&(temp1<g_s_counter[i]))
-                    total_offset=temp1[temp2]
-                    selected_val=val_a[a_all_offset[total_offset]]
-                    new_loca=(np.mean(selected_val,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
-                    
-                    
-                    a_sample=np.array(all_sample)
-                    selected_sample=a_sample[total_offset]
-                    
-                    if list(selected_sample) in sample_list:   #to prevent two different colors in different group
-                        continue
-                    else:
-                        sample_list.append(list(selected_sample))
-                    
-                    
-                    #print(selected_sample)
-                    for s in selected_sample:
-                        
-                        dataset=s.dataset_id.name
-                        try:
-                            sets=dataset_dict[c]
-                            if(nci_flag==1 and gse_flag==1):
-                                if (("NCI60" in sets) and ("GSE36133" in sets)):
-                                    break
-                            elif(nci_flag==1 and gse_flag==0):
-                                if("NCI60" in sets):
-                                    break
-                            elif(gse_flag==1 and nci_flag==0):
-                                if("GSE36133" in sets):
-                                    break
-                            elif ("Sanger Cell Line Project" in sets):
-                                break
-                            if( dataset not in sets):
-                                dataset_dict[c]=dataset+"/"+sets
-                        except KeyError: 
-                            dataset_dict[c]=dataset
-                    X_val.append(new_loca)
-                    location_dict['g'+str(i)].append([c,dataset_dict[c],len(X_val)-1])  #the last part is the index to get pca result from new_val
-                    combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
-            
-            #run the pca
-            print(len(X_val[0]))
-            X_val=np.matrix(X_val)
-            pca= PCA(n_components=n)
-            new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
-            ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[1:n])
-            table_propotion=sum(ratio_temp[0:n])
-            print(new_val)
-
-
-
-
-            
-            out_group=[]
-            min=10000000000
-            max=0
-            for g in range(1,group_counter+1):
-                output_cell=[]
-                exist_cell={}
-                
-                for group_c in location_dict['g'+str(g)]:  #a list of [c,dataset_dict[c],new_val index] in group one
-                    cell=group_c[0]
-                    key_string=cell.name+'/'+cell.primary_site+'/'+cell.primary_hist+'/'+group_c[1]
-                    exist_cell[key_string]=[]
-                    output_cell.append([cell,[]])
-                    
-                    #count the distance
-                    for temp_list in combined:
-                        c=temp_list[0]
-                        temp_string=c.name+'/'+c.primary_site+'/'+c.primary_hist+'/'+temp_list[1]
-                        try:
-                            if(key_string not in exist_cell[temp_string]):
-                                distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[temp_list[2]]))
-                                if distance==0:
-                                    continue
-                                if distance<min:
-                                    min=distance
-                                if distance>max:
-                                    max=distance
-                                output_cell[len(output_cell)-1][1].append([cell,group_c[1],temp_list[0],temp_list[1],distance])
-                                exist_cell[key_string].append(temp_string)
-                        except KeyError:
-                            distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[temp_list[2]]))
+                        if(key_string not in exist_cell[temp_string]):
+                            distance=np.linalg.norm(np.array(new_val[group_c[2]][n-3:n])-np.array(new_val[temp_list[2]][n-3:n]))
                             if distance==0:
                                 continue
                             if distance<min:
@@ -1983,32 +1838,42 @@ def pca(request):
                                 max=distance
                             output_cell[len(output_cell)-1][1].append([cell,group_c[1],temp_list[0],temp_list[1],distance])
                             exist_cell[key_string].append(temp_string)
-                    if(g==1):
-                        name1.append(cell.name+'<br>'+group_c[1])
-                        X1.append(round(new_val[group_c[2]][n-3],5))
-                        Y1.append(round(new_val[group_c[2]][n-2],5))
-                        Z1.append(round(new_val[group_c[2]][n-1],5))
-                    elif(g==2):
-                        name2.append(cell.name+'<br>'+group_c[1])
-                        X2.append(round(new_val[group_c[2]][n-3],5))
-                        Y2.append(round(new_val[group_c[2]][n-2],5))
-                        Z2.append(round(new_val[group_c[2]][n-1],5))
-                    elif(g==3):
-                        name3.append(cell.name+'<br>'+group_c[1])
-                        X3.append(round(new_val[group_c[2]][n-3],5))
-                        Y3.append(round(new_val[group_c[2]][n-2],5))
-                        Z3.append(round(new_val[group_c[2]][n-1],5))
-                    elif(g==4):
-                        name4.append(cell.name+'<br>'+group_c[1])
-                        X4.append(round(new_val[group_c[2]][n-3],5))
-                        Y4.append(round(new_val[group_c[2]][n-2],5))
-                        Z4.append(round(new_val[group_c[2]][n-1],5))
-                    elif(g==5):
-                        name5.append(cell.name+'<br>'+group_c[1])
-                        X5.append(round(new_val[group_c[2]][n-3],5))
-                        Y5.append(round(new_val[group_c[2]][n-2],5))
-                        Z5.append(round(new_val[group_c[2]][n-1],5)) 
-                out_group.append([g,output_cell])
+                    except KeyError:
+                        distance=np.linalg.norm(np.array(new_val[group_c[2]][n-3:n])-np.array(new_val[temp_list[2]][n-3:n]))
+                        if distance==0:
+                            continue
+                        if distance<min:
+                            min=distance
+                        if distance>max:
+                            max=distance
+                        output_cell[len(output_cell)-1][1].append([cell,group_c[1],temp_list[0],temp_list[1],distance])
+                        exist_cell[key_string].append(temp_string)
+                if(g==1):
+                    name1.append(cell.name+'<br>'+group_c[1])
+                    X1.append(round(new_val[group_c[2]][n-3],5))
+                    Y1.append(round(new_val[group_c[2]][n-2],5))
+                    Z1.append(round(new_val[group_c[2]][n-1],5))
+                elif(g==2):
+                    name2.append(cell.name+'<br>'+group_c[1])
+                    X2.append(round(new_val[group_c[2]][n-3],5))
+                    Y2.append(round(new_val[group_c[2]][n-2],5))
+                    Z2.append(round(new_val[group_c[2]][n-1],5))
+                elif(g==3):
+                    name3.append(cell.name+'<br>'+group_c[1])
+                    X3.append(round(new_val[group_c[2]][n-3],5))
+                    Y3.append(round(new_val[group_c[2]][n-2],5))
+                    Z3.append(round(new_val[group_c[2]][n-1],5))
+                elif(g==4):
+                    name4.append(cell.name+'<br>'+group_c[1])
+                    X4.append(round(new_val[group_c[2]][n-3],5))
+                    Y4.append(round(new_val[group_c[2]][n-2],5))
+                    Z4.append(round(new_val[group_c[2]][n-1],5))
+                elif(g==5):
+                    name5.append(cell.name+'<br>'+group_c[1])
+                    X5.append(round(new_val[group_c[2]][n-3],5))
+                    Y5.append(round(new_val[group_c[2]][n-2],5))
+                    Z5.append(round(new_val[group_c[2]][n-1],5)) 
+            out_group.append([g,output_cell])
     #logger.info('end pca')    
     return render_to_response(return_html,RequestContext(request,
     {
@@ -2036,80 +1901,40 @@ def pca(request):
 def cellline_microarray(request):
     # Pre-fetch the cell line field for all samples.
     # Reduce N query in to 1. N = number of samples
-    samples = Sample.objects.filter(
-        dataset_id__name__in=['Sanger Cell Line Project']
-    ).select_related('cell_line_id')
-    ncisamples = Sample.objects.filter(
-        dataset_id__name__in=['NCI60']
-    ).select_related('cell_line_id')
-    CCsamples = Sample.objects.filter(
-        dataset_id__name__in=['GSE36133']
-    ).select_related('cell_line_id')    
-    '''
-    # Get all distinct primary sites from selected samples
-    primary_sites = sorted(
-        samples.values_list('cell_line_id__primary_site', flat=True).distinct()
-    )
-    nciprimary_sites = sorted(
-        ncisamples.values_list('cell_line_id__primary_site', flat=True).distinct()
-    )
-    CCprimary_sites = sorted(
-        CCsamples.values_list('cell_line_id__primary_site', flat=True).distinct()
-    )
-    '''
-    nci=[]
-    nciprime=Sample.objects.filter(dataset_id__name="NCI60").order_by('cell_line_id__primary_site').select_related('cell_line_id')
-    ncisites=list(nciprime.values_list('cell_line_id__primary_site',flat=True))
-    ncicells=list(nciprime.values_list('cell_line_id__name',flat=True))
-    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
-    ncidi=list(nciprime.values_list('cell_line_id__primary_site',flat=True).distinct())
-    ncicells=list(ncicells)
-    id_counter=0
-   
-    for p in range(0,len(ncidi)):
-        temp=ncisites.count(ncidi[p])
-        nci.append((ncidi[p],list(set(ncicells[id_counter:id_counter+temp]))))
-        id_counter+=temp
+    d=Dataset.objects.all()
+    d_name=list(d.values_list('name',flat=True))
+    datasets=[]  #[[dataset_name,[[primary_site,[cell line]]]]
+    an=[]
+    for i in d_name:
         
-    sanger=[]
-    sangerprime=Sample.objects.filter(dataset_id__name="Sanger Cell Line Project").order_by('cell_line_id__primary_site').select_related('cell_line_id')
-    sangersites=list(sangerprime.values_list('cell_line_id__primary_site',flat=True))
-    sangercells=list(sangerprime.values_list('cell_line_id__name',flat=True))
-    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
-    sangerdi=list(sangerprime.values_list('cell_line_id__primary_site',flat=True).distinct())
-    sangercells=list(sangercells)
-    id_counter=0
-   
-    for p in range(0,len(sangerdi)):
-        temp=sangersites.count(sangerdi[p])
-        sanger.append((sangerdi[p],list(set(sangercells[id_counter:id_counter+temp]))))
-        id_counter+=temp
+        if i=="Sanger Cell Line Project":
+            alias='sanger'
+        elif i=="NCI60":
+            alias='nci'
+        elif i=="GSE36133":
+            alias='gse'
+        else:
+            alias=i
         
-    ccle=[]
-    ccleprime=Sample.objects.filter(dataset_id__name="GSE36133").order_by('cell_line_id__primary_site').select_related('cell_line_id')
-    cclesites=list(ccleprime.values_list('cell_line_id__primary_site',flat=True))
-    cclecells=list(ccleprime.values_list('cell_line_id__name',flat=True))
-    #ncidi=list(ncicells.values_list('cell_line_id__primary_site',flat=True))
-    ccledi=list(ccleprime.values_list('cell_line_id__primary_site',flat=True).distinct())
-    cclecells=list(cclecells)
-    id_counter=0
-   
-    for p in range(0,len(ccledi)):
-        temp=cclesites.count(ccledi[p])
-        ccle.append((ccledi[p],list(set(cclecells[id_counter:id_counter+temp]))))
-        id_counter+=temp
-    
-    
-    
+        an.append(alias)
+        sample=Sample.objects.filter(dataset_id__name=i).order_by('cell_line_id__primary_site').select_related('cell_line_id')
+        datasets.append([i,alias,list(sample),[]])
+        sites=list(sample.values_list('cell_line_id__primary_site',flat=True))
+        hists=list(sample.values_list('cell_line_id__name',flat=True))
+        
+        dis_prim=list(sample.values_list('cell_line_id__primary_site',flat=True).distinct())
+        hists=list(hists)
+        id_counter=0
+       
+        for p in range(0,len(dis_prim)):
+            temp=sites.count(dis_prim[p])
+            datasets[-1][3].append([dis_prim[p],list(set(hists[id_counter:id_counter+temp]))])
+            id_counter+=temp
 
     return render(request, 'cellline_microarray.html', {
-        'nci': nci,
-        'sanger':sanger,
-        'ccle':ccle,
-        'samples': samples,
-        'ncisamples': ncisamples,
-        'CCsamples': CCsamples,
-        
+        'an':mark_safe(json.dumps(an)),
+        'd_name':d_name,
+        'datasets':datasets, 
     })
 
 
@@ -2150,6 +1975,16 @@ def cell_lines(request):
 def clinical_search(request):
 
     norm_name=[request.POST['normalize']]  #get the normalize gene name
+    #f_type=['age','gender','ethnic','grade','stage','stageT','stageN','stageM','metastatic']
+    age=[]
+    gender=[]
+    ethnic=[]
+    grade=[]
+    stage=[]
+    T=[]
+    N=[]
+    M=[]
+    metas=[]
     #get the probe/gene/id keywords
     if 'keyword' in request.POST and request.POST['keyword'] != '':
         words = request.POST['keyword']
@@ -2183,20 +2018,89 @@ def clinical_search(request):
         com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
         prims=com_hists[0::2]
         hists=com_hists[1::2]
+        
+        temp=request.POST.getlist('filter_primh')
+        for i in temp:
+            if 'stage/' in i:
+                stage.append(i[6:])                
+            elif 'gender/' in i:
+                gender.append(i[7:])
+            elif 'ethnic/' in i:
+                ethnic.append(i[7:])
+            elif 'grade/' in i:
+                grade.append(i[6:])
+            elif 'stageT/' in i:
+                T.append(i[7:])
+            elif 'stageN/' in i:
+                N.append(i[7:])
+            elif 'stageM/' in i:
+                M.append(i[7:])
+            elif 'metastatic/' in i:
+                if i[11:]=='False':
+                    metas.append(0)
+                else:
+                    metas.append(1)
+            else:  #"age/"
+                age.append(i[4:])
+                                
     
     for sets in datas:
         samples=[]
         offset=[]        
         if request.POST['clinical_method'] == 'prim_dataset':
-            com_hists=list(set(request.POST.getlist('primd_'+sets)))
+            com_hists=list(set(request.POST.getlist('primd_'+sets)))    #can I get this by label to reduce number of queries?
             com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
             prims=com_hists[0::2]
             hists=com_hists[1::2]
+            temp=request.POST.getlist('filter_'+sets)
+            age=[]
+            gender=[]
+            ethnic=[]
+            grade=[]
+            stage=[]
+            T=[]
+            N=[]
+            M=[]
+            metas=[]
+            for i in temp:
+                if 'stage/' in i:
+                    stage.append(i[6:])
+                elif 'gender/' in i:
+                    gender.append(i[7:])
+                elif 'ethnic/' in i:
+                    ethnic.append(i[7:])
+                elif 'grade/' in i:
+                    grade.append(i[6:])
+                elif 'stageT/' in i:
+                    T.append(i[7:])
+                elif 'stageN/' in i:
+                    N.append(i[7:])
+                elif 'stageM/' in i:
+                    M.append(i[7:])
+                elif 'metastatic/' in i:
+                    if i[11:]=='False':
+                        metas.append(0)
+                    else:
+                        metas.append(1)
+                else:  #"age/"
+                    age.append(i[4:])
         for i in range(0,len(prims)):
-            s=Clinical_sample.objects.filter(dataset_id__name=sets,primary_site=prims[i],primary_hist=hists[i]).select_related('dataset_id').order_by('id')
+            #metas=[bool(x) for x in metas]
+            s=Clinical_sample.objects.filter(dataset_id__name=sets,primary_site=prims[i],
+            primary_hist=hists[i],
+            age__in=age,
+            gender__in=gender,
+            ethnic__in=ethnic,
+            stage__in=stage,
+            grade__in=grade,
+            stageT__in=T,
+            stageN__in=N,
+            stageM__in=M,
+            metastatic__in=metas
+            ).select_related('dataset_id').order_by('id')
             samples+=list(s) 
             offset+=list(s.values_list('offset',flat=True))
-
+            #print(s)
         pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=sets).data_path)
         val=np.load(pth.as_posix(),mmap_mode='r')
         
