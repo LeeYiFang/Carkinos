@@ -189,6 +189,7 @@ $("#submit").click(function() {
   }
   else
   {
+    ef=0;
     if($( "input[name='dataset']:checked" ).length==0)
     {
         $("span[name='needed2']").css('display', 'block');
@@ -202,19 +203,22 @@ $("#submit").click(function() {
     l=name.length;
     for(var j=0;j<l;j++)
     {
-        if( !$("#select_"+name[j]).val() ) 
+        if($("#"+name[j]).is(':checked'))
         {
-            $("span[name='"+name[j]+"_needed']").show();
-            ef=1;
+            if( !$("#select_"+name[j]).val() ) 
+            {
+                $("span[name='"+name[j]+"_needed']").show();
+                ef=1;
+            }
+            else
+            {
+                $("span[name='"+name[j]+"_needed']").hide();
+            }
         }
-        else
-        {
-            $("span[name='"+name[j]+"_needed']").hide();
-        }
-        
     }
     if(ef==1)
     {
+        alert("error!!!");
         return false;
     }
     
