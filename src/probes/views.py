@@ -178,41 +178,257 @@ def user_pca(request):
         quantile=list(np.load('ranking_u133a.npy'))
         probe_path=Path('../').resolve().joinpath('src','Affy_U133A_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
-        sanger_val_pth=Path('../').resolve().joinpath('src','sanger_cell_line_proj.npy')
-        sanger_val=np.load(sanger_val_pth.as_posix(),mmap_mode='r')
+        
     else:
         quantile=np.load('ranking_u133plus2.npy')
         probe_path=Path('../').resolve().joinpath('src','Affy_U133plus2_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
-        nci_val_pth=Path('../').resolve().joinpath('src','nci60.npy')
-        gse_val_pth=Path('../').resolve().joinpath('src','GSE36133.npy')
         
-        nci_val=np.load(nci_val_pth.as_posix(),mmap_mode='r')
-        gse_val=np.load(gse_val_pth.as_posix(),mmap_mode='r')
     
     uni_probe=pd.unique(probe_list.PROBEID)
-    #read the user file(suppose only one file now)    
+    
+    
+    propotion=0
+    table_propotion=0
+    show=request.POST['show_type']      #get the pca show type
+    nci_size=Sample.objects.filter(dataset_id__name__in=["NCI60"]).count()
+    gse_size=Sample.objects.filter(dataset_id__name__in=["GSE36133"]).count()
+    group_counter=1
+    user_out_group=[]
+    s_group_dict={}  #store sample
+    offset_group_dict={} #store offset
+    cell_line_dict={}
+    
+    #this part is for selecting cell lines base on dataset
+    #count how many group
+    group_counter=1
+    while True:
+        temp_name='dataset_g'+str(group_counter)
+        if temp_name in request.POST:
+            group_counter=group_counter+1
+        else:
+            group_counter=group_counter-1
+            break
+
+    s_group_dict={}  #store sample
+    group_name=[]
+    offset_group_dict={} #store offset
+    
+    clinic=list(Clinical_Dataset.objects.all().values_list('name',flat=True))
+    clline=list(Dataset.objects.all().values_list('name',flat=True))
+    
+    all_exist_dataset=[]
+    for i in range(1,group_counter+1):
+        dname='dataset_g'+str(i)
+        all_exist_dataset=all_exist_dataset+request.POST.getlist(dname)
+    all_exist_dataset=list(set(all_exist_dataset))
+    
+    all_base=[0]
+    for i in range(0,len(all_exist_dataset)-1):
+        if all_exist_dataset[i] in clline:
+            all_base.append(all_base[i]+Sample.objects.filter(dataset_id__name__in=[all_exist_dataset[i]]).count())
+        else:
+            all_base.append(all_base[i]+Clinical_sample.objects.filter(dataset_id__name__in=[all_exist_dataset[i]]).count())
+    
+    
+    all_c=[]
+    
+    for i in range(1,group_counter+1):
+        s_group_dict['g'+str(i)]=[]
+        offset_group_dict['g'+str(i)]=[]
+        cell_line_dict['g'+str(i)]=[]
+        dname='dataset_g'+str(i)
+        datasets=request.POST.getlist(dname)
+        group_name.append('g'+str(i))
+        
+        for dn in datasets:
+            if dn=='Sanger Cell Line Project':
+                c='select_sanger_g'+str(i)
+            elif dn=='NCI60':
+                c='select_nci_g'+str(i)
+            elif dn=='GSE36133':
+                c='select_ccle_g'+str(i)
+
+            if dn in clline:
+                temp=list(set(request.POST.getlist(c)))
+                if 'd_sample' in show:
+                    if all_c==[]:
+                        all_c=all_c+temp
+                        uni=temp
+                    else:
+                        uni=list(set(temp)-set(all_c))
+                        all_c=all_c+uni
+                else:
+                    uni=list(temp)          #do not filter duplicate input only when select+centroid
+                s=Sample.objects.filter(cell_line_id__name__in=uni,dataset_id__name__in=[dn]).order_by('dataset_id'
+                ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
+                
+                cell_line_dict['g'+str(i)]=cell_line_dict['g'+str(i)]+list(s.values_list('cell_line_id__name',flat=True))
+                s_group_dict['g'+str(i)]=s_group_dict['g'+str(i)]+list(s)
+                offset_group_dict['g'+str(i)]=offset_group_dict['g'+str(i)]+list(np.add(list(s.values_list('offset',flat=True)),all_base[all_exist_dataset.index(dn)]))
+                
+
+            else: #dealing with clinical sample datasets
+                com_hists=list(set(request.POST.getlist('primd_'+dn+'_g'+str(i))))    #can I get this by label to reduce number of queries?
+                com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
+                prims=com_hists[0::2]
+                hists=com_hists[1::2]
+                temp=request.POST.getlist('filter_'+dn+'_g'+str(i))
+                age=[]
+                gender=[]
+                ethnic=[]
+                grade=[]
+                stage=[]
+                T=[]
+                N=[]
+                M=[]
+                metas=[]
+                for t in temp:
+                    if 'stage/' in t:
+                        stage.append(t[6:])
+                    elif 'gender/' in t:
+                        gender.append(t[7:])
+                    elif 'ethnic/' in t:
+                        ethnic.append(t[7:])
+                    elif 'grade/' in t:
+                        grade.append(t[6:])
+                    elif 'stageT/' in t:
+                        T.append(t[7:])
+                    elif 'stageN/' in t:
+                        N.append(t[7:])
+                    elif 'stageM/' in t:
+                        M.append(t[7:])
+                    elif 'metastatic/' in t:
+                        if t[11:]=='False':
+                            metas.append(0)
+                        else:
+                            metas.append(1)
+                    else:  #"age/"
+                        age.append(t[4:])
+                for x in range(0,len(prims)):
+                    s=Clinical_sample.objects.filter(dataset_id__name=dn,primary_site=prims[x],
+                    primary_hist=hists[x],
+                    age__in=age,
+                    gender__in=gender,
+                    ethnic__in=ethnic,
+                    stage__in=stage,
+                    grade__in=grade,
+                    stageT__in=T,
+                    stageN__in=N,
+                    stageM__in=M,
+                    metastatic__in=metas,
+                    ).select_related('dataset_id').order_by('id')
+                    s_group_dict['g'+str(i)]=s_group_dict['g'+str(i)]+list(s)
+                    cell_line_dict['g'+str(i)]=cell_line_dict['g'+str(i)]+list(s.values_list('name',flat=True))
+                    offset_group_dict['g'+str(i)]=offset_group_dict['g'+str(i)]+list(np.add(list(s.values_list('offset',flat=True)),all_base[all_exist_dataset.index(dn)]))
+
+    all_sample=[]
+    all_cellline=[]
+    cell_object=[]
+    all_offset=[]
+    sample_counter={}
+    group_cell=[]
+    g_s_counter=[0]
+    
+    for i in range(1,group_counter+1):
+        all_sample=all_sample+s_group_dict['g'+str(i)] #will not exist duplicate sample if d_sample
+        all_offset=all_offset+offset_group_dict['g'+str(i)]
+        all_cellline=all_cellline+cell_line_dict['g'+str(i)]
+        g_s_counter.append(g_s_counter[i-1]+len(s_group_dict['g'+str(i)]))
+
+    for i in all_sample:
+        sample_counter[i.name]=1
+        if str(type(i))=="<class 'probes.models.Sample'>":
+            #print("i am sample!!")
+            cell_object.append(i.cell_line_id)
+        else:
+            #print("i am clinical!!")
+            cell_object.append(i)
+            
+    #read the user file   
     text=request.FILES.getlist('user_file')
     user_counter=len(text)
+    user_dict={} #{user group number:user 2d array}
+    samples=0
     for x in range(1,user_counter+1):
         #check the file format and content here first        
         filetype=str(text[x-1]).split('.')
         if(filetype[-1]!="csv"):
-            return HttpResponse('You have the wrong file type. Please upload .csv files')
+            error_reason='You have the wrong file type. Please upload .csv files'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
         if(text[x-1].size>=80000000): #bytes
-            return HttpResponse('The file size is too big. Please upload .csv file with size less than 80MB.')
+            error_reason='The file size is too big. Please upload .csv file with size less than 80MB.'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
         temp_data = pd.read_csv(text[x-1])
+        col=list(temp_data.columns.values)
+        samples=samples+len(col)-1
+        if(samples==0):
+           error_reason='The file does not have any samples.'
+           return render_to_response('pca_error.html',RequestContext(request,
+           {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+           })) 
         if(len(temp_data.index)<(len(uni_probe)/2)):
-            return HttpResponse('The file has less than 1/2 probes of the platform.')
-            
-    user_dict={} #{user group number:user 2d array}
+            error_reason='The file has less than 1/2 probes of the platform.'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
+        user_dict[x]=temp_data    
+    
+    if 'd_sample' in show:
+        if((len(all_sample)+samples)<4):
+            error_reason='You should have at least 4 samples for PCA. The samples are not enough.<br />'\
+            'The total number of samples in your uploaded file is '+str(samples)+'.<br />'\
+            'The number of samples you selected is '+str(len(all_sample))+'.<br />'\
+            'Total is '+str(len(all_sample)+samples)+'.'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
+    else:
+        s_count=0
+        sample_list=[]
+        a_sample=np.array(all_sample)
+        for i in range(1,group_counter+1):
+            dis_cellline=list(set(cell_object[g_s_counter[i-1]:g_s_counter[i]]))
+            a_cell_object=np.array(cell_object)
+            for c in dis_cellline:    
+                
+                temp1=np.where((a_cell_object==c))[0]
+                
+                temp2=np.where((temp1>=g_s_counter[i-1])&(temp1<g_s_counter[i]))
+                total_offset=temp1[temp2]
+
+                selected_sample=a_sample[total_offset]
+                
+                if list(selected_sample) in sample_list:   #to prevent two different colors in different group
+                    continue
+                else:
+                    sample_list.append(list(selected_sample))
+                    s_count=s_count+1
+        if((s_count+samples)<4):
+            error_reason='Since the display method is [centroid], you should have at least 4 dots for PCA. The total number is not enough.<br />'\
+            'The total number of dots in you uploaded file is '+str(samples)+'.<br />'\
+            'The number of centroid dots you selected is '+str(s_count)+'.<br />'\
+            'Total is '+str(s_count+samples)+'.'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
     new_name=[]
     origin_name=[]
-    return render_to_response('welcome.html',locals())
-    
+
     for x in range(1,user_counter+1):
         
-        temp_data = pd.read_csv(text[x-1])
+        #temp_data = pd.read_csv(text[x-1])
+        temp_data=user_dict[x]
         col=list(temp_data.columns.values)
         col[0]='probe'
         temp_data.columns=col
@@ -245,223 +461,28 @@ def user_pca(request):
         else:
             data=np.concatenate((data,temp_data), axis=1)
     
-    propotion=0
-    table_propotion=0
-    show=request.POST['show_type']      #get the pca show type
-    nci_size=Sample.objects.filter(dataset_id__name__in=["NCI60"]).count()
-    gse_size=Sample.objects.filter(dataset_id__name__in=["GSE36133"]).count()
-    group_counter=1
-    user_out_group=[]
-    s_group_dict={}  #store sample
-    offset_group_dict={} #store offset
-    cell_line_dict={}
-    if request.POST['cell_line_method'] == 'text':
-        
-        #count how many group
-        group_counter=1
-        while True:
-            temp_name='cellline_g'+str(group_counter)
-            if temp_name in request.POST:
-                group_counter=group_counter+1
-            else:
-                group_counter=group_counter-1
-                break
-    
-        s_group_dict={}  #store sample
-        offset_group_dict={} #store offset
-        gse_flag=0
-        nci_flag=0
-        all_c=[]
-        for i in range(1,group_counter+1):
-            c='cellline_g'+str(i)
-            if request.POST[c] !='':
-                temp_name='g'+str(i)
-
-                temp=list(set(request.POST[c].split()))
-                if all_c==[]:
-                    all_c=all_c+temp
-                    uni=temp
-                else:
-                    uni=list(set(temp)-set(all_c))
-                    all_c=all_c+uni
-                    
-                s=Sample.objects.filter(cell_line_id__name__in=(uni),platform_id__name=pform).order_by('dataset_id'
-                ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                s_group_dict['g'+str(i)]=s
-                goffset=list(s.values_list('offset',flat=True))
-                offset_group_dict['g'+str(i)]=goffset
-                
-                cell_line_dict['g'+str(i)]=list(s.values_list('cell_line_id__name',flat=True))
-                
-                #deal with offset, because we have to combine u133plus2 data together PROBLEM!!!sample
-                gseindex=-1
-                if pform=="PLUS2":
-                    listg=list(s_group_dict[temp_name].values('dataset_id'))
-                    if {'dataset_id':3} in listg:
-                        nci_flag=1
-                    if {'dataset_id':3} in listg:
-                        gse_flag=1
-                        gseindex=listg.index({'dataset_id':3})
-                        offset_group_dict['g'+str(i)]=offset_group_dict['g'+str(i)][:gseindex]+list(np.add(offset_group_dict['g'+str(i)][gseindex:],nci_size))
-                
-                s_group_dict['g'+str(i)]=list(s)        
-        
-        
-    else:
-        #this part is for selecting cell lines base on dataset
-        #count how many group
-        group_counter=1
-        while True:
-            temp_name='dataset_g'+str(group_counter)
-            if temp_name in request.POST:
-                group_counter=group_counter+1
-            else:
-                group_counter=group_counter-1
-                break
-    
-        s_group_dict={}  #store sample
-        offset_group_dict={} #store offset
-        gse_flag=0
-        nci_flag=0
-        all_c=[]
-        all_c_nci=[]
-        all_c_gse=[]
-        for i in range(1,group_counter+1):
-            
-            dname='dataset_g'+str(i)
-            datasets=request.POST.getlist(dname)
-            sanger_data=[]
-            nci_data=[]
-            gse_data=[]
-            temp_name='g'+str(i)
-            if pform=="U133A":
-                csanger='select_sanger_g'+str(i)
-                if 'Sanger Cell Line Project' in datasets:
-                    SANGER=request.POST.getlist(csanger)
-                    temp=list(set(SANGER))
-                    if all_c==[]:
-                        all_c=all_c+temp
-                        uni=temp
-                    else:
-                        uni=list(set(temp)-set(all_c))
-                        all_c=all_c+uni
-                    s=Sample.objects.filter(cell_line_id__name__in=uni,platform_id__name=pform).order_by('dataset_id'
-                    ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                    goffset=list(s.values_list('offset',flat=True))
-                    s_group_dict['g'+str(i)]=list(s)
-                    offset_group_dict['g'+str(i)]=goffset
-                    cell_line_dict['g'+str(i)]=list(s.values_list('cell_line_id__name',flat=True))
-            else:
-                cnci='select_nci_g'+str(i)
-                cgse='select_ccle_g'+str(i)
-                s_nci=[]
-                s_gse=[]
-                cell_gse=[]
-                cell_nci=[]
-                goffset_nci=[]
-                goffset_gse=[]
-                if 'NCI60' in datasets:
-                    nci_flag=1
-                    NCI=request.POST.getlist(cnci)
-                    
-                    
-                    temp_nci=list(set(NCI))
-                    if 'd_sample' in show:
-                        if all_c_nci==[]:
-                            all_c_nci=all_c_nci+temp_nci
-                            uni_nci=temp_nci
-                        else:
-                            uni_nci=list(set(temp_nci)-set(all_c_nci))
-                            all_c_nci=all_c_nci+uni_nci
-                    else:
-                        uni_nci=list(temp_nci)          #do not filter duplicate input only when select+centroid
-                    s_nci=Sample.objects.filter(cell_line_id__name__in=uni_nci,dataset_id__name__in=['NCI60']).order_by('dataset_id'
-                    ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                    goffset_nci=list(s_nci.values_list('offset',flat=True))
-                    cell_nci=list(s_nci.values_list('cell_line_id__name',flat=True))
-                if 'GSE36133' in datasets:
-                    gse_flag=1
-                    GSE=request.POST.getlist(cgse)
-                    temp_gse=list(set(GSE))
-                    
-                    if 'd_sample' in show:
-                        if all_c_gse==[]:
-                            all_c_gse=all_c_gse+temp_gse
-                            uni_gse=temp_gse
-                        else:
-                            uni_gse=list(set(temp_gse)-set(all_c_gse))
-                            all_c_gse=all_c_gse+uni_gse
-                    else:
-                        uni_gse=list(temp_gse)
-                    s_gse=Sample.objects.filter(cell_line_id__name__in=uni_gse,dataset_id__name__in=['GSE36133']).order_by('dataset_id'
-                    ).select_related('cell_line_id__name','cell_line_id__primary_site','cell_line_id__primary_hist','dataset_id','dataset_id__name')
-                    cell_gse=list(s_gse.values_list('cell_line_id__name',flat=True))
-                    if(nci_flag==1):
-                        goffset_gse=list(np.add(list(s_gse.values_list('offset',flat=True)),nci_size))
-                    else:
-                        goffset_gse=list(s_gse.values_list('offset',flat=True))
-                
-                
-                #append nci60 and gse36133 as g_data
-                s_group_dict['g'+str(i)]=list(s_nci)+list(s_gse)
-                offset_group_dict['g'+str(i)]=goffset_nci+goffset_gse
-                cell_line_dict['g'+str(i)]=cell_nci+cell_gse
-                
-
     #delete nan, combine user data to the datasets,transpose matrix
-    if pform=="U133A":
-        user_offset=len(sanger_val[0])
-        comb=np.concatenate((sanger_val, data), axis=1)
-        sanger_val=comb[~np.isnan(comb).any(axis=1)]
-        sanger_val=np.matrix(sanger_val)#need fix
-        val=np.transpose(sanger_val)
-        
-    elif((nci_flag==1) and (gse_flag==1)):
-        user_offset=len(nci_val[0])+len(gse_val[0])
-        comb=np.concatenate((nci_val, gse_val), axis=1)
-        comb=np.concatenate((comb, data), axis=1)
-        comb=comb[~np.isnan(comb).any(axis=1)]
-        val=np.matrix(comb) #need fix
+    for x in range(0,len(all_exist_dataset)):
+        if all_exist_dataset[x] in clline:
+            pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+        else:
+            pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+        if x==0:
+            val=np.load(pth.as_posix())
+        else:
+            val=np.hstack((val, np.load(pth.as_posix())))#combine together
+    if 'd_sample' in show:
+        val=val[:,all_offset]
+        user_offset=len(val[0])
+        val=np.hstack((val, data))
+        val=val[~np.isnan(val).any(axis=1)]
         val=np.transpose(val)
-
-    elif nci_flag==1:
-        user_offset=len(nci_val[0])
-        comb=np.concatenate((nci_val, data), axis=1) #need fix
-        comb=comb[~np.isnan(comb).any(axis=1)]
-        nci_val=np.matrix(comb) 
-        val=np.transpose(nci_val)
     else:
-        user_offset=len(gse_val[0])
-        comb=np.concatenate((gse_val, data), axis=1)
-        comb=comb[~np.isnan(comb).any(axis=1)]
-        gse_val=np.matrix(comb) #need fix
-        val=np.transpose(gse_val)
-        
-    
-    
-    all_sample=[]
-    all_cellline=[]
-    cell_object=[]
-    all_offset=[]
-    sample_counter={}
-    group_cell=[]
-    g_s_counter=[0]
-    
-    for i in range(1,group_counter+1):
-        all_sample=all_sample+s_group_dict['g'+str(i)] #will not exist duplicate sample if d_sample
-        all_offset=all_offset+offset_group_dict['g'+str(i)]
-        all_cellline=all_cellline+cell_line_dict['g'+str(i)]
-        g_s_counter.append(g_s_counter[i-1]+len(s_group_dict['g'+str(i)]))
-    
-    for i in all_sample:
-        sample_counter[i.name]=1
-        cell_object.append(i.cell_line_id)
-    
-     
-          
+        user_offset=len(val[0])
+        val=np.hstack((val, data))
+        val=val[~np.isnan(val).any(axis=1)]  
     pca_index=[]
     dis_offset=[]
-      
 
     
     #PREMISE:same dataset same cell line will have only one type of primary site and primary histology
@@ -485,15 +506,15 @@ def user_pca(request):
     X5=[]
     Y5=[]
     Z5=[]
-    n=4  #need to fix to the best one #need to fix proportion 
+    n=4  #need to fix to the best one 
     
     if 'd_sample' in show:
         #count the pca first
         pca= PCA(n_components=n)
         
         #combine user sample's offset to all_offset in another variable
-        temp_offset=all_offset+[x for x in range(user_offset,len(val))]
-        Xval = pca.fit_transform(val[temp_offset,:])  #cannot get Xval with original offset any more
+        
+        Xval = pca.fit_transform(val[:,:])  #cannot get Xval with original offset any more
         ratio_temp=pca.explained_variance_ratio_
         propotion=sum(ratio_temp[1:n])
         table_propotion=sum(ratio_temp[0:n])
@@ -509,8 +530,12 @@ def user_pca(request):
             output_cell={}
             check={}
             for s in range(g_s_counter[g-1],g_s_counter[g]):
-                  
-                cell=all_sample[s].cell_line_id
+                
+                if str(type(all_sample[s]))=="<class 'probes.models.Sample'>":
+                    cell=all_sample[s].cell_line_id
+                else:
+                    cell=all_sample[s]
+               
                 try: 
                     counter=exist_cell[cell]
                     exist_cell[cell]=counter+1
@@ -530,7 +555,7 @@ def user_pca(request):
                         
                         try:
                             if(all_sample[s].name not in check[all_sample[i].name]):
-                                distance=np.linalg.norm(Xval[i]-Xval[s])
+                                distance=np.linalg.norm(Xval[i][n-3:n]-Xval[s][n-3:n])
                                 if distance<min:
                                     min=distance
                                 if distance>max:
@@ -543,7 +568,7 @@ def user_pca(request):
                                 check[all_sample[s].name].append(all_sample[i].name)
                                 
                         except KeyError:
-                            distance=np.linalg.norm(Xval[i]-Xval[s])
+                            distance=np.linalg.norm(Xval[i][n-3:n]-Xval[s][n-3:n])
                             if distance<min:
                                 min=distance
                             if distance>max:
@@ -556,7 +581,7 @@ def user_pca(request):
                 g_count=1   
                 u_count=len(user_dict[g_count][0])  #sample number in first user file
                 for i in range(user_new_offset,user_new_offset+len(origin_name)):  #remember to prevent empty file uploaded
-                    distance=np.linalg.norm(Xval[i]-Xval[s])
+                    distance=np.linalg.norm(Xval[i][n-3:n]-Xval[s][n-3:n])
                     if distance<min:
                         min=distance
                     if distance>max:
@@ -605,7 +630,7 @@ def user_pca(request):
                 before=0
                 for i in range(user_new_offset,user_new_offset+len(origin_name)):
                     for x in range(0,len(all_sample)):
-                        distance=np.linalg.norm(Xval[x]-Xval[i])
+                        distance=np.linalg.norm(Xval[x][n-3:n]-Xval[i][n-3:n])
                         if distance<min:
                             min=distance
                         if distance>max:
@@ -623,7 +648,7 @@ def user_pca(request):
                                 temp_count+=len(user_dict[temp_g][0])
                             except KeyError:
                                 temp_count+=0
-                        distance=np.linalg.norm(Xval[j]-Xval[i])
+                        distance=np.linalg.norm(Xval[j][n-3:n]-Xval[i][n-3:n])
                         if distance<min:
                             min=distance
                         if distance>max:
@@ -640,7 +665,7 @@ def user_pca(request):
                                 temp_count+=len(user_dict[temp_g][0])
                             except KeyError:
                                 temp_count+=0
-                        distance=np.linalg.norm(Xval[j]-Xval[i])
+                        distance=np.linalg.norm(Xval[j][n-3:n]-Xval[i][n-3:n])
                         if distance<min:
                             min=distance
                         if distance>max:
@@ -695,313 +720,92 @@ def user_pca(request):
     else:
         #This part is for centroid display
         return_html='user_pca_center.html'
-        #deal with text part first, get all cell line base on platform instead of dataset--->different group need to filter same cell line name first
-        #count the centroid--->use this new data to run pca--->new location to count distance
-        if request.POST['cell_line_method'] == 'text':
-            dis_cellline=list(set(cell_object))
-            #location_dict={} #{cell object:new location}
-            dataset_dict={}  #{cell object:dataset combined}
-            a_cell_object=np.array(cell_object)
-            X_val=[]
-            val_a=np.array(val)
-            for c in dis_cellline:
-                total_offset=np.where(a_cell_object==c)[0]
-                a_all_offset=np.array(all_offset)
-                selected_val=val_a[a_all_offset[total_offset]]
-                new_loca=(np.mean(selected_val,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
-                #location_dict[c]=new_loca
-                X_val.append(new_loca)   #in the order of dis_cellline
-                
-                a_sample=np.array(all_sample)
-                selected_sample=a_sample[total_offset]
-                
-                for s in selected_sample:
-                    
-                    dataset=s.dataset_id.name
-                    try:
-                        sets=dataset_dict[c]
-                        if (("NCI60" in sets) and ("GSE36133" in sets)):
-                            break
-                        if ("Sanger Cell Line Project" in sets):
-                            break
-                        if( dataset not in sets):
-                            dataset_dict[c]=dataset+"/"+sets
-                    except KeyError: 
-                        dataset_dict[c]=dataset
-            
-            
-            #run the pca again here and store it with new offset to get the new pca data
-            user_new_offset=len(X_val)
-            for x in range(user_offset,len(val)):
-                X_val.append(list(val_a[x]))
-            print(len(X_val[0]))
-            X_val=np.matrix(X_val)
-            pca= PCA(n_components=n)
-            new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
-            ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[1:n])
-            table_propotion=sum(ratio_temp[0:n])
-            print(new_val)
-            
-            out_group=[]
-            min=10000000000
-            max=0
-            #count distance base on X_val
-            for g in range(1,group_counter+1):
-                output_cell=[]
-                exist_cell=[]
-                check={} #to remove A-B and B-A
-                for s in range(g_s_counter[g-1],g_s_counter[g]):
-                    cell=all_sample[s].cell_line_id
-                    index_cell=np.where(np.array(dis_cellline)==cell)[0][0]
-                    if (cell not in exist_cell):
-                        output_cell.append([cell,[]])
-                        check[cell]=[]  
-                        #count the distance
-                        for c in dis_cellline:
-                            if c != cell:
-                                index_c=np.where(np.array(dis_cellline)==c)[0][0]
-                                
-                                try:
-                                    if(cell not in check[c]):
-                                        distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[index_c]))
-                                        if distance<min:
-                                            min=distance
-                                        if distance>max:
-                                            max=distance
-                                        output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
-                                        ,dataset_dict[cell],c.name,c.primary_site,c.primary_hist,dataset_dict[c],distance])
-                                        check[cell].append(c)
-                                except KeyError:
-                                    
-                                    distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[index_c]))
-                                    if distance<min:
-                                        min=distance
-                                    if distance>max:
-                                        max=distance
-                                    output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
-                                        ,dataset_dict[cell],c.name,c.primary_site,c.primary_hist,dataset_dict[c],distance])
-                                    check[cell].append(c)
-                                                    
-                        exist_cell.append(cell) 
-                        
-                        g_count=1   
-                        u_count=len(user_dict[g_count][0])  #sample number in first user file
-                        for i in range(user_new_offset,user_new_offset+len(origin_name)):
-                            distance=np.linalg.norm(np.array(new_val[index_cell])-np.array(new_val[i]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist,dataset_dict[cell]
-                                        ,origin_name[i-user_new_offset]," "," ","User Group"+str(g_count),distance])
-                            if ((i-user_new_offset+1)==u_count):
-                                g_count+=1
-                                try:
-                                    u_count+=len(user_dict[g_count][0])
-                                except KeyError:
-                                    u_count+=0
-                        if(g==1):
-                            name3.append(cell.name+'<br>'+dataset_dict[cell])
-                            X3.append(round(new_val[index_cell][n-3],5))
-                            Y3.append(round(new_val[index_cell][n-2],5))
-                            Z3.append(round(new_val[index_cell][n-1],5))
-                        elif(g==2):
-                            name4.append(cell.name+'<br>'+dataset_dict[cell])
-                            X4.append(round(new_val[index_cell][n-3],5))
-                            Y4.append(round(new_val[index_cell][n-2],5))
-                            Z4.append(round(new_val[index_cell][n-1],5))
-                        elif(g==3):
-                            name5.append(cell.name+'<br>'+dataset_dict[cell])
-                            X5.append(round(new_val[index_cell][n-3],5))
-                            Y5.append(round(new_val[index_cell][n-2],5))
-                            Z5.append(round(new_val[index_cell][n-1],5))
-                        
-                out_group.append(["Dataset Group"+str(g),output_cell]) 
-                
-                
-                if g==group_counter:
-                    output_cell=[]
-                    output_cell.append([" ",[]])
-                    g_count=1
-                    u_count=len(user_dict[g_count][0])
-                    temp_count=u_count
-                    temp_g=1
-                    before=0
-                    for i in range(user_new_offset,user_new_offset+len(origin_name)):
-                        for c in dis_cellline:
-                            index_c=np.where(np.array(dis_cellline)==c)[0][0]
-                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[index_c]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
-                            ,c.name,c.primary_site,c.primary_hist,dataset_dict[c],distance])
-                        
-                        temp_g=1
-                        temp_count=len(user_dict[temp_g][0])
-                        for x in range(user_new_offset,user_new_offset+before):
-                            if ((j-user_new_offset)==temp_count):
-                                temp_g+=1
-                                try:
-                                    temp_count+=len(user_dict[temp_g][0])
-                                except KeyError:
-                                    temp_count+=0
-                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[x]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
-                            ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
-                        
-                        temp_g=g_count  
-                        temp_count=len(user_dict[g_count][0])
-                        for x in range(i+1,user_new_offset+len(origin_name)):
-                            if ((j-user_new_offset)==temp_count):
-                                temp_g+=1
-                                try:
-                                    temp_count+=len(user_dict[temp_g][0])
-                                except KeyError:
-                                    temp_count+=0
-                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[x]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
-                            ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
-                        
-                        if g_count==1:
-                            name1.append(origin_name[i-user_new_offset])
-                            X1.append(round(new_val[i][n-3],5))
-                            Y1.append(round(new_val[i][n-2],5))
-                            Z1.append(round(new_val[i][n-1],5)) 
-                        else:
-                            name2.append(origin_name[i-user_new_offset])
-                            X2.append(round(new_val[i][n-3],5))
-                            Y2.append(round(new_val[i][n-2],5))
-                            Z2.append(round(new_val[i][n-1],5)) 
-                        
-                        if ((i-user_new_offset+1)==u_count):    
-                            user_out_group.append(["User Group"+str(g_count),output_cell])
-
-                            g_count+=1
-                            before=u_count+before
-                            print("I am here!!")
-                            try:
-                                u_count+=len(user_dict[g_count][0])
-                                output_cell=[]
-                                output_cell.append([" ",[]])
-                            except KeyError:
-                                u_count+=0
-                          
-                    
-        else:
+        
         #This part is for select cell line base on dataset,count centroid base on the dataset
         #group中的cell line為單位來算重心
 
-            location_dict={} #{group number:[[cell object,dataset,new location]]}
-            combined=[]
-            sample_list=[]
-            pca_index=np.array(pca_index)
-            X_val=[]
-            val_a=np.array(val)
-            a_all_offset=np.array(all_offset)
-            for i in range(1,group_counter+1):
-                dis_cellline=list(set(cell_object[g_s_counter[i-1]:g_s_counter[i]]))  #cell object may have duplicate cell line since:NCI A + CCLE A===>[A,A]
-                location_dict['g'+str(i)]=[]
-                dataset_dict={}
-                a_cell_object=np.array(cell_object)
-                
-                for c in dis_cellline:    #dis_cellline may not have the same order as cell_object
-                    
-                    temp1=np.where((a_cell_object==c))[0]
-                    
-                    temp2=np.where((temp1>=g_s_counter[i-1])&(temp1<g_s_counter[i]))
-                    total_offset=temp1[temp2]
-                    selected_val=val_a[a_all_offset[total_offset]]
-                    new_loca=(np.mean(selected_val,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
-                    
-                    
-                    a_sample=np.array(all_sample)
-                    selected_sample=a_sample[total_offset]
-                    
-                    if list(selected_sample) in sample_list:   #to prevent two different colors in different group
-                        continue
-                    else:
-                        sample_list.append(list(selected_sample))
-                    
-                    
-                    #print(selected_sample)
-                    for s in selected_sample:
-                        
-                        dataset=s.dataset_id.name
-                        try:
-                            sets=dataset_dict[c]
-                            if(nci_flag==1 and gse_flag==1):
-                                if (("NCI60" in sets) and ("GSE36133" in sets)):
-                                    break
-                            elif(nci_flag==1 and gse_flag==0):
-                                if("NCI60" in sets):
-                                    break
-                            elif(gse_flag==1 and nci_flag==0):
-                                if("GSE36133" in sets):
-                                    break
-                            elif ("Sanger Cell Line Project" in sets):
-                                break
-                            if( dataset not in sets):
-                                dataset_dict[c]=dataset+"/"+sets
-                        except KeyError: 
-                            dataset_dict[c]=dataset
-                    X_val.append(new_loca)
-                    location_dict['g'+str(i)].append([c,dataset_dict[c],len(X_val)-1])  #the last part is the index to get pca result from new_val
-                    combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
+        location_dict={} #{group number:[[cell object,dataset,new location]]}
+        combined=[]
+        sample_list=[]
+        pca_index=np.array(pca_index)
+        X_val=[]
+        val_a=np.array(val)
+        a_all_offset=np.array(all_offset)
+        a_sample=np.array(all_sample)
+        for i in range(1,group_counter+1):
+            dis_cellline=list(set(cell_object[g_s_counter[i-1]:g_s_counter[i]]))  #cell object may have duplicate cell line since:NCI A + CCLE A===>[A,A]
+            location_dict['g'+str(i)]=[]
+            dataset_dict={}
+            a_cell_object=np.array(cell_object)
             
-            #run the pca
-            print(len(X_val[0]))
-            user_new_offset=len(X_val)
-            for x in range(user_offset,len(val)):
-                X_val.append(list(val_a[x]))
-            X_val=np.matrix(X_val)
-            pca= PCA(n_components=n)
-            new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
-            ratio_temp=pca.explained_variance_ratio_
-            propotion=sum(ratio_temp[1:n])
-            table_propotion=sum(ratio_temp[0:n])
-            print(new_val)
-
-            out_group=[]
-            min=10000000000
-            max=0
-            for g in range(1,group_counter+1):
-                output_cell=[]
-                exist_cell={}
+            for c in dis_cellline:    #dis_cellline may not have the same order as cell_object
                 
-                for group_c in location_dict['g'+str(g)]:  #a list of [c,dataset_dict[c],new_val index] in group one
-                    cell=group_c[0]
-                    key_string=cell.name+'/'+cell.primary_site+'/'+cell.primary_hist+'/'+group_c[1]
-                    exist_cell[key_string]=[]
-                    output_cell.append([cell,[]])
-                    
-                    #count the distance
-                    for temp_list in combined:
-                        c=temp_list[0]
-                        temp_string=c.name+'/'+c.primary_site+'/'+c.primary_hist+'/'+temp_list[1]
-                        try:
-                            if(key_string not in exist_cell[temp_string]):
-                                distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[temp_list[2]]))
-                                if distance==0:
-                                    continue
-                                if distance<min:
-                                    min=distance
-                                if distance>max:
-                                    max=distance
-                                output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
-                            ,group_c[1],temp_list[0].name,temp_list[0].primary_site,temp_list[0].primary_hist,temp_list[1],distance])
-                        except KeyError:
-                            distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[temp_list[2]]))
+                temp1=np.where((a_cell_object==c))[0]
+                
+                temp2=np.where((temp1>=g_s_counter[i-1])&(temp1<g_s_counter[i]))
+                total_offset=temp1[temp2]
+                selected_val=val_a[:,a_all_offset[total_offset]]
+                selected_val=np.transpose(selected_val)
+                new_loca=(np.mean(selected_val,axis=0,dtype=np.float64,keepdims=True)).tolist()[0]
+
+                selected_sample=a_sample[total_offset]
+                
+                if list(selected_sample) in sample_list:   #to prevent two different colors in different group
+                    continue
+                else:
+                    sample_list.append(list(selected_sample))
+                
+                
+                d_temp=[]
+                for s in selected_sample:
+                    d_temp.append(s.dataset_id.name)
+                dataset_dict[c]="/".join(list(set(d_temp)))  
+                X_val.append(new_loca)
+                location_dict['g'+str(i)].append([c,dataset_dict[c],len(X_val)-1])  #the last part is the index to get pca result from new_val
+                combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
+        
+        #run the pca
+        user_new_offset=len(X_val)
+        temp_val=np.transpose(val[:,user_offset:])
+        for x in range(0,len(temp_val)):
+            X_val.append(list(temp_val[x]))
+        if(len(X_val)<4):
+            error_reason='Since the display method is [centroid], you should have at least 4 dots for PCA. The total number is not enough.<br />'\
+            'The total number of dots in you uploaded file is '+str(len(temp_val))+'.<br />'\
+            'The number of centroid dots you selected is '+str(len(X_val)-len(temp_val))+'.<br />'\
+            'Total is '+str(len(X_val))+'.'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
+        X_val=np.matrix(X_val)
+        pca= PCA(n_components=n)
+        new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
+        ratio_temp=pca.explained_variance_ratio_
+        propotion=sum(ratio_temp[1:n])
+        table_propotion=sum(ratio_temp[0:n])
+        print(new_val)
+
+        out_group=[]
+        min=10000000000
+        max=0
+        for g in range(1,group_counter+1):
+            output_cell=[]
+            exist_cell={}
+            
+            for group_c in location_dict['g'+str(g)]:  #a list of [c,dataset_dict[c],new_val index] in group one
+                cell=group_c[0]
+                key_string=cell.name+'/'+cell.primary_site+'/'+cell.primary_hist+'/'+group_c[1]
+                exist_cell[key_string]=[]
+                output_cell.append([cell,[]])
+                
+                #count the distance
+                for temp_list in combined:
+                    c=temp_list[0]
+                    temp_string=c.name+'/'+c.primary_site+'/'+c.primary_hist+'/'+temp_list[1]
+                    try:
+                        if(key_string not in exist_cell[temp_string]):
+                            distance=np.linalg.norm(np.array(new_val[group_c[2]][n-3:n])-np.array(new_val[temp_list[2]][n-3:n]))
                             if distance==0:
                                 continue
                             if distance<min:
@@ -1009,116 +813,126 @@ def user_pca(request):
                             if distance>max:
                                 max=distance
                             output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
-                            ,group_c[1],temp_list[0].name,temp_list[0].primary_site,temp_list[0].primary_hist,temp_list[1],distance])
-                            exist_cell[key_string].append(temp_string)
-                    g_count=1   
-                    u_count=len(user_dict[g_count][0])  #sample number in first user file
-                    for i in range(user_new_offset,user_new_offset+len(origin_name)):
-                            distance=np.linalg.norm(np.array(new_val[group_c[2]])-np.array(new_val[i]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist,group_c[1]
-                                        ,origin_name[i-user_new_offset]," "," ","User Group"+str(g_count),distance])
-                            if ((i-user_new_offset+1)==u_count):
-                                g_count+=1
-                                try:
-                                    u_count+=len(user_dict[g_count][0])
-                                except KeyError:
-                                    u_count+=0
-                    if(g==1):
-                        name3.append(cell.name+'<br>'+group_c[1])
-                        X3.append(round(new_val[group_c[2]][n-3],5))
-                        Y3.append(round(new_val[group_c[2]][n-2],5))
-                        Z3.append(round(new_val[group_c[2]][n-1],5))
-                    elif(g==2):
-                        name4.append(cell.name+'<br>'+group_c[1])
-                        X4.append(round(new_val[group_c[2]][n-3],5))
-                        Y4.append(round(new_val[group_c[2]][n-2],5))
-                        Z4.append(round(new_val[group_c[2]][n-1],5))
-                    elif(g==3):
-                        name5.append(cell.name+'<br>'+group_c[1])
-                        X5.append(round(new_val[group_c[2]][n-3],5))
-                        Y5.append(round(new_val[group_c[2]][n-2],5))
-                        Z5.append(round(new_val[group_c[2]][n-1],5))
-                    
-                out_group.append(["Dataset Group"+str(g),output_cell])
-                
-
-                if g==group_counter:
-                    output_cell=[]
-                    g_count=1 
-                    output_cell.append([" ",[]])
-                    u_count=len(user_dict[g_count][0])
-                    temp_count=u_count
-                    temp_g=1
-                    before=0
-                    for i in range(user_new_offset,user_new_offset+len(origin_name)):
-                        for temp_list in combined:
-                            c=temp_list[0]
-                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[temp_list[2]]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
-                            ,c.name,c.primary_site,c.primary_hist,temp_list[1],distance])
-                        
-                        temp_g=1
-                        temp_count=len(user_dict[temp_g][0])
-                        for j in range(user_new_offset,user_new_offset+before):
-                            if ((j-user_new_offset)==temp_count):
-                                temp_g+=1
-                                try:
-                                    temp_count+=len(user_dict[temp_g][0])
-                                except KeyError:
-                                    temp_count+=0
-                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[j]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
-                            ,origin_name[j-user_new_offset]," "," ","User Group"+str(temp_g),distance])
-                        
-                        temp_g=g_count  
-                        temp_count=len(user_dict[g_count][0])
-                        for x in range(i+1,user_new_offset+len(origin_name)):
-                            if ((x-user_new_offset)==temp_count):
-                                temp_g+=1
-                                try:
-                                    temp_count+=len(user_dict[temp_g][0])
-                                except KeyError:
-                                    temp_count+=0
-                            distance=np.linalg.norm(np.array(new_val[i])-np.array(new_val[x]))
-                            if distance<min:
-                                min=distance
-                            if distance>max:
-                                max=distance
-                            output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
-                            ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
-                        if g_count==1:        
-                            name1.append(origin_name[i-user_new_offset])
-                            X1.append(round(new_val[i][n-3],5))
-                            Y1.append(round(new_val[i][n-2],5))
-                            Z1.append(round(new_val[i][n-1],5))  
-                        else:
-                            name2.append(origin_name[i-user_new_offset])
-                            X2.append(round(new_val[i][n-3],5))
-                            Y2.append(round(new_val[i][n-2],5))
-                            Z2.append(round(new_val[i][n-1],5)) 
+                        ,group_c[1],temp_list[0].name,temp_list[0].primary_site,temp_list[0].primary_hist,temp_list[1],distance])
+                    except KeyError:
+                        distance=np.linalg.norm(np.array(new_val[group_c[2]][n-3:n])-np.array(new_val[temp_list[2]][n-3:n]))
+                        if distance==0:
+                            continue
+                        if distance<min:
+                            min=distance
+                        if distance>max:
+                            max=distance
+                        output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
+                        ,group_c[1],temp_list[0].name,temp_list[0].primary_site,temp_list[0].primary_hist,temp_list[1],distance])
+                        exist_cell[key_string].append(temp_string)
+                g_count=1   
+                u_count=len(user_dict[g_count][0])  #sample number in first user file
+                for i in range(user_new_offset,user_new_offset+len(origin_name)):
+                        distance=np.linalg.norm(np.array(new_val[group_c[2]][n-3:n])-np.array(new_val[i][n-3:n]))
+                        if distance<min:
+                            min=distance
+                        if distance>max:
+                            max=distance
+                        output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist,group_c[1]
+                                    ,origin_name[i-user_new_offset]," "," ","User Group"+str(g_count),distance])
                         if ((i-user_new_offset+1)==u_count):
-                            user_out_group.append(["User Group"+str(g_count),output_cell])
                             g_count+=1
-                            before=u_count+before
-                            print("I am here!!")
                             try:
                                 u_count+=len(user_dict[g_count][0])
-                                output_cell=[]
-                                output_cell.append([" ",[]])
                             except KeyError:
                                 u_count+=0
+                if(g==1):
+                    name3.append(cell.name+'<br>'+group_c[1])
+                    X3.append(round(new_val[group_c[2]][n-3],5))
+                    Y3.append(round(new_val[group_c[2]][n-2],5))
+                    Z3.append(round(new_val[group_c[2]][n-1],5))
+                elif(g==2):
+                    name4.append(cell.name+'<br>'+group_c[1])
+                    X4.append(round(new_val[group_c[2]][n-3],5))
+                    Y4.append(round(new_val[group_c[2]][n-2],5))
+                    Z4.append(round(new_val[group_c[2]][n-1],5))
+                elif(g==3):
+                    name5.append(cell.name+'<br>'+group_c[1])
+                    X5.append(round(new_val[group_c[2]][n-3],5))
+                    Y5.append(round(new_val[group_c[2]][n-2],5))
+                    Z5.append(round(new_val[group_c[2]][n-1],5))
+                
+            out_group.append(["Dataset Group"+str(g),output_cell])
+            
+
+            if g==group_counter:
+                output_cell=[]
+                g_count=1 
+                output_cell.append([" ",[]])
+                u_count=len(user_dict[g_count][0])
+                temp_count=u_count
+                temp_g=1
+                before=0
+                for i in range(user_new_offset,user_new_offset+len(origin_name)):
+                    for temp_list in combined:
+                        c=temp_list[0]
+                        distance=np.linalg.norm(np.array(new_val[i][n-3:n])-np.array(new_val[temp_list[2]][n-3:n]))
+                        if distance<min:
+                            min=distance
+                        if distance>max:
+                            max=distance
+                        output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                        ,c.name,c.primary_site,c.primary_hist,temp_list[1],distance])
+                    
+                    temp_g=1
+                    temp_count=len(user_dict[temp_g][0])
+                    for j in range(user_new_offset,user_new_offset+before):
+                        if ((j-user_new_offset)==temp_count):
+                            temp_g+=1
+                            try:
+                                temp_count+=len(user_dict[temp_g][0])
+                            except KeyError:
+                                temp_count+=0
+                        distance=np.linalg.norm(np.array(new_val[i][n-3:n])-np.array(new_val[j][n-3:n]))
+                        if distance<min:
+                            min=distance
+                        if distance>max:
+                            max=distance
+                        output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                        ,origin_name[j-user_new_offset]," "," ","User Group"+str(temp_g),distance])
+                    
+                    temp_g=g_count  
+                    temp_count=len(user_dict[g_count][0])
+                    for x in range(i+1,user_new_offset+len(origin_name)):
+                        if ((x-user_new_offset)==temp_count):
+                            temp_g+=1
+                            try:
+                                temp_count+=len(user_dict[temp_g][0])
+                            except KeyError:
+                                temp_count+=0
+                        distance=np.linalg.norm(np.array(new_val[i][n-3:n])-np.array(new_val[x][n-3:n]))
+                        if distance<min:
+                            min=distance
+                        if distance>max:
+                            max=distance
+                        output_cell[len(output_cell)-1][1].append([origin_name[i-user_new_offset],"User Group"+str(g_count)
+                        ,origin_name[x-user_new_offset]," "," ","User Group"+str(temp_g),distance])
+                    if g_count==1:        
+                        name1.append(origin_name[i-user_new_offset])
+                        X1.append(round(new_val[i][n-3],5))
+                        Y1.append(round(new_val[i][n-2],5))
+                        Z1.append(round(new_val[i][n-1],5))  
+                    else:
+                        name2.append(origin_name[i-user_new_offset])
+                        X2.append(round(new_val[i][n-3],5))
+                        Y2.append(round(new_val[i][n-2],5))
+                        Z2.append(round(new_val[i][n-1],5)) 
+                    if ((i-user_new_offset+1)==u_count):
+                        user_out_group.append(["User Group"+str(g_count),output_cell])
+                        g_count+=1
+                        before=u_count+before
+                        print("I am here!!")
+                        try:
+                            u_count+=len(user_dict[g_count][0])
+                            output_cell=[]
+                            output_cell.append([" ",[]])
+                        except KeyError:
+                            u_count+=0
                     
     return render_to_response(return_html,RequestContext(request,
     {
@@ -1329,7 +1143,7 @@ def heatmap(request):
     express={}
     #logger.info('run ttest or anova')
     if group_counter<=2:
-        for i in range(0,500):#len(all_probe)):    #need to fix if try to run on laptop
+        for i in range(0,len(all_probe)):    #need to fix if try to run on laptop
             presult[all_probe[i]]=stats.ttest_ind(list(val[0][i]),list(val[1][i]),equal_var=False,nan_policy='omit')[1]
             express[all_probe[i]]=np.append(val[0][i],val[1][i]).tolist()
     else:
@@ -1590,13 +1404,22 @@ def pca(request):
         all_cellline=all_cellline+cell_line_dict['g'+str(i)]
         g_s_counter.append(g_s_counter[i-1]+len(s_group_dict['g'+str(i)]))
     
+    if 'd_sample' in show:
+        if((len(all_sample))<4):
+            error_reason='You should have at least 4 samples for PCA. The samples are not enough.<br />'\
+            'The number of samples you selected is '+str(len(all_sample))+'.'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
+    
     for i in all_sample:
         sample_counter[i.name]=1
         if str(type(i))=="<class 'probes.models.Sample'>":
-            print("i am sample!!")
+            #print("i am sample!!")
             cell_object.append(i.cell_line_id)
         else:
-            print("i am clinical!!")
+            #print("i am clinical!!")
             cell_object.append(i)
     #delete nan, transpose matrix
     ##open file
@@ -1799,7 +1622,14 @@ def pca(request):
                 combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
         
         #run the pca
-        print(len(X_val[0]))
+        print(len(X_val))
+        if((len(X_val))<4):
+            error_reason='Since the display method is [centroid], you should have at least 4 dots for PCA. The dots are not enough.<br />'\
+            'The number of centroid dots you selected is '+str(len(X_val))+'.'
+            return render_to_response('pca_error.html',RequestContext(request,
+            {
+            'error_reason':mark_safe(json.dumps(error_reason)),
+            }))
         X_val=np.matrix(X_val)
         pca= PCA(n_components=n)
         new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
