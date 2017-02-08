@@ -1,23 +1,25 @@
 {% extends 'base.html' %}
 
-{% block title %}No_probe{% endblock title %}
+{% block title %}No_Result{% endblock title %}
 
 {% block content %}
 
-    <h1>Result:No probe match</h1>
+    <h1>No result match</h1>
     <hr />
-    <p>If you see this page, that means the probe numbers are not enough for clustering and produce heatmap.</p>
+    <p>If you see this page, that means there are some errors for clustering and producing heatmap.</p>
     <br />
     <p>Following are some possible reasons:</p>
-    <p style="text-indent : 2em ;">1. There is no any probes can match the p-value cutoff you decided on Step1.</p>
+    <p style="text-indent : 2em ;">1. Less than two probes match the p-value cutoff you decided on Step1.</p>
     <p style="text-indent : 2em ;">2. There are some problems with the groups you defined(They may not meet the statistical meaning of t-test or ANOVA).</p>
-    <p>Following is the possible probe (if any) that match p-value < {{pro_number}}:</p>
+    <p style="text-indent : 2em ;">3. The probe or gene input is not in the platform you selected.</p>
+    <!--
+    <p>Following is the possible probe (if any) that match the p-value:</p>
     <p>
         {% for p in probe_out %}
             <p>{{p}}</p>
         {% endfor%}
     </p>
     <br />
-   
+   -->
 
 {% endblock content %}

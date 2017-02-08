@@ -7,24 +7,13 @@
 <h1>Gene Signature Explore</h1>
 </br>
 <form action="{% url 'heatmap' %}" method="post" target="_blank">{% csrf_token %}
-
-<h3>Step1 - Decide level of significance:</h3>
-<p>Please decide what level of significance you want to use on statistic test in Step4.</p>
-<label>
-        <input type="radio" name="probe_number" value="0.05"checked>0.05</input>
-        <input type="radio" name="probe_number" value="0.01">0.01 </input>
-        
-        
-        
-</label>
-
-<h3>Step2 - Choose microarray platform:</h3>
+<h3>Step1 - Choose platform:</h3>
 <style type="text/css">  
     .help {display: none}
 </style> 
 <div id="platform_type">
     <p>Please choose the platform:</p>
-    <p>The cell lines input in Step4 should be based on the platform you select.</p>
+    <p>The input in Step2 and 4 should be based on the platform you selected.</p>
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
@@ -41,6 +30,49 @@
     
 </div>
 
+<h3>Step2:</h3>
+    <div class="radio">
+        <label>
+            <input type="radio" name="user_type" value="all" id="all" checked>
+            Use all the probes
+        </label>
+    </div>
+    <div id="significant">
+        <p style="color:blue;text-indent : 2em ;">Please decide what level of significance you want to use on statistic test in Step4.</p>
+        <label style="text-indent : 4em ;">
+            <input type="radio" name="probe_number" value="0.05"checked>0.05</input>
+            <input type="radio" name="probe_number" value="0.01">0.01 </input>
+            
+        </label>
+    </div>
+    <div class="radio">
+        <label>
+            <input type="radio" name="user_type" value="upload" id="upload">
+            Input specific probes or genes
+        </label>    
+    </div>
+    <div id="keys">
+        <p style="color:blue;text-indent : 2em ;">Choose type of keywords (gene name or platform identifier):</p>
+            
+            <label style="text-indent : 4em ;">
+                <input type="radio" name="gtype" value="symbol" checked>Gene symbol
+                <input type="radio" name="gtype" value="probeid">Probe ID
+            </label>
+            
+
+        <p style="color:blue;text-indent : 2em ;">Input more than 1 keywords:</p>
+            <p style="text-indent : 4em ;">Please separate keywords with space or new line.</p><!--grammar problem,need fix later-->
+            <p style="text-indent : 4em ;">Example(probe id):1007_s_at 1053_at</p>
+            <style type="text/css" style="text-indent : 2em ;">  
+                        .help {display: none}
+            </style> 
+            <div class="form-group">
+                    <label for="keyword">Keyword:</label>
+                    <textarea class="form-control" rows="5" id="keyword" name="keyword"
+                    style="width:300px;height:100px;" required="required" 
+                    placeholder="Enter keyword"/></textarea> 
+            </div>
+    </div>
 </br>
 <h3>Step3 - Define Groups:</h3>
 <p>Two groups will use student t-test to evaluate the result.</p>
@@ -184,6 +216,8 @@ $(document).ready(function () {
     $("div[id^='select_platform_g']").show();
     $("div[id^='select_a_g']").show();
     $("div[id^='select_plus2_g']").hide();
+    $("div[id='keys']").hide();
+    $("div[id='significant']").show();
  
 });  
 $("#submit").click(function() { 
@@ -209,6 +243,34 @@ $("#submit").click(function() {
     {
         return false;
     };
+    if($("#upload").is(':checked'))
+    {
+        var text = $("#keyword").val();
+        text=$.trim(text);
+        $("#select_error").append('<br /><p>error:'+(text)+'</p>');
+        var lines = text.replace( /\s+/g, " " ).split( " " );
+        lines=jQuery.unique(lines);
+        /*var temp=[];
+        
+        for(var j=0;j<lines.length;j++)
+        {
+            var indata=lines[j].split(" ");
+            temp.push(indata);
+        }
+        temp=jQuery.unique(temp);*/
+        $("#select_error").append('<br /><p>error:'+(lines)+'</p>');
+        var count = lines.length;
+        if(count<2)
+        {
+            alert("Need to input more than one probe or gene in step2.");
+            return false;
+        }
+        if(count>100)
+        {
+            alert("Need to input less than 100 probes or genes in step2.");
+            return false;
+        }
+    }
     for (var i=1;i<=num; i++)
     {
         var name={{same_name}}; 
@@ -254,6 +316,16 @@ $("#submit").click(function() {
 });
 </script>
 <script type="text/javascript">
+$("input[name='user_type']").change(function(){
+        if($("#upload").is(':checked')){
+            $("div[id='keys']").show();
+            $("div[id='significant']").hide();
+        }
+        if($("#all").is(':checked')){
+            $("div[id='keys']").hide();
+            $("div[id='significant']").show();
+        }
+});
 $("input[name='data_platform']").change(function(){
         $("#select_error").empty();
         if($("#U133A-id").is(':checked')){

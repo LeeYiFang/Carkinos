@@ -42,6 +42,7 @@ class Sample(models.Model):
     def __str__(self):
         return 'name=%s filename=%s' % (self.name, self.filename)
 
+#empty is 'nan'
 class Clinical_sample(models.Model):
     
     name=models.CharField(max_length=20)
@@ -65,7 +66,7 @@ class Clinical_sample(models.Model):
         return '%s of %s of %s of %s' % (self.name, self.primary_site, self.primary_hist,self.dataset_id)
 
         
-#need to update with new datasets
+#empty is 'nan'
 class CellLine(models.Model):
 
     name = models.CharField(max_length=20)
@@ -78,7 +79,7 @@ class CellLine(models.Model):
 
 
 
-#alread put in all three platform data
+#alread put in all three platform data,empty is ''
 class ProbeID(models.Model):
 
     Probe_id = models.CharField(max_length=20)
@@ -89,7 +90,16 @@ class ProbeID(models.Model):
     offset=models.IntegerField(default=0)
     def __str__(self):
         return self.Probe_id
-        
+
+#empty is 'nan'
+class Gene(models.Model):     
+    symbol=models.CharField(max_length=20,default='')
+    platform=models.ForeignKey('Platform', related_name='fplat',default='')
+    offset=models.IntegerField(default=0)
+    def __str__(self):
+        return self.symbol
+
+
 
 
 

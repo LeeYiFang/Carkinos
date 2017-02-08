@@ -19,6 +19,12 @@ import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
 
 import uuid
+from rpy2.robjects.packages import importr
+import rpy2.robjects as ro
+r=ro.r
+lumi= importr('lumi')
+from rpy2.robjects import pandas2ri
+pandas2ri.activate()
 #import logging
 #logger = logging.getLogger("__name__")
 
@@ -174,18 +180,30 @@ def user_pca(request):
 
     #load the ranking file and the table of probe first,open files
     pform=request.POST['data_platform']
-    if (pform=="U133A"):
+    uni=[] #to store valid probe offset for getting the correct data
+    uni_probe=[]
+    gene_flag=0
+    if(pform=="others"): #gene level
+        gene_flag=1
+        if(request.POST['ngs']=="ngs_u133a"):
+            pform="U133A"
+        else:
+            pform="PLUS2"
+        
+    elif (pform=="U133A"):
         quantile=list(np.load('ranking_u133a.npy'))
         probe_path=Path('../').resolve().joinpath('src','Affy_U133A_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
+        uni_probe=pd.unique(probe_list.PROBEID)
         
     else:
         quantile=np.load('ranking_u133plus2.npy')
         probe_path=Path('../').resolve().joinpath('src','Affy_U133plus2_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
+        uni_probe=pd.unique(probe_list.PROBEID)
         
     
-    uni_probe=pd.unique(probe_list.PROBEID)
+    
     
     
     propotion=0
@@ -209,7 +227,7 @@ def user_pca(request):
         else:
             group_counter=group_counter-1
             break
-
+    
     s_group_dict={}  #store sample
     group_name=[]
     offset_group_dict={} #store offset
@@ -348,8 +366,11 @@ def user_pca(request):
     #read the user file   
     text=request.FILES.getlist('user_file')
     user_counter=len(text)
+    if(gene_flag==1):
+        user_counter=1
     user_dict={} #{user group number:user 2d array}
     samples=0
+    nans=[] #to store the probe name that has nan 
     for x in range(1,user_counter+1):
         #check the file format and content here first        
         filetype=str(text[x-1]).split('.')
@@ -374,13 +395,28 @@ def user_pca(request):
            {
             'error_reason':mark_safe(json.dumps(error_reason)),
            })) 
-        if(len(temp_data.index)<(len(uni_probe)/2)):
-            error_reason='The file has less than 1/2 probes of the platform.'
-            return render_to_response('pca_error.html',RequestContext(request,
-            {
-            'error_reason':mark_safe(json.dumps(error_reason)),
-            }))
-        user_dict[x]=temp_data    
+        if(gene_flag==0): #probe level check
+            check_probe=[str(x) for x in list(temp_data.iloc[:,0]) if not str(x).lower().startswith('affx')]  
+            print(len(check_probe))
+            if(len(check_probe)!=len(uni_probe)):
+                error_reason='The probe number does not match with the platform you selected.'
+                return render_to_response('pca_error.html',RequestContext(request,
+                {
+                'error_reason':mark_safe(json.dumps(error_reason)),
+                }))
+            if(set(check_probe)!=set(uni_probe)):
+                error_reason='The probe number or probe name in your file does not match the platform you selected.'
+                #error_reason+='</br>The probes that are not in the platform: '+str(set(check_probe)-set(uni_probe))[1:-1]
+                #error_reason+='</br>The probes that are lacking: '+str(set(uni_probe)-set(check_probe))[1:-1]
+                return render_to_response('pca_error.html',RequestContext(request,
+                {
+                'error_reason':mark_safe(json.dumps(error_reason)),
+                }))
+            col=list(temp_data.columns.values)
+            n=pd.isnull(temp_data).any(1).nonzero()[0]
+            nans += list(temp_data[col[0]][n])
+        
+        user_dict[x]=temp_data
     
     if 'd_sample' in show:
         if((len(all_sample)+samples)<4):
@@ -413,6 +449,10 @@ def user_pca(request):
                 else:
                     sample_list.append(list(selected_sample))
                     s_count=s_count+1
+                    if(s_count>=4): #check this part
+                        break
+            if(s_count>=4): #check this part
+                break
         if((s_count+samples)<4):
             error_reason='Since the display method is [centroid], you should have at least 4 dots for PCA. The total number is not enough.<br />'\
             'The total number of dots in you uploaded file is '+str(samples)+'.<br />'\
@@ -424,7 +464,8 @@ def user_pca(request):
             }))
     new_name=[]
     origin_name=[]
-
+    com_gene=[] #for ngs select same gene
+    nans=list(set(nans))
     for x in range(1,user_counter+1):
         
         #temp_data = pd.read_csv(text[x-1])
@@ -432,15 +473,11 @@ def user_pca(request):
         col=list(temp_data.columns.values)
         col[0]='probe'
         temp_data.columns=col
+        
         temp_data.index = temp_data['probe']
         temp_data.index.name = None
         temp_data=temp_data.iloc[:, 1:]
-        try:
-            temp_data=temp_data.reindex(uni_probe)
-        except ValueError:
-            return HttpResponse('The file have probes with the same names, please remove them or let them be unique.')
-        temp_data=temp_data.rank(method='dense')
-        print(len(temp_data))
+        
         #add "use_" to user's sample names
         col_name=list(temp_data.columns.values)   #have user's sample name list here
         origin_name=origin_name+list(temp_data.columns.values)
@@ -448,39 +485,130 @@ def user_pca(request):
         temp_data.columns=col_name
         new_name=new_name+col_name
         
-
-        for i in col_name:
-            for j in range(0,len(temp_data[i])):
-                if(not(np.isnan(temp_data[i][j]))):
+        if(gene_flag==0):
+            try:
+                temp_data=temp_data.reindex(uni_probe)
+            except ValueError:
+                return HttpResponse('The file has probes with the same names, please let them be unique.')
+            #remove probe that has nan
+            temp_data=temp_data.drop(nans)
+            temp_data=temp_data.rank(method='dense')
+    
+            #this is for quantile
+            for i in col_name:
+                for j in range(0,len(temp_data[i])):
+                    #if(not(np.isnan(temp_data[i][j]))):
                     temp_data[i][j]=quantile[int(temp_data[i][j]-1)]
             
-        print(temp_data.head())
-        user_dict[x]=np.array(temp_data)
-        if x==1:
-            data=temp_data
+            if x==1:
+                data=temp_data
+            else:
+                data=np.concatenate((data,temp_data), axis=1)
+            user_dict[x]=np.array(temp_data)
         else:
-            data=np.concatenate((data,temp_data), axis=1)
+            temp_data=temp_data.drop(nans)  #drop nan
+            temp_data=temp_data.loc[~(temp_data==0).all(axis=1)] #drop all rows with 0 here
+            temp_data=temp_data.groupby(temp_data.index).first()
+            com_gene+=list(temp_data.index)
+            user_dict[x]=temp_data
+        
+        print(temp_data.head())
+        
+        
     
     #delete nan, combine user data to the datasets,transpose matrix
     for x in range(0,len(all_exist_dataset)):
-        if all_exist_dataset[x] in clline:
-            pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+        if(gene_flag==0):
+            if all_exist_dataset[x] in clline:
+                pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+            else:
+                pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=all_exist_dataset[x]).data_path)
         else:
-            pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+            if all_exist_dataset[x] in clline:
+                pth=Path('../').resolve().joinpath('src','gene_'+Dataset.objects.get(name=all_exist_dataset[x]).data_path)
+            else:
+                pth=Path('../').resolve().joinpath('src','gene_'+Clinical_Dataset.objects.get(name=all_exist_dataset[x]).data_path)
         if x==0:
             val=np.load(pth.as_posix())
         else:
             val=np.hstack((val, np.load(pth.as_posix())))#combine together
+    
+    #database dataset remove nan probes
+    if(gene_flag==0):
+        p_offset=list(ProbeID.objects.filter(platform__name__in=[pform],Probe_id__in=nans).values_list('offset',flat=True))
+        for n in range(0,len(uni_probe)):
+            if(n not in p_offset):
+                uni.append(n)
+    else:
+        #deal with ngs uploaded data here
+        probe_path=Path('../').resolve().joinpath('src','new_human_gene_info.csv')
+        probe_list = pd.read_csv(probe_path.as_posix())
+        #notice duplicate
+        #get the match gene first, notice the size issue
+        info=pd.read_csv()
+        col=list(info.columns.values)
+        col[0]='symbol'
+        info.columns=col
+                
+        info.index = info['symbol']
+        info.index.name = None
+        info=info.iloc[:, 1:]
+        
+        data=user_dict[1]
+        data=data.groupby(data.index).first() #drop the duplicate gene row
+        com_gene=list(data.index)
+        gg=Gene.objects.filter(platform__name__in=[pform],symbol__in=com_gene).order_by('offset')
+        exist_gene=[]
+        uni=[]
+        for i in gg:
+            exist_gene.append(i.symbol)
+            uni.append(i.offset)
+        info=info.drop(exist_gene)
+        new_data=data.loc[data['probe'].isin(exist_gene)].re_index(exist_gene)
+        
+        #search remain symbol's alias and symbol
+        search_alias=list(set(com_gene)-set(exist_gene))
+         
+        for i in search_alias:
+            re_symbol=list(set(info.loc[info['alias'].isin([i])].index)) #find whether has alias first
+            if(len(re_symbol)!=0):
+                re_match=Gene.objects.filter(platform__name__in=[pform],symbol__in=re_symbol).order_by('offset') #check the symbol in database or not
+                repeat=len(re_match)
+                if(repeat!=0): #match gene symbol in database                    
+                    for x in re_match:
+                        new_data.append(data.loc[i])
+                        uni.append(x.offset)
+                        info=info.drop(x.symbol)
+        user_dict[1]=np.array(new_data)
+        data=new_data
+        
     if 'd_sample' in show:
-        val=val[:,all_offset]
+        val=val[np.ix_(uni,all_offset)]
         user_offset=len(val[0])
-        val=np.hstack((val, data))
-        val=val[~np.isnan(val).any(axis=1)]
+        if(gene_flag==1):
+            #do the rank invariant here
+            rngs=pandas2ri.py2ri(data)
+            rarray=pandas2ri.py2ri(pd.Dataframe(val))
+            ro.globalenv['ngs'] = rngs
+            ro.globalenv['array'] = rarray
+            ref=pd.read_csv('rank_ref.csv')
+            rref=pandas2ri.py2ri(ref[:len(uni)])  #notice the length
+            r('ref_array<-as.matrix(rref)')
+            val=r('array_norm<-rankinvariant(as.matrix(rarray),ref_array)')
+            data=r('ngs_norm<-rankinvariant(as.matrix(rngs),ref_array)')
+        val=np.hstack((np.array(val), np.array(data)))
+        #val=val[~np.isnan(val).any(axis=1)]
         val=np.transpose(val)
     else:
+        print("I am here!!!")
+        val=val[uni]
         user_offset=len(val[0])
-        val=np.hstack((val, data))
-        val=val[~np.isnan(val).any(axis=1)]  
+        if(gene_flag==1):
+            #do the rank invariant here?
+            aaaa=0
+            
+        val=np.hstack((np.array(val), np.array(data)))
+        #val=val[~np.isnan(val).any(axis=1)]  
     pca_index=[]
     dis_offset=[]
 
@@ -987,18 +1115,53 @@ def heatmap(request):
     expression=[]
     probe_out=[]
     sample_out=[]
-
+    not_found=[]
     #get probe from different platform
     pform=request.POST['data_platform']
-    all_probe=ProbeID.objects.filter(platform__name=pform).order_by('offset')
-    probe_offset=list(all_probe.values_list('offset',flat=True))
+    stop_end=100  
+    return_page_flag=0
+    user_probe_flag=0
+    if(request.POST['user_type']=="all"):
+        all_probe=ProbeID.objects.filter(platform__name=pform).order_by('offset')
+        probe_offset=list(all_probe.values_list('offset',flat=True))
+        pro_number=float(request.POST['probe_number'])  #significant 0.05 or 0.01
+        all_probe=list(all_probe)
+    else:
+        indata=request.POST['keyword']
+        indata = list(set(indata.split()))
+        
+        if(request.POST['gtype']=="probeid"):
+            user_probe_flag=1
+            all_probe=ProbeID.objects.filter(platform__name=pform,Probe_id__in=indata).order_by('offset')
+            probe_offset=list(all_probe.values_list('offset',flat=True))
+            pro_number=10000
+            not_found=list(set(set(indata) - set(all_probe.values_list('Probe_id',flat=True))))
+            all_probe=list(all_probe)
+            
+        else:
+            probe_offset=[]
+            return_page_flag=1
+            pro_number=10000
+            if(pform=="U133A"):
+                probe_path=Path('../').resolve().joinpath('src','uni_u133a.csv')
+                gene_list = pd.read_csv(probe_path.as_posix())
+                gene=list(gene_list.SYMBOL)
+            else:
+                probe_path=Path('../').resolve().joinpath('src','uni_plus2.csv')
+                gene_list = pd.read_csv(probe_path.as_posix())
+                gene=list(gene_list.SYNBOL)
+            
+            
+            all_probe=[]
+            for i in indata:
+                try:
+                    probe_offset.append(gene.index(i))
+                    all_probe.append(i)
+                except ValueError:
+                    not_found.append(i)
+                    
+            
     
-    all_probe=list(all_probe)
-    #deal with "nan" in Sanger dataset
-    if pform=="U133A":
-        for x in range(22275,22281):
-            all_probe.pop(probe_offset.index(x))
-            probe_offset.remove(x)
     
     #count the number of group 
     group_counter=1
@@ -1041,6 +1204,7 @@ def heatmap(request):
                 s=Sample.objects.filter(dataset_id__name__in=[dn],cell_line_id__name__in=ACELL).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
                 s_group_dict['g'+str(i)]=list(s)+s_group_dict['g'+str(i)]
                 goffset=list(s.values_list('offset',flat=True))
+                print(goffset)
                 if dn not in opened_name:  #check if the file is opened
                     print("opend file!!")
                     opened_name.append(dn)
@@ -1156,7 +1320,7 @@ def heatmap(request):
             presult[all_probe[i]]=stats.f_oneway(*to_anova)[1]  
             express[all_probe[i]]=sum(to_anova,[])
        
-        
+    print("test done")    
     #sort the dictionary with p-value and need to get the expression data again (top20)  
     #presult[all_probe[0]]=float('nan')
     #presult[all_probe[11]]=float('nan')
@@ -1167,19 +1331,21 @@ def heatmap(request):
     sortkey=sorted(presult,key=presult.get)   #can optimize here
     
     counter=1
-    pro_number=float(request.POST['probe_number'])
-    stop_end=100
+    
+    
     cell_probe_val=[]
     for w in sortkey: 
-        print(presult[w],":",w.Probe_id)
+        #print(presult[w],":",w.Probe_id)
         
         if (presult[w]<pro_number):
             cell_probe_val.append([w,presult[w]])
             
             express_mean=np.mean(np.array(express[w]))
             expression.append(list((np.array(express[w]))-express_mean))
-            
-            probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
+            if(return_page_flag==1):
+                probe_out.append(w)
+            else:
+                probe_out.append(w.Probe_id+"("+w.Gene_symbol+")")
             counter+=1
         else:
             break
@@ -1222,10 +1388,14 @@ def heatmap(request):
         g = sns.clustermap(test,cmap=my_cmap)
     
     except ValueError:
+        if((return_page_flag==1) and (probe_out==[])):
+            probe_out=indata  #probe_out is the rows of heatmap
         return render_to_response('noprobe.html',RequestContext(request,
         {
+        'user_probe_flag':user_probe_flag,
+        'return_page_flag':return_page_flag,
         'probe_out':probe_out,
-        'pro_number':pro_number,
+        'not_found':not_found
         }))
     
     plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
@@ -1238,19 +1408,24 @@ def heatmap(request):
     
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
     
-    sid=str(uuid.uuid4())+".png"
+    sid=str(uuid.uuid1())+".png"
     print(sid)
     P=Path('../').resolve().joinpath('src','static','image',sid)
     assP=Path('../').resolve().joinpath('src','assets','image',sid)
     g.savefig(str(P))
     g.savefig(str(assP))
     file_name=sid
+    
     return render_to_response('heatmap.html',RequestContext(request,
-        {
-        'cell_probe_val':cell_probe_val,
-        'file_name':file_name,
-        'pro_number':pro_number,
-        }))
+    {
+    'user_probe_flag':user_probe_flag,
+    'return_page_flag':return_page_flag,
+    'cell_probe_val':cell_probe_val,
+    'file_name':file_name,
+    'pro_number':pro_number,
+    'not_found':not_found
+    }))
+    
 
     
 def pca(request):
@@ -1435,7 +1610,7 @@ def pca(request):
             val=np.hstack((val, np.load(pth.as_posix())))#combine together
     if 'd_sample' in show:
         val=val[:,all_offset]
-        val=val[~np.isnan(val).any(axis=1)]
+        #val=val[~np.isnan(val).any(axis=1)]
         val=np.transpose(val)
    
         
@@ -1571,7 +1746,7 @@ def pca(request):
         
         return_html='pca_center.html'
         
-        val=val[~np.isnan(val).any(axis=1)]  #bottle neck???
+        #val=val[~np.isnan(val).any(axis=1)]  #bottle neck???
         
         #This part is for select cell line base on dataset,count centroid base on the dataset
         #group中的cell line為單位來算重心
@@ -1946,7 +2121,7 @@ def clinical_search(request):
             normalize=np.subtract(raw_test,norm)#dimension different!!!!
            
             sample_probe_val_pairs += [
-                (c, p, raw_test[probe_ix, cell_ix],54676-np.where(plus2_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
+                (c, p, raw_test[probe_ix, cell_ix],54614-np.where(plus2_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
                 for cell_ix, c in enumerate(samples)
             ]
@@ -2090,11 +2265,11 @@ def data(request):
             normalize=np.subtract(raw_test,norm)#dimension different!!!!
             #normalize=np.around(normalize, decimals=1)
             cell_probe_val_pairs = (
-                (c, p, raw_test[probe_ix, cell_ix],22277-np.where(u133a_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
+                (c, p, raw_test[probe_ix, cell_ix],22216-np.where(u133a_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
                 for cell_ix, c in enumerate(cell)
             )
-            #because of nan, we only use 22277
+            
         else:
             cell_probe_val_pairs =()
             
@@ -2102,7 +2277,7 @@ def data(request):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
             nci_normalize=np.subtract(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
-                (c, p, nci_raw_test[probe_ix, cell_ix],54676-np.where(plus2_rank==nci_raw_test[probe_ix, cell_ix])[0],nci_normalize[probe_ix, cell_ix])                        
+                (c, p, nci_raw_test[probe_ix, cell_ix],54614-np.where(plus2_rank==nci_raw_test[probe_ix, cell_ix])[0],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(ncicell)
             )
@@ -2114,7 +2289,7 @@ def data(request):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
             CC_normalize=np.subtract(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
-                (c, p, CC_raw_test[probe_ix, cell_ix],54676-np.where(plus2_rank==CC_raw_test[probe_ix, cell_ix])[0],CC_normalize[probe_ix, cell_ix])                        
+                (c, p, CC_raw_test[probe_ix, cell_ix],54614-np.where(plus2_rank==CC_raw_test[probe_ix, cell_ix])[0],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(CCcell)
             )
@@ -2139,7 +2314,7 @@ def data(request):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
             normalize=np.subtract(raw_test,norm)
             cell_probe_val_pairs = (
-                (c, p, raw_test[probe_ix, cell_ix],22277-np.where(u133a_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
+                (c, p, raw_test[probe_ix, cell_ix],22216-np.where(u133a_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
                 for cell_ix, c in enumerate(cell)
             )
@@ -2163,7 +2338,7 @@ def data(request):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
             CC_normalize=np.subtract(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
-                (c, p, CC_raw_test[probe_ix, cell_ix],54676-np.where(plus2_rank==CC_raw_test[probe_ix, cell_ix])[0],CC_normalize[probe_ix, cell_ix])                        
+                (c, p, CC_raw_test[probe_ix, cell_ix],54614-np.where(plus2_rank==CC_raw_test[probe_ix, cell_ix])[0],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(CCcell)
             )
@@ -2188,7 +2363,7 @@ def data(request):
             raw_test=sanger_val[np.ix_(probe_offset,offset)]
             normalize=np.subtract(raw_test,norm)
             cell_probe_val_pairs = (
-                (c, p, raw_test[probe_ix, cell_ix],22277-np.where(u133a_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
+                (c, p, raw_test[probe_ix, cell_ix],22216-np.where(u133a_rank==raw_test[probe_ix, cell_ix])[0],normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(gene)
                 for cell_ix, c in enumerate(cell)
             )
@@ -2200,7 +2375,7 @@ def data(request):
             nci_raw_test=nci_val[np.ix_(nciprobe_offset,ncioffset)]
             nci_normalize=np.subtract(nci_raw_test,nci_norm)
             nci_cell_probe_val_pairs = (
-                (c, p, nci_raw_test[probe_ix, cell_ix],54676-np.where(plus2_rank==nci_raw_test[probe_ix, cell_ix])[0],nci_normalize[probe_ix, cell_ix])                        
+                (c, p, nci_raw_test[probe_ix, cell_ix],54614-np.where(plus2_rank==nci_raw_test[probe_ix, cell_ix])[0],nci_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(ncicell)
             )
@@ -2212,7 +2387,7 @@ def data(request):
             CC_raw_test=gse_val[np.ix_(nciprobe_offset,CCoffset)]
             CC_normalize=np.subtract(CC_raw_test,CC_norm)
             CC_cell_probe_val_pairs = (
-                (c, p, CC_raw_test[probe_ix, cell_ix],54676-np.where(plus2_rank==CC_raw_test[probe_ix, cell_ix])[0],CC_normalize[probe_ix, cell_ix])                        
+                (c, p, CC_raw_test[probe_ix, cell_ix],54614-np.where(plus2_rank==CC_raw_test[probe_ix, cell_ix])[0],CC_normalize[probe_ix, cell_ix])                        
                 for probe_ix, p in enumerate(ncigene)
                 for cell_ix, c in enumerate(CCcell)
             )

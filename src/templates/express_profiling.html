@@ -31,17 +31,29 @@
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
-            Affymatrix U133A platform
+            Affymetrix U133A platform
         </label>
     </div>
     
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="PLUS2" id="PLUS2-id" >
-            Affymatrix U133plus2 platform
+            Affymetrix U133plus2 platform
         </label>
     </div>
-    
+    <div class="radio">
+        <label>
+            <input type="radio" name="data_platform" value="others" id="others" >
+            Gene level comparison(NGS data or other microarray platform)
+        </label>
+    </div>
+    <div id="ngs_platform">
+        <p style="text-indent : 4em ;">Choose the microarray platform you want to compare:</p>
+        <label style="text-indent : 4em ;">
+            <input type="radio" name="ngs" value="ngs_u133a" id="ngs_u133a" checked>Affymetrix U133A platform
+            <input type="radio" name="ngs" value="ngs_plus2" id="ngs_plus2">Affymetrix U133plus2 platform
+        </label>
+    </div>
 </div>
 
 <h3>Step3 - Upload file</h3>
@@ -192,6 +204,7 @@ $(document).ready(function () {
     $("div[id^='select_platform_g']").show();
     $("div[id^='select_a_g']").show();
     $("div[id^='select_plus2_g']").hide();
+    $("div[id='ngs_platform']").hide();
 });  
 $("#submit").click(function() { 
     var $div = $('div[id^="group"]:last');
@@ -267,9 +280,8 @@ $("#submit").click(function() {
 });
 </script>
 <script type="text/javascript">
-$("input[name='data_platform']").change(function(){
-    $("#select_error").empty();
-    if($("#U133A-id").is(':checked')){
+$("input[name='ngs']").change(function(){
+    if($("#ngs_u133a").is(':checked')){
         $("div[id^='select_a_g']").show();
         $("div[id^='select_plus2_g']").hide();
         var name={{same_name}}; 
@@ -285,7 +297,7 @@ $("input[name='data_platform']").change(function(){
         
         
     }
-    if($("#PLUS2-id").is(':checked')){
+    if($("#ngs_plus2").is(':checked')){
         $("div[id^='select_a_g']").hide();
         $("div[id^='select_plus2_g']").show();
         var name={{same_name}}; 
@@ -298,6 +310,84 @@ $("input[name='data_platform']").change(function(){
         $("select").multipleSelect("setSelects", []);
         $("select[name^='filter']").multipleSelect("checkAll");
         $("div[id*='_table_g']").hide();
+    }
+});
+$("input[name='data_platform']").change(function(){
+    $("#select_error").empty();
+    if($("#U133A-id").is(':checked')){
+        $("#user_add").show();
+        $("#user_delete").show();
+        $("#upload_div").show();
+        $("div[id='ngs_platform']").hide();
+        $("div[id^='select_a_g']").show();
+        $("div[id^='select_plus2_g']").hide();
+        var name={{same_name}}; 
+        l=name.length;
+        for(var j=0;j<l;j++)
+        {
+            $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+        };
+        $("select option").removeProp('selected').removeAttr('selected');
+        $("select").multipleSelect("setSelects", []);
+        $("select[name^='filter']").multipleSelect("checkAll");
+        $("div[id*='_table_g']").hide();
+        
+        
+    }
+    
+    if($("#PLUS2-id").is(':checked')){
+        $("#user_add").show();
+        $("#user_delete").show();
+        $("#upload_div").show();
+        $("div[id='ngs_platform']").hide();
+        $("div[id^='select_a_g']").hide();
+        $("div[id^='select_plus2_g']").show();
+        var name={{same_name}}; 
+        l=name.length;
+        for(var j=0;j<l;j++)
+        {
+            $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+        };
+        $("select option").removeProp('selected').removeAttr('selected');
+        $("select").multipleSelect("setSelects", []);
+        $("select[name^='filter']").multipleSelect("checkAll");
+        $("div[id*='_table_g']").hide();
+    }
+    if($("#others").is(':checked')){
+        $("#upload_div").hide()
+        $("#user_add").hide()
+        $("#user_delete").hide()
+        $("div[id='ngs_platform']").show();
+        if($("#ngs_u133a").is(':checked')){
+            $("div[id^='select_a_g']").show();
+            $("div[id^='select_plus2_g']").hide();
+            var name={{same_name}}; 
+            l=name.length;
+            for(var j=0;j<l;j++)
+            {
+                $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+            };
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
+            $("select[name^='filter']").multipleSelect("checkAll");
+            $("div[id*='_table_g']").hide();
+            
+            
+        }
+        if($("#ngs_plus2").is(':checked')){
+            $("div[id^='select_a_g']").hide();
+            $("div[id^='select_plus2_g']").show();
+            var name={{same_name}}; 
+            l=name.length;
+            for(var j=0;j<l;j++)
+            {
+                $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+            };
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
+            $("select[name^='filter']").multipleSelect("checkAll");
+            $("div[id*='_table_g']").hide();
+        }
     }
     });
 $(document).on('change',"input[name^='dataset_g']",function(){
@@ -317,6 +407,9 @@ $(document).on('change',"input[name^='dataset_g']",function(){
                     else
                     {
                         $("#"+name[j]+"_table_g"+i).hide();
+                        //$("select option").removeProp('selected').removeAttr('selected');
+                        //$("select").multipleSelect("setSelects", []);
+                        //$("select[name^='filter']").multipleSelect("checkAll");
                     }               
                 };
             }
@@ -478,16 +571,39 @@ $(document).on('click', '#add_group', function() {
             
            
             if($("#U133A-id").is(':checked')){
+            $("#user_add").show();
+            $("#user_delete").show();
+            $("#upload_div").show();
+            $("div[id='select_a_g"+index+"']").show();
+            $("div[id='select_plus2_g"+index+"']").hide();
+            $("div[id*='_table_g"+index+"']").hide();
+            
+            };
+            if($("#ngs_u133a").is(':checked')){
+            $("#user_add").hide();
+            $("#user_delete").hide();
+            $("#upload_div").hide();
             $("div[id='select_a_g"+index+"']").show();
             $("div[id='select_plus2_g"+index+"']").hide();
             $("div[id*='_table_g"+index+"']").hide();
             
             };
             if($("#PLUS2-id").is(':checked')){
+            $("#user_add").show();
+            $("#user_delete").show();
+            $("#upload_div").show();
             $("div[id='select_a_g"+index+"']").hide();
             $("div[id='select_plus2_g"+index+"']").show();            
             $("div[id*='_table_g"+index+"']").hide();
             
+            };
+            if($("#ngs_plus2").is(':checked')){
+            $("#user_add").hide()
+            $("#user_delete").hide()
+            $("#upload_div").hide()
+            $("div[id='select_a_g"+index+"']").hide();
+            $("div[id='select_plus2_g"+index+"']").show();            
+            $("div[id*='_table_g"+index+"']").hide();
             };
         });
     //});
