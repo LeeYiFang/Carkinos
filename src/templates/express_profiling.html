@@ -53,6 +53,12 @@
             <input type="radio" name="ngs" value="ngs_u133a" id="ngs_u133a" checked>Affymetrix U133A platform
             <input type="radio" name="ngs" value="ngs_plus2" id="ngs_plus2">Affymetrix U133plus2 platform
         </label>
+        <p style="text-indent : 4em ;">Choose the type of your data:</p>
+        <label style="text-indent : 4em ;">
+            <input type="radio" name="data_type" value="raw" id="raw" checked>Raw data
+            <input type="radio" name="data_type" value="log2" id="log2">Log2
+            <input type="radio" name="data_type" value="log10" id="log10">Log10
+        </label>
     </div>
 </div>
 
@@ -354,7 +360,10 @@ $("input[name='data_platform']").change(function(){
         $("div[id*='_table_g']").hide();
     }
     if($("#others").is(':checked')){
-        $("#upload_div").hide()
+        
+         
+        $('div[id^="upload_user"]:last').remove();
+
         $("#user_add").hide()
         $("#user_delete").hide()
         $("div[id='ngs_platform']").show();
@@ -582,7 +591,9 @@ $(document).on('click', '#add_group', function() {
             if($("#ngs_u133a").is(':checked')){
             $("#user_add").hide();
             $("#user_delete").hide();
-            $("#upload_div").hide();
+             
+            $('div[id^="upload_user"]:last').remove();
+
             $("div[id='select_a_g"+index+"']").show();
             $("div[id='select_plus2_g"+index+"']").hide();
             $("div[id*='_table_g"+index+"']").hide();
@@ -600,7 +611,9 @@ $(document).on('click', '#add_group', function() {
             if($("#ngs_plus2").is(':checked')){
             $("#user_add").hide()
             $("#user_delete").hide()
-            $("#upload_div").hide()
+             
+            $('div[id^="upload_user"]:last').remove();
+
             $("div[id='select_a_g"+index+"']").hide();
             $("div[id='select_plus2_g"+index+"']").show();            
             $("div[id*='_table_g"+index+"']").hide();

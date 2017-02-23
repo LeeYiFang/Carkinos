@@ -1,7 +1,7 @@
 from django.shortcuts import render,render_to_response
 from django.http import HttpResponse, Http404
 from django.views.decorators.http import require_GET
-from .models import Dataset, CellLine, ProbeID, Sample, Platform, Clinical_Dataset,Clinical_sample
+from .models import Dataset, CellLine, ProbeID, Sample, Platform, Clinical_Dataset,Clinical_sample,Gene
 from django.template import RequestContext
 from django.utils.html import mark_safe
 import json
@@ -22,7 +22,7 @@ import uuid
 from rpy2.robjects.packages import importr
 import rpy2.robjects as ro
 r=ro.r
-lumi= importr('lumi')
+#lumi= importr('lumi')
 from rpy2.robjects import pandas2ri
 pandas2ri.activate()
 #import logging
@@ -412,9 +412,9 @@ def user_pca(request):
                 {
                 'error_reason':mark_safe(json.dumps(error_reason)),
                 }))
-            col=list(temp_data.columns.values)
-            n=pd.isnull(temp_data).any(1).nonzero()[0]
-            nans += list(temp_data[col[0]][n])
+        col=list(temp_data.columns.values)
+        n=pd.isnull(temp_data).any(1).nonzero()[0]
+        nans += list(temp_data[col[0]][n])
         
         user_dict[x]=temp_data
     
@@ -508,11 +508,10 @@ def user_pca(request):
         else:
             temp_data=temp_data.drop(nans)  #drop nan
             temp_data=temp_data.loc[~(temp_data==0).all(axis=1)] #drop all rows with 0 here
-            temp_data=temp_data.groupby(temp_data.index).first()
-            com_gene+=list(temp_data.index)
+            temp_data=temp_data.groupby(temp_data.index).first() #drop the duplicate gene row
             user_dict[x]=temp_data
         
-        print(temp_data.head())
+        print(temp_data)
         
         
     
@@ -541,11 +540,11 @@ def user_pca(request):
                 uni.append(n)
     else:
         #deal with ngs uploaded data here
-        probe_path=Path('../').resolve().joinpath('src','new_human_gene_info.csv')
-        probe_list = pd.read_csv(probe_path.as_posix())
+        probe_path=Path('../').resolve().joinpath('src','new_human_gene_info.txt')
+        #probe_list = pd.read_csv(probe_path.as_posix())
         #notice duplicate
         #get the match gene first, notice the size issue
-        info=pd.read_csv()
+        info=pd.read_csv(probe_path.as_posix(),sep='\t')
         col=list(info.columns.values)
         col[0]='symbol'
         info.columns=col
@@ -555,16 +554,24 @@ def user_pca(request):
         info=info.iloc[:, 1:]
         
         data=user_dict[1]
-        data=data.groupby(data.index).first() #drop the duplicate gene row
+        #data=data.groupby(data.index).first() #drop the duplicate gene row
         com_gene=list(data.index)
-        gg=Gene.objects.filter(platform__name__in=[pform],symbol__in=com_gene).order_by('offset')
+        temp_data=data
+        rloop=divmod(len(com_gene),990)
+        if(rloop[1]==0):
+            rloop=(rloop[0]-1,0)
+        gg=[]
+        for x in range(0,rloop[0]+1):
+            gg+=list(Gene.objects.filter(platform__name__in=[pform],symbol__in=com_gene[x*990:(x+1)*990]).order_by('offset'))
         exist_gene=[]
         uni=[]
         for i in gg:
             exist_gene.append(i.symbol)
             uni.append(i.offset)
-        info=info.drop(exist_gene)
-        new_data=data.loc[data['probe'].isin(exist_gene)].re_index(exist_gene)
+        info=info.drop(exist_gene,errors='ignore')
+        new_data=temp_data.loc[data.index.isin(exist_gene)].reindex(exist_gene)
+        #print(exist_gene)
+        #print(new_data.index)
         
         #search remain symbol's alias and symbol
         search_alias=list(set(com_gene)-set(exist_gene))
@@ -574,28 +581,62 @@ def user_pca(request):
             if(len(re_symbol)!=0):
                 re_match=Gene.objects.filter(platform__name__in=[pform],symbol__in=re_symbol).order_by('offset') #check the symbol in database or not
                 repeat=len(re_match)
-                if(repeat!=0): #match gene symbol in database                    
+                if(repeat!=0): #match gene symbol in database      
+                    #print(re_match)
                     for x in re_match:
-                        new_data.append(data.loc[i])
+                        to_copy=data.loc[i]
+                        to_copy.name=x.symbol
+                        new_data=new_data.append(to_copy)
                         uni.append(x.offset)
-                        info=info.drop(x.symbol)
+                        info=info.drop(x.symbol,errors='ignore')
         user_dict[1]=np.array(new_data)
+        #print("length of new data:"+str(len(new_data)))
+        print("data:")
+        print(data)
+        #print("new_data:")
+        #print(new_data)
         data=new_data
         
     if 'd_sample' in show:
         val=val[np.ix_(uni,all_offset)]
+        print(len(val))
         user_offset=len(val[0])
         if(gene_flag==1):
             #do the rank invariant here
-            rngs=pandas2ri.py2ri(data)
-            rarray=pandas2ri.py2ri(pd.Dataframe(val))
-            ro.globalenv['ngs'] = rngs
-            ro.globalenv['array'] = rarray
-            ref=pd.read_csv('rank_ref.csv')
-            rref=pandas2ri.py2ri(ref[:len(uni)])  #notice the length
-            r('ref_array<-as.matrix(rref)')
-            val=r('array_norm<-rankinvariant(as.matrix(rarray),ref_array)')
-            data=r('ngs_norm<-rankinvariant(as.matrix(rngs),ref_array)')
+            print("sample with ngs data do rank invariant here")
+            ref_path=Path('../').resolve().joinpath('src','cv_result.txt')
+            ref=pd.read_csv(ref_path.as_posix())
+            col=list(ref.columns.values)
+            col[0]='symbol'
+            ref.columns=col
+                    
+            ref.index = ref['symbol']
+            ref.index.name = None
+            ref=ref.iloc[:, 1:]
+            ref=ref.iloc[:5000,:]  #rank invariant need 5000 genes
+            same_gene=list(ref.index.intersection(data.index))
+            
+            #to lowess
+            rref=pandas2ri.py2ri(ref.loc[same_gene].mean(axis=1))
+            rngs=pandas2ri.py2ri(data.loc[same_gene])
+            rall=pandas2ri.py2ri(data)
+            ro.globalenv['x'] = rngs
+            ro.globalenv['y'] = rref
+            ro.globalenv['newx'] = rall
+
+            r('x<-as.vector(as.matrix(x))')
+            r('y<-as.vector(as.matrix(y))')
+            r('newx<-as.vector(as.matrix(newx))')
+            r('y.loess<-loess(2**y~x)')
+
+            for z in range(0,len(list(data.columns))):
+                rz=pandas2ri.py2ri(z+1) #bug here
+                ro.globalenv['rz'] = rz
+                r('newx[,rz]=log2(as.matrix(predict(y.loess,newx[,rz])))')
+                
+            data=r('newx')
+            print(data)
+            print(type(data))
         val=np.hstack((np.array(val), np.array(data)))
         #val=val[~np.isnan(val).any(axis=1)]
         val=np.transpose(val)
@@ -1118,7 +1159,7 @@ def heatmap(request):
     not_found=[]
     #get probe from different platform
     pform=request.POST['data_platform']
-    stop_end=100  
+    stop_end=101  
     return_page_flag=0
     user_probe_flag=0
     if(request.POST['user_type']=="all"):
@@ -1126,6 +1167,20 @@ def heatmap(request):
         probe_offset=list(all_probe.values_list('offset',flat=True))
         pro_number=float(request.POST['probe_number'])  #significant 0.05 or 0.01
         all_probe=list(all_probe)
+    elif(request.POST['user_type']=="genes"): #for all genes
+        return_page_flag=1
+        if(pform=="U133A"):
+            probe_path=Path('../').resolve().joinpath('src','uni_u133a.txt')
+            gene_list = pd.read_csv(probe_path.as_posix())
+            all_probe=list(gene_list['SYMBOL'])
+        else:
+            probe_path=Path('../').resolve().joinpath('src','uni_plus2.txt')
+            gene_list = pd.read_csv(probe_path.as_posix())
+            all_probe=list(gene_list['SYMBOL'])
+        pro_number=float(request.POST['probe_number_gene'])
+        probe_offset=[]
+        for i in range(0,len(all_probe)):
+            probe_offset.append(i)
     else:
         indata=request.POST['keyword']
         indata = list(set(indata.split()))
@@ -1143,22 +1198,46 @@ def heatmap(request):
             return_page_flag=1
             pro_number=10000
             if(pform=="U133A"):
-                probe_path=Path('../').resolve().joinpath('src','uni_u133a.csv')
+                probe_path=Path('../').resolve().joinpath('src','uni_u133a.txt')
                 gene_list = pd.read_csv(probe_path.as_posix())
-                gene=list(gene_list.SYMBOL)
+                gene=list(gene_list['SYMBOL'])
             else:
-                probe_path=Path('../').resolve().joinpath('src','uni_plus2.csv')
+                probe_path=Path('../').resolve().joinpath('src','uni_plus2.txt')
                 gene_list = pd.read_csv(probe_path.as_posix())
-                gene=list(gene_list.SYNBOL)
+                gene=list(gene_list['SYMBOL'])
             
-            
+            probe_path=Path('../').resolve().joinpath('src','new_human_gene_info.txt')
+            info=pd.read_csv(probe_path.as_posix(),sep='\t')
+            col=list(info.columns.values)
+            col[0]='symbol'
+            info.columns=col
+                    
+            info.index = info['symbol']
+            info.index.name = None
+            info=info.iloc[:, 1:]
             all_probe=[]
+            
+            
             for i in indata:
                 try:
                     probe_offset.append(gene.index(i))
                     all_probe.append(i)
+                    info=info.drop(i,errors='ignore')
                 except ValueError:
-                    not_found.append(i)
+                    re_symbol=list(set(info.loc[info['alias'].isin([i])].index)) #find whether has alias first
+                    if(len(re_symbol)!=0):
+                        re_match=Gene.objects.filter(platform__name__in=[pform],symbol__in=re_symbol).order_by('offset') #check the symbol in database or not
+                        repeat=len(re_match)
+                        if(repeat!=0): #match gene symbol in database      
+                            #print(re_match)
+                            for x in re_match:
+                                info=info.drop(x.symbol,errors='ignore')
+                                probe_offset.append(x.offset)
+                                all_probe.append(i+"("+x.symbol+")")
+                        else:
+                            not_found.append(i)
+                    else:
+                        not_found.append(i)
                     
             
     
@@ -1208,7 +1287,10 @@ def heatmap(request):
                 if dn not in opened_name:  #check if the file is opened
                     print("opend file!!")
                     opened_name.append(dn)
-                    pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=dn).data_path)
+                    if(return_page_flag==1):
+                        pth=Path('../').resolve().joinpath('src','gene_'+Dataset.objects.get(name=dn).data_path)
+                    else:
+                        pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=dn).data_path)
                     raw_val=np.load(pth.as_posix(),mmap_mode='r')
                     opened_val.append(raw_val)
                     temp=raw_val[np.ix_(probe_offset,list(goffset))]
@@ -1282,7 +1364,10 @@ def heatmap(request):
                 if dn not in opened_name:  #check if the file is opened
                     print("opend file!!")
                     opened_name.append(dn)
-                    pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=dn).data_path)
+                    if(return_page_flag==1):
+                        pth=Path('../').resolve().joinpath('src','gene_'+Clinical_Dataset.objects.get(name=dn).data_path)
+                    else:
+                        pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=dn).data_path)
                     raw_val=np.load(pth.as_posix(),mmap_mode='r')
                     opened_val.append(raw_val)
                     temp=raw_val[np.ix_(probe_offset,list(cgoffset))]
@@ -1639,14 +1724,17 @@ def pca(request):
     X5=[]
     Y5=[]
     Z5=[]
-    n=4  #need to fix to the best one #need to fix proportion 
+    if(len(all_exist_dataset)==1):
+        n=3  #need to fix to the best one #need to fix proportion 
+    else:
+        n=4
     #logger.info('pca show')
     if 'd_sample' in show:
         #count the pca first
         pca= PCA(n_components=n)
         Xval = pca.fit_transform(val[:,:])  #cannot get Xval with original all_offset any more
         ratio_temp=pca.explained_variance_ratio_
-        propotion=sum(ratio_temp[1:n])
+        propotion=sum(ratio_temp[n-3:n])
         table_propotion=sum(ratio_temp[0:n])
         print(Xval)
         #print(all_cellline)
@@ -1809,7 +1897,7 @@ def pca(request):
         pca= PCA(n_components=n)
         new_val = pca.fit_transform(X_val[:,:])  #cannot get Xval with original offset any more
         ratio_temp=pca.explained_variance_ratio_
-        propotion=sum(ratio_temp[1:n])
+        propotion=sum(ratio_temp[n-3:n])
         table_propotion=sum(ratio_temp[0:n])
         print(new_val)
 

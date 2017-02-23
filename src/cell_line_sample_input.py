@@ -21,7 +21,8 @@ known_cell_lines = {}
 for rowid, row in sanger_sample.iterrows():
     cl = str(row.cell_line)
     p_site=str(row.primary_site)
-    p_hist=str(row.primary_hist)
+    p_hist=str(row.primary_hist).lower()
+    p_hist=d[p_hist]
     try:
         cell_line = known_cell_lines[cl+"/"+p_site+"/"+p_hist]
     except KeyError:

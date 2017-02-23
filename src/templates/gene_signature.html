@@ -33,6 +33,44 @@
 <h3>Step2:</h3>
     <div class="radio">
         <label>
+            <input type="radio" name="user_type" value="user_file" id="user_file">
+            Upload your own file based on the platform in Step 1.
+        </label>
+    </div>
+    <!--
+    <div id="significant_user">
+        <p style="color:blue;text-indent : 2em ;">Please decide what level of significance you want to use on statistic test in Step4.</p>
+        <label style="text-indent : 4em ;">
+            <input type="radio" name="probe_number_user" value="0.05"checked>0.05</input>
+            <input type="radio" name="probe_number_user" value="0.01">0.01 </input>
+            
+        </label>
+    </div>
+    <div id="user_file_type">
+        <p style="color:blue;text-indent : 2em ;">Please choose the type of your file.</p>
+        <label style="text-indent : 4em ;">
+            <input type="radio" name="filetype" value="0.05"checked>Probe</input>
+            <input type="radio" name="filetype" value="0.01">Gene</input>
+            
+        </label>
+    </div>
+    -->
+    <div class="radio">
+        <label>
+            <input type="radio" name="user_type" value="genes" id="genes">
+            Use all the genes
+        </label>
+    </div>
+    <div id="significant_gene">
+        <p style="color:blue;text-indent : 2em ;">Please decide what level of significance you want to use on statistic test in Step4.</p>
+        <label style="text-indent : 4em ;">
+            <input type="radio" name="probe_number_gene" value="0.05"checked>0.05</input>
+            <input type="radio" name="probe_number_gene" value="0.01">0.01 </input>
+            
+        </label>
+    </div>
+    <div class="radio">
+        <label>
             <input type="radio" name="user_type" value="all" id="all" checked>
             Use all the probes
         </label>
@@ -217,7 +255,9 @@ $(document).ready(function () {
     $("div[id^='select_a_g']").show();
     $("div[id^='select_plus2_g']").hide();
     $("div[id='keys']").hide();
+    $("#keyword").removeAttr('required');
     $("div[id='significant']").show();
+    $("div[id='significant_gene']").hide();
  
 });  
 $("#submit").click(function() { 
@@ -247,7 +287,7 @@ $("#submit").click(function() {
     {
         var text = $("#keyword").val();
         text=$.trim(text);
-        $("#select_error").append('<br /><p>error:'+(text)+'</p>');
+        //$("#select_error").append('<br /><p>error:'+(text)+'</p>');
         var lines = text.replace( /\s+/g, " " ).split( " " );
         lines=jQuery.unique(lines);
         /*var temp=[];
@@ -258,7 +298,7 @@ $("#submit").click(function() {
             temp.push(indata);
         }
         temp=jQuery.unique(temp);*/
-        $("#select_error").append('<br /><p>error:'+(lines)+'</p>');
+        //$("#select_error").append('<br /><p>error:'+(lines)+'</p>');
         var count = lines.length;
         if(count<2)
         {
@@ -319,11 +359,21 @@ $("#submit").click(function() {
 $("input[name='user_type']").change(function(){
         if($("#upload").is(':checked')){
             $("div[id='keys']").show();
+            $("#keyword").attr('required', '');
+            $("div[id='significant']").hide();
+            $("div[id='significant_gene']").hide();
+        }
+        if($("#genes").is(':checked')){
+            $("div[id='keys']").hide();
+            $("#keyword").removeAttr('required');
+            $("div[id='significant_gene']").show();
             $("div[id='significant']").hide();
         }
         if($("#all").is(':checked')){
             $("div[id='keys']").hide();
+            $("#keyword").removeAttr('required');
             $("div[id='significant']").show();
+            $("div[id='significant_gene']").hide();
         }
 });
 $("input[name='data_platform']").change(function(){
