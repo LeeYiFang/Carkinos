@@ -24,93 +24,102 @@
     <p>Maximum distance:{{max|floatformat:4}}</p>
     <p>Minimum distance:{{min|floatformat:4}}</p>
     <hr>
-    {% for index,output_cell in user_out_group %}
-        <!--<div class="row">
-            <div class="col-md-offset-1 col-md-10">-->
-                <h2>PCA Results: {{index}} Distance</h2>
-             
-                <table id="example_user" class="display">
-                    <thead>
-                    <tr>
-                        <th>User Sample Name</th>
-                        <th>Dataset</th>
-                        <th>Paired Cell Line name</th>
-                        <th>Sample name</th>
-                        <th>Primary site</th>
-                        <th>Primary histology</th>
-                        <th>Dataset</th>
-                        <th>distance</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <!--This part need to fix with above column defined-->
-                    {% for cell_line,b in output_cell %}
-                        {% for sn,dset,cname,sname,cell_primary_site,cell_primary_hist,setname,dis in b %} 
-                            <tr> 
-                                <td>{{ sn }}</td>
-                                <td>{{dset}}</td>
-                                <td>{{ cname }}</td>
-                                <td>{{ sname }}</td>
-                                <td>{{cell_primary_site}}</td>
-                                <td>{{cell_primary_hist}}</td>
-                                <td>{{setname}}</td>
-                                <td>{{ dis|floatformat:4 }}</td>
-                            </tr>
+    {% if big_flag %}
+        <p>Because the distance table is too big, we provide csv file here, instead of showing the result on the website.</p>
+        <p>Dataset Group Data:</p>
+        {% load static %}
+        <a href="{{STATIC_URL}}csv/{{data_file_name}}" download>Download link</a>
+        <p>User Group Data:</p>
+        <a href="{{STATIC_URL}}csv/{{user_file_name}}" download>Download link</a>
+    {% else %}
+        {% for index,output_cell in user_out_group %}
+            <!--<div class="row">
+                <div class="col-md-offset-1 col-md-10">-->
+                    <h2>PCA Results: {{index}} Distance</h2>
+                 
+                    <table id="example_user" class="display">
+                        <thead>
+                        <tr>
+                            <th>User Sample Name</th>
+                            <th>Dataset</th>
+                            <th>Paired Cell Line Name/</br>Clinical Sample</th>
+                            <th>Sample Name</th>
+                            <th>Primary Site</th>
+                            <th>Primary Histology</th>
+                            <th>Dataset</th>
+                            <th>Distance</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!--This part need to fix with above column defined-->
+                        {% for cell_line,b in output_cell %}
+                            {% for sn,dset,cname,sname,cell_primary_site,cell_primary_hist,setname,dis in b %} 
+                                <tr> 
+                                    <td>{{ sn }}</td>
+                                    <td>{{dset}}</td>
+                                    <td>{{ cname }}</td>
+                                    <td>{{ sname }}</td>
+                                    <td>{{cell_primary_site}}</td>
+                                    <td>{{cell_primary_hist}}</td>
+                                    <td>{{setname}}</td>
+                                    <td>{{ dis|floatformat:4 }}</td>
+                                </tr>
+                            {% endfor %}
                         {% endfor %}
-                    {% endfor %}
-                    </tbody>
-                </table>
-        <!--    </div>
-        </div>-->
-    {% endfor %}
-    <HR>
-    
-        {% for index,output_cell in out_group %}
-        <!--<div class="row">
-            <div class="col-md-offset-1 col-md-10">-->
-                <h2>PCA Results: {{index}} Distance</h2>
-             
-                <table id="example_dataset" class="display">
-                    <thead>
-                    <tr>
-                        <th>Group Cell Line/</br>Clinical Sample</th>
-                        <th>Sample Name</th>
-                        <th>Primary site</th>
-                        <th>Primary histology</th>
-                        <th>Dataset</th>
-                        <th>Paired Cell Line name/</br>Clinical Sample</th>
-                        <th>Sample name</th>
-                        <th>Primary site</th>
-                        <th>Primary histology</th>
-                        <th>Dataset</th>
-                        <th>distance</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <!--This part need to fix with above column defined-->
-                    {% for cell_line,b in output_cell %}
-                        {% for group_cell,sn,cell_line_primary_site,cell_line_primary_hist,dset,cname,sname,cell_primary_site,cell_primary_hist,setname,dis in b %} 
-                            <tr> 
-                                <td>{{ group_cell }}</td>
-                                <td>{{ sn }}</td>
-                                <td>{{cell_line_primary_site}}</td>
-                                <td>{{cell_line_primary_hist}}</td>
-                                <td>{{dset}}</td>
-                                <td>{{ cname }}</td>
-                                <td>{{ sname }}</td>
-                                <td>{{cell_primary_site}}</td>
-                                <td>{{cell_primary_hist}}</td>
-                                <td>{{setname}}</td>
-                                <td>{{ dis|floatformat:4 }}</td>
-                            </tr>
-                        {% endfor %}
-                    {% endfor %}
-                    </tbody>
-                </table>
-        <!--    </div>
-        </div>-->
+                        </tbody>
+                    </table>
+            <!--    </div>
+            </div>-->
         {% endfor %}
-    <HR>    
+        <HR>
+        
+            {% for index,output_cell in out_group %}
+            <!--<div class="row">
+                <div class="col-md-offset-1 col-md-10">-->
+                    <h2>PCA Results: {{index}} Distance</h2>
+                 
+                    <table id="example_dataset" class="display">
+                        <thead>
+                        <tr>
+                            <th>Group Cell Line/</br>Clinical Sample</th>
+                            <th>Sample Name</th>
+                            <th>Primary Site</th>
+                            <th>Primary Histology</th>
+                            <th>Dataset</th>
+                            <th>Paired Cell Line name/</br>Clinical Sample</th>
+                            <th>Sample Name</th>
+                            <th>Primary Site</th>
+                            <th>Primary Histology</th>
+                            <th>Dataset</th>
+                            <th>Distance</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!--This part need to fix with above column defined-->
+                        {% for cell_line,b in output_cell %}
+                            {% for group_cell,sn,cell_line_primary_site,cell_line_primary_hist,dset,cname,sname,cell_primary_site,cell_primary_hist,setname,dis in b %} 
+                                <tr> 
+                                    <td>{{ group_cell }}</td>
+                                    <td>{{ sn }}</td>
+                                    <td>{{cell_line_primary_site}}</td>
+                                    <td>{{cell_line_primary_hist}}</td>
+                                    <td>{{dset}}</td>
+                                    <td>{{ cname }}</td>
+                                    <td>{{ sname }}</td>
+                                    <td>{{cell_primary_site}}</td>
+                                    <td>{{cell_primary_hist}}</td>
+                                    <td>{{setname}}</td>
+                                    <td>{{ dis|floatformat:4 }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+            <!--    </div>
+            </div>-->
+            {% endfor %}
+        <HR> 
+    {% endif %}
 {% endblock content %}
 
 {% block scripts %}

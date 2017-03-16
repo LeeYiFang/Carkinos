@@ -1,5 +1,5 @@
 from django.shortcuts import render,render_to_response
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404,JsonResponse
 from django.views.decorators.http import require_GET
 from .models import Dataset, CellLine, ProbeID, Sample, Platform, Clinical_Dataset,Clinical_sample,Gene
 from django.template import RequestContext
@@ -25,9 +25,11 @@ r=ro.r
 #lumi= importr('lumi')
 from rpy2.robjects import pandas2ri
 pandas2ri.activate()
+import csv
 #import logging
 #logger = logging.getLogger("__name__")
 
+show_row=4000 #more than how many rows will become download file mode
 
 
 def generate_samples():
@@ -575,7 +577,7 @@ def user_pca(request):
         
         #search remain symbol's alias and symbol
         search_alias=list(set(com_gene)-set(exist_gene))
-         
+        
         for i in search_alias:
             re_symbol=list(set(info.loc[info['alias'].isin([i])].index)) #find whether has alias first
             if(len(re_symbol)!=0):
@@ -589,6 +591,7 @@ def user_pca(request):
                         new_data=new_data.append(to_copy)
                         uni.append(x.offset)
                         info=info.drop(x.symbol,errors='ignore')
+        
         user_dict[1]=np.array(new_data)
         #print("length of new data:"+str(len(new_data)))
         print("data:")
@@ -604,6 +607,7 @@ def user_pca(request):
         if(gene_flag==1):
             #do the rank invariant here
             print("sample with ngs data do rank invariant here")
+            
             ref_path=Path('../').resolve().joinpath('src','cv_result.txt')
             ref=pd.read_csv(ref_path.as_posix())
             col=list(ref.columns.values)
@@ -617,8 +621,8 @@ def user_pca(request):
             same_gene=list(ref.index.intersection(data.index))
             
             #to lowess
-            rref=pandas2ri.py2ri(ref.loc[same_gene].mean(axis=1))
-            rngs=pandas2ri.py2ri(data.loc[same_gene])
+            rref=pandas2ri.py2ri(ref.loc[same_gene])
+            rngs=pandas2ri.py2ri(data.loc[same_gene].mean(axis=1))
             rall=pandas2ri.py2ri(data)
             ro.globalenv['x'] = rngs
             ro.globalenv['y'] = rref
@@ -626,30 +630,81 @@ def user_pca(request):
 
             r('x<-as.vector(as.matrix(x))')
             r('y<-as.vector(as.matrix(y))')
-            r('newx<-as.vector(as.matrix(newx))')
-            r('y.loess<-loess(2**y~x)')
-
-            for z in range(0,len(list(data.columns))):
-                rz=pandas2ri.py2ri(z+1) #bug here
-                ro.globalenv['rz'] = rz
-                r('newx[,rz]=log2(as.matrix(predict(y.loess,newx[,rz])))')
+            r('newx<-as.matrix(newx)')
+            try:
+                if(request.POST['data_type']=='raw'):
+                    r('y.loess<-loess(2**y~x,span=0.3)')
+                elif(request.POST['data_type']=='log2'):
+                    r('y.loess<-loess(2**y~2**x,span=0.3)')
+                else:
+                    r('y.loess<-loess(2**y~10**x,span=0.3)')
+            except RRuntimeError:
+                error_reason='Match too less genes. Check your gene symbols again. We use NCBI standard gene symbol.'
+                return render_to_response('pca_error.html',RequestContext(request,
+                {
+                'error_reason':mark_safe(json.dumps(error_reason)),
+                }))
+            
+            r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
                 
             data=r('newx')
-            print(data)
+            print(data[:10])
             print(type(data))
+            
         val=np.hstack((np.array(val), np.array(data)))
-        #val=val[~np.isnan(val).any(axis=1)]
+        val=val[~np.isnan(val).any(axis=1)]
         val=np.transpose(val)
     else:
         print("I am here!!!")
         val=val[uni]
         user_offset=len(val[0])
         if(gene_flag==1):
-            #do the rank invariant here?
-            aaaa=0
+            print("sample with ngs data do rank invariant here")
+            ref_path=Path('../').resolve().joinpath('src','cv_result.txt')
+            ref=pd.read_csv(ref_path.as_posix())
+            col=list(ref.columns.values)
+            col[0]='symbol'
+            ref.columns=col
+                    
+            ref.index = ref['symbol']
+            ref.index.name = None
+            ref=ref.iloc[:, 1:]
+            ref=ref.iloc[:5000,:]  #rank invariant need 5000 genes
+            same_gene=list(ref.index.intersection(data.index))
+            
+            #to lowess
+            rref=pandas2ri.py2ri(ref.loc[same_gene])
+            rngs=pandas2ri.py2ri(data.loc[same_gene].mean(axis=1))
+            rall=pandas2ri.py2ri(data)
+            ro.globalenv['x'] = rngs
+            ro.globalenv['y'] = rref
+            ro.globalenv['newx'] = rall
+
+            r('x<-as.vector(as.matrix(x))')
+            r('y<-as.vector(as.matrix(y))')
+            r('newx<-as.matrix(newx)')
+            try:
+                if(request.POST['data_type']=='raw'):
+                    r('y.loess<-loess(2**y~x,span=0.3)')
+                elif(request.POST['data_type']=='log2'):
+                    r('y.loess<-loess(2**y~2**x,span=0.3)')
+                else:
+                    r('y.loess<-loess(2**y~10**x,span=0.3)')
+            except RRuntimeError:
+                error_reason='Match too less genes. Check your gene symbols again. We use NCBI standard gene symbol.'
+                return render_to_response('pca_error.html',RequestContext(request,
+                {
+                'error_reason':mark_safe(json.dumps(error_reason)),
+                }))
+
+            r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
+                
+            data=r('newx')
+            print(data[:10])
+            print(type(data))
             
         val=np.hstack((np.array(val), np.array(data)))
-        #val=val[~np.isnan(val).any(axis=1)]  
+        val=val[~np.isnan(val).any(axis=1)]  
     pca_index=[]
     dis_offset=[]
 
@@ -688,7 +743,7 @@ def user_pca(request):
         propotion=sum(ratio_temp[1:n])
         table_propotion=sum(ratio_temp[0:n])
         user_new_offset=len(all_offset)
-        print(Xval)
+        #print(Xval)
         
         max=0
         min=10000000000
@@ -874,8 +929,10 @@ def user_pca(request):
         #for xx in origin_name:
             #sample_counter[xx]=1
         #print(out_group)
+        element_counter=0
         for i in out_group:
             for temp_list in i[1]:
+                element_counter=element_counter+len(temp_list[1])
                 for temp in temp_list[1]:
                     if(temp[5]!=" "):
                         temp[5]=temp[5]+'('+str(sample_counter[temp[6]])+')'
@@ -884,7 +941,7 @@ def user_pca(request):
                 for temp in temp_list[1]:
                     if(temp[2]!=" "):
                         temp[2]=temp[2]+'('+str(sample_counter[temp[3]])+')'
-        
+
         return_html='user_pca.html'
     else:
         #This part is for centroid display
@@ -958,6 +1015,7 @@ def user_pca(request):
         out_group=[]
         min=10000000000
         max=0
+        element_counter=0
         for g in range(1,group_counter+1):
             output_cell=[]
             exist_cell={}
@@ -983,6 +1041,7 @@ def user_pca(request):
                                 max=distance
                             output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
                         ,group_c[1],temp_list[0].name,temp_list[0].primary_site,temp_list[0].primary_hist,temp_list[1],distance])
+                            element_counter=element_counter+1
                     except KeyError:
                         distance=np.linalg.norm(np.array(new_val[group_c[2]][n-3:n])-np.array(new_val[temp_list[2]][n-3:n]))
                         if distance==0:
@@ -993,6 +1052,7 @@ def user_pca(request):
                             max=distance
                         output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist
                         ,group_c[1],temp_list[0].name,temp_list[0].primary_site,temp_list[0].primary_hist,temp_list[1],distance])
+                        element_counter=element_counter+1
                         exist_cell[key_string].append(temp_string)
                 g_count=1   
                 u_count=len(user_dict[g_count][0])  #sample number in first user file
@@ -1004,6 +1064,7 @@ def user_pca(request):
                             max=distance
                         output_cell[len(output_cell)-1][1].append([cell.name,cell.primary_site,cell.primary_hist,group_c[1]
                                     ,origin_name[i-user_new_offset]," "," ","User Group"+str(g_count),distance])
+                        element_counter=element_counter+1
                         if ((i-user_new_offset+1)==u_count):
                             g_count+=1
                             try:
@@ -1102,13 +1163,70 @@ def user_pca(request):
                             output_cell.append([" ",[]])
                         except KeyError:
                             u_count+=0
-                    
+    
+    
+    
+    print(element_counter)
+    
+    if(element_counter>show_row):
+        big_flag=1    
+        sid=str(uuid.uuid1())+".csv"
+        if(return_html=='user_pca.html'):
+            dataset_header=['Group Cell Line/Clinical Sample','Sample Name','Primary Site','Primary Histology'
+                ,'Dataset','Paired Cell Line name/Clinical Sample','Sample Name','Primary Site','Primary Histology','Dataset','Distance']
+            user_header=['User Sample Name','Dataset','Paired Cell Line name/Clinical Sample','Sample Name','Primary Site','Primary Histology','Dataset','Distance']
+        else:
+            dataset_header=['Group Cell Line/Clinical Sample','Primary Site','Primary Histology'
+                ,'Dataset','Paired Cell Line name/Clinical Sample','Primary Site','Primary Histology','Dataset','Distance']
+            user_header=['User Sample Name','Dataset','Paired Cell Line name/Clinical Sample','Primary Site','Primary Histology','Dataset','Distance']    
+        P=Path('../').resolve().joinpath('src','static','csv',"dataset_"+sid)
+        userP=Path('../').resolve().joinpath('src','static','csv',"user_"+sid)
+        assP=Path('../').resolve().joinpath('src','assets','csv',"dataset_"+sid)
+        assuserP=Path('../').resolve().joinpath('src','assets','csv',"user_"+sid)
+        with open(str(P), "w", newline='') as f:
+            writer = csv.writer(f)
+            for index,output_cell in out_group:
+                writer.writerows([[index]])
+                writer.writerows([dataset_header])
+                for cell_line,b in output_cell:
+                    writer.writerows(b)
+        with open(str(assP), "w", newline='') as ff:
+            writer = csv.writer(ff)
+            for index,output_cell in out_group:
+                writer.writerows([[index]])
+                writer.writerows([dataset_header])
+                for cell_line,b in output_cell:
+                    writer.writerows(b)
+        with open(str(assuserP), "w", newline='') as ff:
+            writer = csv.writer(ff)
+            for index,output_cell in user_out_group:
+                writer.writerows([[index]])
+                writer.writerows([user_header])
+                for cell_line,b in output_cell:
+                    writer.writerows(b)
+        with open(str(userP), "w", newline='') as f:
+            writer = csv.writer(f)
+            for index,output_cell in user_out_group:
+                writer.writerows([[index]])
+                writer.writerows([user_header])
+                for cell_line,b in output_cell:
+                    writer.writerows(b)
+        
+        data_file_name="dataset_"+sid
+        user_file_name="user_"+sid
+    else:
+        big_flag=0
+        data_file_name=0
+        user_file_name=0
     return render_to_response(return_html,RequestContext(request,
     {
     'min':min,'max':max,
+    'big_flag':big_flag,
     'out_group':out_group,'user_out_group':user_out_group,
     'propotion':propotion,
     'table_propotion':table_propotion,
+    'data_file_name':data_file_name,
+    'user_file_name':user_file_name,
     'X1':X1,'name1':mark_safe(json.dumps(name1)),
     'Y1':Y1,'name2':mark_safe(json.dumps(name2)),
     'Z1':Z1,'name3':mark_safe(json.dumps(name3)),
@@ -1125,6 +1243,7 @@ def user_pca(request):
     'Y5':Y5,
     'Z5':Z5,
     }))
+    
     #notice that we need to return a user_pca_center.html, too!!
     #return render_to_response('welcome.html',locals())
     
@@ -1134,6 +1253,9 @@ def express_profiling(request):
 
 def welcome(request):
     return render_to_response('welcome.html',locals())
+
+def help(request):
+    return render_to_response('help.html',locals())
 
 def help_similar_assessment(request):
     return render_to_response('help_similar_assessment.html',RequestContext(request))
@@ -1484,10 +1606,10 @@ def heatmap(request):
         }))
     
     plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
-    if counter>=100:
-        plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=5)
+    if counter>=stop_end:
+        plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=4)
     else:
-        plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=6)
+        plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=7)
     
     
     
@@ -1499,6 +1621,8 @@ def heatmap(request):
     assP=Path('../').resolve().joinpath('src','assets','image',sid)
     g.savefig(str(P))
     g.savefig(str(assP))
+    #g.savefig("heatmap_for_paper_600.svg")
+    #test.to_csv('er_whole_gene.txt',sep='\t')
     file_name=sid
     
     return render_to_response('heatmap.html',RequestContext(request,
@@ -1736,7 +1860,7 @@ def pca(request):
         ratio_temp=pca.explained_variance_ratio_
         propotion=sum(ratio_temp[n-3:n])
         table_propotion=sum(ratio_temp[0:n])
-        print(Xval)
+        #print(Xval)
         #print(all_cellline)
         #print(all_sample)
         max=0
@@ -1820,10 +1944,11 @@ def pca(request):
                 dictlist+=temp
             output_cell=list(dictlist)
             out_group.append([g,output_cell])
-        
+        element_counter=0
         #[g,[[group_cell_line,[paired_cellline,......,]],[],[]]]
         for i in out_group:
             for temp_list in i[1]:
+                element_counter+=len(temp_list[1])
                 for temp in temp_list[1]:
                     #print(temp)
                     temp[3]=temp[3]+'('+str(sample_counter[temp[4]])+')'
@@ -1833,7 +1958,7 @@ def pca(request):
         #This part is for centroid display
         
         return_html='pca_center.html'
-        
+        element_counter=0
         #val=val[~np.isnan(val).any(axis=1)]  #bottle neck???
         
         #This part is for select cell line base on dataset,count centroid base on the dataset
@@ -1879,13 +2004,13 @@ def pca(request):
                 for s in selected_sample:
                     d_temp.append(s.dataset_id.name)
                 dataset_dict[c]="/".join(list(set(d_temp)))    
-                print(dataset_dict[c])
+                #print(dataset_dict[c])
                 X_val.append(new_loca)
                 location_dict['g'+str(i)].append([c,dataset_dict[c],len(X_val)-1])  #the last part is the index to get pca result from new_val
                 combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
         
         #run the pca
-        print(len(X_val))
+        #print(len(X_val))
         if((len(X_val))<4):
             error_reason='Since the display method is [centroid], you should have at least 4 dots for PCA. The dots are not enough.<br />'\
             'The number of centroid dots you selected is '+str(len(X_val))+'.'
@@ -1899,7 +2024,7 @@ def pca(request):
         ratio_temp=pca.explained_variance_ratio_
         propotion=sum(ratio_temp[n-3:n])
         table_propotion=sum(ratio_temp[0:n])
-        print(new_val)
+        #print(new_val)
 
 
         
@@ -1930,6 +2055,7 @@ def pca(request):
                             if distance>max:
                                 max=distance
                             output_cell[len(output_cell)-1][1].append([cell,group_c[1],temp_list[0],temp_list[1],distance])
+                            element_counter+=1
                             exist_cell[key_string].append(temp_string)
                     except KeyError:
                         distance=np.linalg.norm(np.array(new_val[group_c[2]][n-3:n])-np.array(new_val[temp_list[2]][n-3:n]))
@@ -1940,6 +2066,7 @@ def pca(request):
                         if distance>max:
                             max=distance
                         output_cell[len(output_cell)-1][1].append([cell,group_c[1],temp_list[0],temp_list[1],distance])
+                        element_counter+=1
                         exist_cell[key_string].append(temp_string)
                 if(g==1):
                     name1.append(cell.name+'<br>'+group_c[1])
@@ -1968,11 +2095,62 @@ def pca(request):
                     Z5.append(round(new_val[group_c[2]][n-1],5)) 
             out_group.append([g,output_cell])
     #logger.info('end pca')    
+    if(element_counter>show_row):
+        big_flag=1    
+        sid=str(uuid.uuid1())+".csv"
+        if(return_html=='pca.html'):
+            dataset_header=['Group Cell Line/Clinical Sample','Sample Name','Primary Site','Primary Histology'
+                ,'Dataset','Paired Cell Line name/Clinical Sample','Sample Name','Primary Site','Primary Histology','Dataset','Distance']
+        else:
+            dataset_header=['Group Cell Line/Clinical Sample','Primary Site','Primary Histology'
+                ,'Dataset','Paired Cell Line name/Clinical Sample','Primary Site','Primary Histology','Dataset','Distance']
+        P=Path('../').resolve().joinpath('src','static','csv',sid)
+        assP=Path('../').resolve().joinpath('src','assets','csv',sid)
+        with open(str(P), "w", newline='') as f:
+            writer = csv.writer(f)
+            for index,output_cell in out_group:
+                writer.writerows([["Group_"+str(index)]])
+                writer.writerows([dataset_header])
+                for cell_line,b in output_cell:
+                    temp_b=[]
+                    if(return_html=='pca.html'):
+                        for group_cell,sn,dset,cname,sname,setname,dis,cell_object in b:
+                            temp_b.append([group_cell,sn,cell_line.primary_site,cell_line.primary_hist,dset,cname
+                            ,sname,cell_object.primary_site,cell_object.primary_hist,setname,dis])
+                    else:
+                        for group_cell,group_dataset,paired_cell,paired_dataset,dis in b:
+                            temp_b.append([group_cell.name,group_cell.primary_site,group_cell.primary_hist,group_dataset
+                            ,paired_cell.name,paired_cell.primary_site,paired_cell.primary_hist,paired_dataset,dis])
+                    writer.writerows(temp_b)
+        print('write first file done')
+        with open(str(assP), "w", newline='') as ff:
+            writer = csv.writer(ff)
+            for index,output_cell in out_group:
+                writer.writerows([["Group_"+str(index)]])
+                writer.writerows([dataset_header])
+                for cell_line,b in output_cell:
+                    temp_b=[]
+                    if(return_html=='pca.html'):
+                        for group_cell,sn,dset,cname,sname,setname,dis,cell_object in b:
+                            temp_b.append([group_cell,sn,cell_line.primary_site,cell_line.primary_hist,dset,cname
+                            ,sname,cell_object.primary_site,cell_object.primary_hist,setname,dis])
+                    else:
+                        for group_cell,group_dataset,paired_cell,paired_dataset,dis in b:
+                            temp_b.append([group_cell.name,group_cell.primary_site,group_cell.primary_hist,group_dataset
+                            ,paired_cell.name,paired_cell.primary_site,paired_cell.primary_hist,paired_dataset,dis])
+                    writer.writerows(temp_b)
+        print('write second file done')
+        data_file_name=sid
+    else:
+        big_flag=0
+        data_file_name=0
     return render_to_response(return_html,RequestContext(request,
     {
     'min':min,'max':max,
     'out_group':out_group,
     'propotion':propotion,
+    'big_flag':big_flag,
+    'data_file_name':data_file_name,
     'table_propotion':table_propotion,
     'X1':X1,'name1':mark_safe(json.dumps(name1)),
     'Y1':Y1,'name2':mark_safe(json.dumps(name2)),

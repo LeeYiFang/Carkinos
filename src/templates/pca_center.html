@@ -23,6 +23,13 @@
     <p>Percentage of variance explained by 3D pca plot: {{propotion}}</p>
     <p>Maximum distance:{{max}}</p>
     <p>Minimum distance:{{min}}</p>
+    <p>Because of the batch effect for selection of more than two datasets, we remove the first dimension of PCA and just use the following three to draw the 3D PCA plot.</p>
+    {% if big_flag %}
+        <p>Because the distance table is too big, we provide csv file here, instead of showing the result on the website.</p>
+        <p>PCA Results Data:</p>
+        {% load static %}
+        <a href="{{STATIC_URL}}csv/{{data_file_name}}" download>Download link</a>
+    {% else %}
     <HR>
 
         {% for index,output_cell in out_group %}
@@ -34,14 +41,14 @@
                     <thead>
                     <tr>
                         <th>Group Cell Line/</br>Clinical Sample</th>
-                        <th>Primary site</th>
-                        <th>Primary histology</th>
+                        <th>Primary Site</th>
+                        <th>Primary Histology</th>
                         <th>Dataset</th>
                         <th>Paired Cell Line/</br>Clinical Sample</th>
-                        <th>Primary site</th>
-                        <th>Primary histology</th>
+                        <th>Primary Site</th>
+                        <th>Primary Histology</th>
                         <th>Dataset</th>
-                        <th>distance</th>
+                        <th>Distance</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -67,7 +74,7 @@
         </div>-->
         {% endfor %}
     <HR>    
-    
+    {% endif %}
 {% endblock content %}
 
 {% block scripts %}

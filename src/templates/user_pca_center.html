@@ -24,7 +24,14 @@
     <p>Maximum distance:{{max|floatformat:4}}</p>
     <p>Minimum distance:{{min|floatformat:4}}</p>
     <HR>
-
+    {% if big_flag %}
+        <p>Because the distance table is too big, we provide csv file here, instead of showing the result on the website.</p>
+        <p>Dataset Group Data:</p>
+        {% load static %}
+        <a href="{{STATIC_URL}}csv/{{data_file_name}}" download>Download link</a>
+        <p>User Group Data:</p>
+        <a href="{{STATIC_URL}}csv/{{user_file_name}}" download>Download link</a>
+    {% else %}
         {% for index,output_cell in user_out_group %}
         <!--<div class="row">
             <div class="col-md-offset-1 col-md-10">-->
@@ -33,13 +40,13 @@
                 <table id="example_user" class="display">
                     <thead>
                     <tr>
-                        <th>User Sample name</th>
+                        <th>User Sample Name</th>
                         <th>Dataset</th>
-                        <th>Paired Cell Line name</th>
-                        <th>Primary site</th>
-                        <th>Primary histology</th>
+                        <th>Paired Cell Line name/</br>Clinical Sample</th>
+                        <th>Primary Site</th>
+                        <th>Primary Histology</th>
                         <th>Dataset</th>
-                        <th>distance</th>
+                        <th>Distance</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -70,11 +77,11 @@
                 <table id="example_dataset" class="display">
                     <thead>
                     <tr>
-                        <th>Group Cell Line</th>
+                        <th>Group Cell Line/</br>Clinical Sample</th>
                         <th>Primary site</th>
                         <th>Primary histology</th>
                         <th>Dataset</th>
-                        <th>Paired Cell Line name</th>
+                        <th>Paired Cell Line name/</br>Clinical Sample</th>
                         <th>Primary site</th>
                         <th>Primary histology</th>
                         <th>Dataset</th>
@@ -103,7 +110,7 @@
 
         {% endfor %}
     <HR>    
-    
+   {% endif %} 
 {% endblock content %}
 
 {% block scripts %}
@@ -156,7 +163,7 @@ var trace4 = {
     z:{{Z4}},
     mode: 'markers',
   marker: {
-    color: 'rgb(9, 9, 1)',  //black
+    color: 'rgb(9, 9, 1)',  //black rgb(192, 192, 192)
     size: 12,
     symbol: 'circle',
     line: {
@@ -175,7 +182,7 @@ var trace3 = {
     z:{{Z3}},
     mode: 'markers',
   marker: {
-    color: 'rgb(255, 255, 0)',  //yellow
+    color: 'rgb(255, 255, 0)',  //yellow  rgb(0, 0, 0)
     size: 12,
     symbol: 'circle',
     line: {
@@ -194,7 +201,7 @@ var trace2 = {
     z:{{Z2}},
     mode: 'markers',
   marker: {
-    color: 'rgb(0, 0, 255)',  //blue
+    color: 'rgb(0, 0, 255)',  //blue 
     size: 12,
     symbol: 'circle',
     line: {
@@ -213,7 +220,7 @@ var trace1 = {
     z:{{Z1}},
     mode: 'markers',
   marker: {
-    color: 'rgb(255, 0, 0)',  //red
+    color: 'rgb(255, 0, 0)',  //red rgb(255, 255, 255)
     size: 12,
     symbol: 'circle',
     line: {
