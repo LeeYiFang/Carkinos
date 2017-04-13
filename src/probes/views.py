@@ -291,7 +291,7 @@ def user_pca(request):
             else: #dealing with clinical sample datasets
                 com_hists=list(set(request.POST.getlist('primd_'+dn+'_g'+str(i))))    #can I get this by label to reduce number of queries?
                 com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
-                print(com_hists)
+                #print(com_hists)
                 prims=com_hists[0::2]
                 hists=com_hists[1::2]
                 temp=request.POST.getlist('filter_'+dn+'_g'+str(i))
@@ -326,8 +326,8 @@ def user_pca(request):
                             metas.append(1)
                     else:  #"age/"
                         age.append(t[4:])
-                print(len(prims))
-                print(len(hists))
+                #print(len(prims))
+                #print(len(hists))
                 
                 for x in range(0,len(prims)):
                     s=Clinical_sample.objects.filter(dataset_id__name=dn,primary_site=prims[x],
@@ -364,10 +364,10 @@ def user_pca(request):
     for i in all_sample:
         sample_counter[i.name]=1
         if str(type(i))=="<class 'probes.models.Sample'>":
-            #print("i am sample!!")
+            ##print("i am sample!!")
             cell_object.append(i.cell_line_id)
         else:
-            #print("i am clinical!!")
+            ##print("i am clinical!!")
             cell_object.append(i)
             
     #read the user file   
@@ -404,7 +404,7 @@ def user_pca(request):
            })) 
         if(gene_flag==0): #probe level check
             check_probe=[str(x) for x in list(temp_data.iloc[:,0]) if not str(x).lower().startswith('affx')]  
-            print(len(check_probe))
+            #print(len(check_probe))
             if(len(check_probe)!=len(uni_probe)):
                 error_reason='The probe number does not match with the platform you selected.'
                 return render_to_response('pca_error.html',RequestContext(request,
@@ -518,7 +518,7 @@ def user_pca(request):
             temp_data=temp_data.groupby(temp_data.index).first() #drop the duplicate gene row
             user_dict[x]=temp_data
         
-        print(temp_data)
+        #print(temp_data)
         
         
     
@@ -577,8 +577,8 @@ def user_pca(request):
             uni.append(i.offset)
         info=info.drop(exist_gene,errors='ignore')
         new_data=temp_data.loc[data.index.isin(exist_gene)].reindex(exist_gene)
-        #print(exist_gene)
-        #print(new_data.index)
+        ##print(exist_gene)
+        ##print(new_data.index)
         
         #search remain symbol's alias and symbol
         search_alias=list(set(com_gene)-set(exist_gene))
@@ -589,7 +589,7 @@ def user_pca(request):
                 re_match=Gene.objects.filter(platform__name__in=[pform],symbol__in=re_symbol).order_by('offset') #check the symbol in database or not
                 repeat=len(re_match)
                 if(repeat!=0): #match gene symbol in database      
-                    #print(re_match)
+                    ##print(re_match)
                     for x in re_match:
                         to_copy=data.loc[i]
                         to_copy.name=x.symbol
@@ -598,20 +598,20 @@ def user_pca(request):
                         info=info.drop(x.symbol,errors='ignore')
         
         user_dict[1]=np.array(new_data)
-        #print("length of new data:"+str(len(new_data)))
-        #print("data:")
-        #print(data)
-        #print("new_data:")
-        #print(new_data)
+        ##print("length of new data:"+str(len(new_data)))
+        ##print("data:")
+        ##print(data)
+        ##print("new_data:")
+        ##print(new_data)
         data=new_data
         
     if 'd_sample' in show:
         val=val[np.ix_(uni,all_offset)]
-        print(len(val))
+        #print(len(val))
         user_offset=len(val[0])
         if(gene_flag==1):
             #do the rank invariant here
-            print("sample with ngs data do rank invariant here")
+            #print("sample with ngs data do rank invariant here")
             
             ref_path=Path('../').resolve().joinpath('src','cv_result.txt')
             ref=pd.read_csv(ref_path.as_posix())
@@ -653,19 +653,19 @@ def user_pca(request):
             r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
                 
             data=r('newx')
-            print(data[:10])
-            print(type(data))
+            #print(data[:10])
+            #print(type(data))
             
         val=np.hstack((np.array(val), np.array(data)))
         val=val[~np.isnan(val).any(axis=1)]
         val=np.transpose(val)
     else:
-        print("I am here!!!")
+        #print("I am here!!!")
         val=val[uni]
         user_offset=len(val[0])
         
         if(gene_flag==1):
-            print("sample with ngs data do rank invariant here")
+            #print("sample with ngs data do rank invariant here")
             ref_path=Path('../').resolve().joinpath('src','cv_result.txt')
             ref=pd.read_csv(ref_path.as_posix())
             col=list(ref.columns.values)
@@ -706,8 +706,8 @@ def user_pca(request):
             r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
                 
             data=r('newx')
-            print(data[:10])
-            print(type(data))
+            #print(data[:10])
+            #print(type(data))
             
         val=np.hstack((np.array(val), np.array(data)))
         val=val[~np.isnan(val).any(axis=1)]  
@@ -749,7 +749,7 @@ def user_pca(request):
         propotion=sum(ratio_temp[1:n])
         table_propotion=sum(ratio_temp[0:n])
         user_new_offset=len(all_offset)
-        #print(Xval)
+        ##print(Xval)
         
         max=0
         min=10000000000
@@ -923,7 +923,7 @@ def user_pca(request):
                         
                         g_count+=1
                         before=u_count+before
-                        print("I am here!!")
+                        #print("I am here!!")
                         try:
                             u_count+=len(user_dict[g_count][0])
                             output_cell={}
@@ -934,7 +934,7 @@ def user_pca(request):
         #[g,[group_cell_1 object,[[outputs paired1,......,],[paired2],[paired3]]],[group_cell_2 object,[[pair1],[pair2]]]]
         #for xx in origin_name:
             #sample_counter[xx]=1
-        #print(out_group)
+        ##print(out_group)
         element_counter=0
         for i in out_group:
             for temp_list in i[1]:
@@ -1016,7 +1016,7 @@ def user_pca(request):
         ratio_temp=pca.explained_variance_ratio_
         propotion=sum(ratio_temp[1:n])
         table_propotion=sum(ratio_temp[0:n])
-        print(new_val)
+        #print(new_val)
 
         out_group=[]
         min=10000000000
@@ -1162,7 +1162,7 @@ def user_pca(request):
                         user_out_group.append(["User Group"+str(g_count),output_cell])
                         g_count+=1
                         before=u_count+before
-                        print("I am here!!")
+                        #print("I am here!!")
                         try:
                             u_count+=len(user_dict[g_count][0])
                             output_cell=[]
@@ -1172,8 +1172,8 @@ def user_pca(request):
     
     
     
-    print(element_counter)
-    print(show_row)
+    #print(element_counter)
+    #print(show_row)
     if(element_counter>show_row):
         big_flag=1    
         sid=str(uuid.uuid1())+".csv"
@@ -1189,7 +1189,7 @@ def user_pca(request):
         userP=Path('../').resolve().joinpath('src','static','csv',"user_"+sid)
         assP=Path('../').resolve().joinpath('src','assets','csv',"dataset_"+sid)
         assuserP=Path('../').resolve().joinpath('src','assets','csv',"user_"+sid)
-        print("start writing files")
+        #print("start writing files")
         with open(str(P), "w", newline='') as f:
             writer = csv.writer(f)
             for index,output_cell in out_group:
@@ -1197,7 +1197,7 @@ def user_pca(request):
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
-        print("end writing first file")
+        #print("end writing first file")
         with open(str(assP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in out_group:
@@ -1205,7 +1205,7 @@ def user_pca(request):
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
-        print("end writing 2 file")
+        #print("end writing 2 file")
         with open(str(assuserP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in user_out_group:
@@ -1213,7 +1213,7 @@ def user_pca(request):
                 writer.writerows([user_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
-        print("end writing 3 file")
+        #print("end writing 3 file")
         with open(str(userP), "w", newline='') as f:
             writer = csv.writer(f)
             for index,output_cell in user_out_group:
@@ -1221,7 +1221,7 @@ def user_pca(request):
                 writer.writerows([user_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
-        print("end writing 4 file")
+        #print("end writing 4 file")
         data_file_name="dataset_"+sid
         user_file_name="user_"+sid
     else:
@@ -1363,7 +1363,7 @@ def heatmap(request):
                         re_match=Gene.objects.filter(platform__name__in=[pform],symbol__in=re_symbol).order_by('offset') #check the symbol in database or not
                         repeat=len(re_match)
                         if(repeat!=0): #match gene symbol in database      
-                            #print(re_match)
+                            ##print(re_match)
                             for x in re_match:
                                 info=info.drop(x.symbol,errors='ignore')
                                 probe_offset.append(x.offset)
@@ -1393,7 +1393,7 @@ def heatmap(request):
     group_name=[]
     clinic=list(Clinical_Dataset.objects.all().values_list('name',flat=True))
     clline=list(Dataset.objects.all().values_list('name',flat=True))
-    print(clline)
+    #print(clline)
     
     opened_name=[]
     opened_val=[]
@@ -1417,9 +1417,9 @@ def heatmap(request):
                 s=Sample.objects.filter(dataset_id__name__in=[dn],cell_line_id__name__in=ACELL).order_by('dataset_id').select_related('cell_line_id__name','dataset_id')
                 s_group_dict['g'+str(i)]=list(s)+s_group_dict['g'+str(i)]
                 goffset=list(s.values_list('offset',flat=True))
-                print(goffset)
+                #print(goffset)
                 if dn not in opened_name:  #check if the file is opened
-                    print("opend file!!")
+                    #print("opend file!!")
                     opened_name.append(dn)
                     if(return_page_flag==1):
                         pth=Path('../').resolve().joinpath('src','gene_'+Dataset.objects.get(name=dn).data_path)
@@ -1442,7 +1442,7 @@ def heatmap(request):
 
                 
             elif dn in clinic:
-                print("I am in clinical part")
+                #print("I am in clinical part")
                 com_hists=list(set(request.POST.getlist('primd_'+dn+'_g'+str(i))))    #can I get this by label to reduce number of queries?
                 com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
                 prims=com_hists[0::2]
@@ -1496,7 +1496,7 @@ def heatmap(request):
                     s_group_dict['g'+str(i)]=list(s)+s_group_dict['g'+str(i)]
                     cgoffset+=list(s.values_list('offset',flat=True))
                 if dn not in opened_name:  #check if the file is opened
-                    print("opend file!!")
+                    #print("opend file!!")
                     opened_name.append(dn)
                     if(return_page_flag==1):
                         pth=Path('../').resolve().joinpath('src','gene_'+Clinical_Dataset.objects.get(name=dn).data_path)
@@ -1505,7 +1505,7 @@ def heatmap(request):
                     raw_val=np.load(pth.as_posix(),mmap_mode='r')
                     opened_val.append(raw_val)
                     temp=raw_val[np.ix_(probe_offset,list(cgoffset))]
-                    print(temp)
+                    #print(temp)
                     if (len(a_data)!=0 ) and (len(temp)!=0):
                         a_data=np.concatenate((a_data,temp),axis=1)
                     elif (len(temp)!=0):
@@ -1517,9 +1517,9 @@ def heatmap(request):
                     elif (len(temp)!=0):
                         a_data=opened_val[opened_name.index(dn)][np.ix_(probe_offset,list(cgoffset))]
         val.append(a_data.tolist())
-        print(len(val))
-        print(len(val[0]))
-        #print(val)
+        #print(len(val))
+        #print(len(val[0]))
+        ##print(val)
         
             
     #run the one way ANOVA test or ttest for every probe base on the platform selected    
@@ -1539,7 +1539,7 @@ def heatmap(request):
             presult[all_probe[i]]=stats.f_oneway(*to_anova)[1]  
             express[all_probe[i]]=sum(to_anova,[])
        
-    print("test done")    
+    #print("test done")    
     #sort the dictionary with p-value and need to get the expression data again (top20)  
     #presult[all_probe[0]]=float('nan')
     #presult[all_probe[11]]=float('nan')
@@ -1554,7 +1554,7 @@ def heatmap(request):
     
     cell_probe_val=[]
     for w in sortkey: 
-        #print(presult[w],":",w.Probe_id)
+        ##print(presult[w],":",w.Probe_id)
         
         if (presult[w]<pro_number):
             cell_probe_val.append([w,presult[w]])
@@ -1580,10 +1580,10 @@ def heatmap(request):
             if dataset_n=="Sanger Cell Line Project":
                 sample_out.append(s.cell_line_id.name+"(SCLP)(group"+str(n_counter)+"-"+str(sample_counter)+")")   
             elif dataset_n in clline:
-                print(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
+                #print(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
                 sample_out.append(s.cell_line_id.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")   
             else:  #what to output for clinical part?
-                print(s.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
+                #print(s.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
                 sample_out.append(s.name+"("+s.dataset_id.name+")"+"(group"+str(n_counter)+"-"+str(sample_counter)+")")
             sample_counter+=1
         n_counter+=1
@@ -1628,7 +1628,7 @@ def heatmap(request):
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
     
     sid=str(uuid.uuid1())+".png"
-    print(sid)
+    #print(sid)
     P=Path('../').resolve().joinpath('src','static','image',sid)
     assP=Path('../').resolve().joinpath('src','assets','image',sid)
     g.savefig(str(P))
@@ -1812,10 +1812,10 @@ def pca(request):
     for i in all_sample:
         sample_counter[i.name]=1
         if str(type(i))=="<class 'probes.models.Sample'>":
-            #print("i am sample!!")
+            ##print("i am sample!!")
             cell_object.append(i.cell_line_id)
         else:
-            #print("i am clinical!!")
+            ##print("i am clinical!!")
             cell_object.append(i)
     #delete nan, transpose matrix
     ##open file
@@ -1872,9 +1872,9 @@ def pca(request):
         ratio_temp=pca.explained_variance_ratio_
         propotion=sum(ratio_temp[n-3:n])
         table_propotion=sum(ratio_temp[0:n])
-        #print(Xval)
-        #print(all_cellline)
-        #print(all_sample)
+        ##print(Xval)
+        ##print(all_cellline)
+        ##print(all_sample)
         max=0
         min=10000000000
         out_group=[]
@@ -1962,7 +1962,7 @@ def pca(request):
             for temp_list in i[1]:
                 element_counter+=len(temp_list[1])
                 for temp in temp_list[1]:
-                    #print(temp)
+                    ##print(temp)
                     temp[3]=temp[3]+'('+str(sample_counter[temp[4]])+')'
         
         return_html='pca.html'
@@ -2008,7 +2008,7 @@ def pca(request):
                     sample_list.append(list(selected_sample))
                 
                 
-                #print(selected_sample)
+                ##print(selected_sample)
                 
                 
                 
@@ -2016,13 +2016,13 @@ def pca(request):
                 for s in selected_sample:
                     d_temp.append(s.dataset_id.name)
                 dataset_dict[c]="/".join(list(set(d_temp)))    
-                #print(dataset_dict[c])
+                ##print(dataset_dict[c])
                 X_val.append(new_loca)
                 location_dict['g'+str(i)].append([c,dataset_dict[c],len(X_val)-1])  #the last part is the index to get pca result from new_val
                 combined.append([c,dataset_dict[c],len(X_val)-1])  #all cell line, do not matter order
         
         #run the pca
-        #print(len(X_val))
+        ##print(len(X_val))
         if((len(X_val))<4):
             error_reason='Since the display method is [centroid], you should have at least 4 dots for PCA. The dots are not enough.<br />'\
             'The number of centroid dots you selected is '+str(len(X_val))+'.'
@@ -2036,7 +2036,7 @@ def pca(request):
         ratio_temp=pca.explained_variance_ratio_
         propotion=sum(ratio_temp[n-3:n])
         table_propotion=sum(ratio_temp[0:n])
-        #print(new_val)
+        ##print(new_val)
 
 
         
@@ -2134,7 +2134,7 @@ def pca(request):
                             temp_b.append([group_cell.name,group_cell.primary_site,group_cell.primary_hist,group_dataset
                             ,paired_cell.name,paired_cell.primary_site,paired_cell.primary_hist,paired_dataset,dis])
                     writer.writerows(temp_b)
-        print('write first file done')
+        #print('write first file done')
         with open(str(assP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in out_group:
@@ -2151,7 +2151,7 @@ def pca(request):
                             temp_b.append([group_cell.name,group_cell.primary_site,group_cell.primary_hist,group_dataset
                             ,paired_cell.name,paired_cell.primary_site,paired_cell.primary_hist,paired_dataset,dis])
                     writer.writerows(temp_b)
-        print('write second file done')
+        #print('write second file done')
         data_file_name=sid
     else:
         big_flag=0
@@ -2281,7 +2281,7 @@ def clinical_search(request):
     if 'gtype' in request.POST and request.POST['gtype'] == 'probeid':
         gene = ProbeID.objects.filter(platform__name__in=["PLUS2"]).filter(Probe_id__in=words).order_by('id') 
         probe=list(gene.values_list('offset',flat=True))
-        #print(gene)
+        ##print(gene)
     elif 'gtype' in request.POST and request.POST['gtype'] == 'symbol':
         gene = ProbeID.objects.filter(platform__name__in=["PLUS2"]).filter(Gene_symbol__in=words).order_by('id') 
         probe=list(gene.values_list('offset',flat=True))
@@ -2383,7 +2383,7 @@ def clinical_search(request):
             ).select_related('dataset_id').order_by('id')
             samples+=list(s) 
             offset+=list(s.values_list('offset',flat=True))
-            #print(s)
+            ##print(s)
         pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=sets).data_path)
         val=np.load(pth.as_posix(),mmap_mode='r')
         
@@ -2514,7 +2514,7 @@ def data(request):
         nci_probe_offset=list(nci_g.values_list('offset',flat=True))
         temp=nci_val[np.ix_(nci_probe_offset,ncioffset)]
         nci_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
-        #print(nci_norm)   
+        ##print(nci_norm)   
     else:
         nci_norm=0.0  #if / should = 1
     if gse_flag==1:
@@ -2522,7 +2522,7 @@ def data(request):
         CC_probe_offset=list(CC_g.values_list('offset',flat=True))
         temp=gse_val[np.ix_(CC_probe_offset,CCoffset)]
         CC_norm=np.mean(temp,axis=0, dtype=np.float64,keepdims=True)
-        #print(CC_norm)
+        ##print(CC_norm)
     else:
         CC_norm=0.0  #if / should = 1             
 
