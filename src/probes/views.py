@@ -291,6 +291,7 @@ def user_pca(request):
             else: #dealing with clinical sample datasets
                 com_hists=list(set(request.POST.getlist('primd_'+dn+'_g'+str(i))))    #can I get this by label to reduce number of queries?
                 com_hists=[w1 for segments in com_hists for w1 in segments.split('/')]
+                print(com_hists)
                 prims=com_hists[0::2]
                 hists=com_hists[1::2]
                 temp=request.POST.getlist('filter_'+dn+'_g'+str(i))
@@ -325,6 +326,9 @@ def user_pca(request):
                             metas.append(1)
                     else:  #"age/"
                         age.append(t[4:])
+                print(len(prims))
+                print(len(hists))
+                
                 for x in range(0,len(prims)):
                     s=Clinical_sample.objects.filter(dataset_id__name=dn,primary_site=prims[x],
                     primary_hist=hists[x],
@@ -341,7 +345,8 @@ def user_pca(request):
                     s_group_dict['g'+str(i)]=s_group_dict['g'+str(i)]+list(s)
                     cell_line_dict['g'+str(i)]=cell_line_dict['g'+str(i)]+list(s.values_list('name',flat=True))
                     offset_group_dict['g'+str(i)]=offset_group_dict['g'+str(i)]+list(np.add(list(s.values_list('offset',flat=True)),all_base[all_exist_dataset.index(dn)]))
-
+                
+                #return render_to_response('welcome.html',locals())
     all_sample=[]
     all_cellline=[]
     cell_object=[]
@@ -594,8 +599,8 @@ def user_pca(request):
         
         user_dict[1]=np.array(new_data)
         #print("length of new data:"+str(len(new_data)))
-        print("data:")
-        print(data)
+        #print("data:")
+        #print(data)
         #print("new_data:")
         #print(new_data)
         data=new_data
@@ -658,6 +663,7 @@ def user_pca(request):
         print("I am here!!!")
         val=val[uni]
         user_offset=len(val[0])
+        
         if(gene_flag==1):
             print("sample with ngs data do rank invariant here")
             ref_path=Path('../').resolve().joinpath('src','cv_result.txt')
@@ -1167,7 +1173,7 @@ def user_pca(request):
     
     
     print(element_counter)
-    
+    print(show_row)
     if(element_counter>show_row):
         big_flag=1    
         sid=str(uuid.uuid1())+".csv"
@@ -1183,6 +1189,7 @@ def user_pca(request):
         userP=Path('../').resolve().joinpath('src','static','csv',"user_"+sid)
         assP=Path('../').resolve().joinpath('src','assets','csv',"dataset_"+sid)
         assuserP=Path('../').resolve().joinpath('src','assets','csv',"user_"+sid)
+        print("start writing files")
         with open(str(P), "w", newline='') as f:
             writer = csv.writer(f)
             for index,output_cell in out_group:
@@ -1190,6 +1197,7 @@ def user_pca(request):
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
+        print("end writing first file")
         with open(str(assP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in out_group:
@@ -1197,6 +1205,7 @@ def user_pca(request):
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
+        print("end writing 2 file")
         with open(str(assuserP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in user_out_group:
@@ -1204,6 +1213,7 @@ def user_pca(request):
                 writer.writerows([user_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
+        print("end writing 3 file")
         with open(str(userP), "w", newline='') as f:
             writer = csv.writer(f)
             for index,output_cell in user_out_group:
@@ -1211,7 +1221,7 @@ def user_pca(request):
                 writer.writerows([user_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
-        
+        print("end writing 4 file")
         data_file_name="dataset_"+sid
         user_file_name="user_"+sid
     else:
@@ -1255,6 +1265,8 @@ def welcome(request):
     return render_to_response('welcome.html',locals())
 
 def help(request):
+    example_name="CellExpress_Examples.pptx"
+    tutorial_name="CellExpress_Tutorial.pptx"
     return render_to_response('help.html',locals())
 
 def help_similar_assessment(request):
