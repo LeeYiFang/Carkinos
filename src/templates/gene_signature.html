@@ -222,7 +222,112 @@
 
     
 
-<div id="more_group"></div>
+<div id="add_groups">
+{% for i in "345" %}
+    <div  id="more{{i}}">   
+        
+            <h3 id="gname{{i}}">Group {{i}}:</h3>
+            <div name="select_platform_more{{i}}" id="select_platform_more{{i}}">
+                <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
+                
+                
+                <div id="select_a_more{{i}}">
+                    <span class="help" style="color:red;" name="needed_more{{i}}">*Please check at least one dataset<br /></span>
+                    <p>Cell line datasets:</p>
+                    <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="sanger_more{{i}}" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>
+                </div>
+            
+                
+            
+                <div id="select_plus2_more{{i}}">
+                    <span class="help" style="color:red;" name="needed_more{{i}}">*Please check at least one dataset<br /></span>
+                    <p>Cell line datasets:</p>
+                    <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="nci_more{{i}}" value="NCI60">NCI60</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="ccle_more{{i}}" value="GSE36133">CCLE(GSE36133)</label>
+                    
+                
+                
+                    <p>Clinical datasets:</p>
+                    <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="Roth_more{{i}}" value="Roth">Roth normal dataset</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="expO_more{{i}}" value="expO">Expression Project for Oncology (expO)</label>
+                
+                </div>
+            </div>
+        <div name="select_more{{i}}" id="select_more{{i}}">
+            {% for name,alias,samples,dataset in cell_datasets %}
+                <div class="panel panel-default" id="{{alias}}_table_more{{i}}">              
+                  <div class="panel-heading">{{name}}:</div>
+                  <div class="panel-body">
+                    <p>please select the cell lines you want:</p>
+                    <select multiple="multiple" id="select_{{alias}}_more{{i}}" name="select_{{alias}}_more{{i}}">
+                    
+                    {% for p,cell in dataset %}
+                    <optgroup label="{{p}}" id="optgroup1">
+                            {% for c in cell %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                    </optgroup>     
+                    {% endfor %}
+                             
+                    </select>
+                  </div>
+                  <div id="test_{{alias}}_more{{i}}"></div>
+                  <br />
+
+                </div>
+            {% endfor %}
+            
+            <!--The clinical sample part-->
+        {% with needed="needed_" primd="primd_" primh="primh_" test="test_"%} 
+        {% for name,dataset,filter in datasets %}
+        <div class="panel panel-default" id="{{name}}_table_more{{i}}">
+          <span class="help" style="color:red;text-indent : 1em ;" name="{{needed}}{{name}}">*The primary histology selection part of {{name}} cannot be empty.<br /></span>
+          <div class="panel-heading">{{name}}:</div>
+          <div class="panel-body">
+            <p>Please select the primary site or primary histology you want.</p>
+            <select multiple="multiple" id="{{primd}}{{name}}_more{{i}}" name="{{primd}}{{name}}_more{{i}}">
+            {% for prim,hist in dataset %}
+            <optgroup label="{{prim}}" id="optgroup">
+                    {% for h in hist %}
+                    <option value="{{prim}}/{{ h }}">{{ h }}</option>
+                    {% endfor %}
+            </optgroup>     
+            {% endfor %}
+                     
+            </select>
+          
+            <div id="{{test}}{{name}}_more{{i}}"></div>
+            </br>
+            <div name="filter_primd_more{{i}}">
+            <p>Additional filter:(default is "All Selected")</p>
+                    <select multiple="multiple" id="filter_{{name}}_more{{i}}" name="filter_{{name}}_more{{i}}">
+                        {% for item,choice in filter %}
+                        <optgroup label="{{item}}" id="optgroup">
+                                {% for h in choice %}
+                                <option value="{{item}}/{{ h }}">{{ h }}</option>
+                                {% endfor %}
+                        </optgroup>     
+                        {% endfor %}
+                             
+                    </select>
+              
+            </div>
+            </br>
+          </div>
+        </div>
+        {% endfor %}
+        {% endwith %}
+            
+            
+        </div>
+
+    </div>
+
+{% endfor %}
+
+
+
+</div>
 <div id="error_display"></div>
 <div id="select_error"></div>
 </br>
@@ -259,6 +364,7 @@ $(document).ready(function () {
     $("#keyword").removeAttr('required');
     $("div[id='significant']").show();
     $("div[id='significant_gene']").hide();
+    $("div[id^='more']").hide();
  
 });  
 $("#submit").click(function() { 
@@ -440,129 +546,141 @@ $(document).on('change',"input[name^='dataset_g']",function(){    //優化?
     });
 $( "#delete_group" ).click(function() {
     var $div = $('div[id^="group"]:last');
-    var num = parseInt( $div.prop("id").match(/\d+/g), 10 );
-    if(num>2)
+    var index = parseInt( $div.prop("id").match(/\d+/g), 10 );
+    if(index>2)
     {   
-        $('div[id^="group"]:last').remove();
+        
+              //remove to the last line later
+            document.getElementById("group"+index).id="more"+index;
+            $('div[id="more'+index+'"]').hide();
+            document.getElementById("select_platform_g"+index).setAttribute('name', 'select_platform_more'+index);
+            document.getElementById("select_platform_g"+index).id="select_platform_more"+index;
+            document.getElementById("select_g"+index).setAttribute('name', 'select_more'+index);
+            document.getElementById("select_g"+index).id="select_more"+index;
+            document.getElementById("select_a_g"+index).id="select_a_more"+index;
+            document.getElementById("sanger_g"+index).setAttribute('name', 'dataset_more'+index);
+            document.getElementById("sanger_g"+index).id="sanger_more"+index;
+            document.getElementById("select_plus2_g"+index).id="select_plus2_more"+index;
+            document.getElementById("nci_g"+index).setAttribute('name', 'dataset_more'+index);
+            document.getElementById("nci_g"+index).id="nci_more"+index;
+            document.getElementById("ccle_g"+index).setAttribute('name', 'dataset_more'+index);
+            document.getElementById("ccle_g"+index).id="ccle_more"+index;
+            document.getElementById("Roth_g"+index).setAttribute('name', 'dataset_more'+index);
+            document.getElementById("Roth_g"+index).id="Roth_more"+index;
+            document.getElementById("expO_g"+index).setAttribute('name', 'dataset_more'+index);
+            document.getElementById("expO_g"+index).id="expO_more"+index;
+            document.getElementsByName("filter_primd_g"+index)[0].setAttribute('name',"filter_primd_more"+index);
+            tt=document.getElementsByName("needed"+index)
+            for(i = 0;i < tt.length; i++)
+            {
+                tt[i].setAttribute('name',"needed_more"+index);
+            }
+           
+            var celldatasets={{same_name}};
+            l=celldatasets.length;  //because we have two clinical datasets
+            for(var j=0;j<l;j++)
+            {
+                    
+                    document.getElementById(celldatasets[j]+"_table_g"+index).id=celldatasets[j]+"_table_more"+index;  
+                    document.getElementById("test_"+celldatasets[j]+"_g"+index).id="test_"+celldatasets[j]+"_more"+index;
+                    if(j<=2)
+                    {
+                        document.getElementById("select_"+celldatasets[j]+"_g"+index).setAttribute('name', "select_"+celldatasets[j]+"_more"+index);
+                        document.getElementById("select_"+celldatasets[j]+"_g"+index).id="select_"+celldatasets[j]+"_more"+index;
+                    }
+                    else
+                    {
+                        document.getElementById("primd_"+celldatasets[j]+"_g"+index).setAttribute('name', "primd_"+celldatasets[j]+"_more"+index);
+                        document.getElementById("primd_"+celldatasets[j]+"_g"+index).id="primd_"+celldatasets[j]+"_more"+index;
+                        document.getElementById("filter_"+celldatasets[j]+"_g"+index).setAttribute('name', "filter_"+celldatasets[j]+"_more"+index);
+                        document.getElementById("filter_"+celldatasets[j]+"_g"+index).id="filter_"+celldatasets[j]+"_more"+index;
+                    
+                    }
+                    $("select[id*='_"+celldatasets[j]+"_more"+index+"']").multipleSelect({
+                    filter: true,
+                    multiple: true,
+                    width: '100%'
+                    });
+                    $("select[name='filter_"+celldatasets[j]+"_more"+index+"']").multipleSelect("checkAll");
+                    $("select[id*='_"+celldatasets[j]+"_more"+index+"']").multipleSelect("setSelects", []);
+                    $("input[id^='"+celldatasets[j]+"_more"+index+"']").removeAttr('checked');
+                    $("select[name='filter_"+celldatasets[j]+"_more"+index+"'] option").removeProp('selected').removeAttr('selected');
+            } ;
+            
+    }
+    else
+    {
+        alert("You need to have at least two groups!!");
+    
     }
 });
 $(document).on('click', '#add_group', function() {
-    //$(function () {
-        //$("#add_group").bind("click", function () {
-            var index = $("#more_group h3").length+3;
+    var $div = $('div[id^="group"]:last');
+            var index = parseInt( $div.prop("id").match(/\d+/g), 10 );
+            if(index==5)
+            {
+                alert("Sorry, you can at most have 5 groups.");
+                return false;
+            };
+            index=index+1;
+            $('div[id="more'+index+'"]').show();
+              //remove to the last line later
+            document.getElementById("more"+index).id="group"+index;
             
-            $("#more_group").append(
-            '<div id="group'+index+'">'+
-                '<h3 id="gname'+index+'">Group 2:</h3>'+
-                '<div name="select_platform_g'+index+'" id="select_platform_g'+index+'">'+
-                        '<p>Please select the datasets and related cell lines you want in each of the datasets.</p>'+                        
-                        
-                        '<div id="select_a_g'+index+'">'+
-                            '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
-                            '<p>Cell line datasets:</p>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="sanger_g'+index+'" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>'+
-                        '</div>'+
-                    
-                        
-                    
-                        '<div id="select_plus2_g'+index+'">'+
-                        '<span class="help" style="color:red;" name="needed'+index+'">*Please check at least one dataset<br /></span>'+
-                            '<p>Cell line datasets:</p>'+
-                            '<p>please select the data set(s) you want to compare:</p>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="nci_g'+index+'" value="NCI60">NCI60</label>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="ccle_g'+index+'" value="GSE36133">CCLE(GSE36133)</label>'+
-                            '<p>Clinical datasets:</p>'+
-                            
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="Roth_g'+index+'" value="Roth">Roth normal dataset</label>'+
-                            '<label class="checkbox-inline"><input type="checkbox" name="dataset_g'+index+'" id="expO_g'+index+'" value="expO">Expression Project for Oncology (expO)</label>'+
-                        '</div>'+
-                    
-                '</div>'+
-                '<script src="static/css/multiple-select.js"><\/script>'+
-
-                '{% for name,alias,samples,dataset in cell_datasets %}'+
-                    '<div class="panel panel-default" id="{{alias}}_table_g'+index+'">'+              
-                      '<div class="panel-heading">{{name}}:</div>'+
-                      '<div class="panel-body">'+
-                        '<p>please select the cell lines you want:</p>'+
-                        '<select multiple="multiple" id="select_{{alias}}_g'+index+'" name="select_{{alias}}_g'+index+'">'+
-                        
-                        '{% for p,cell in dataset %}'+
-                        '<optgroup label="{{p}}" id="optgroup1">'+
-                                '{% for c in cell %}'+
-                                '<option value="{{ c }}">{{ c }}</option>'+
-                                '{% endfor %}'+
-                        '</optgroup>'+     
-                        '{% endfor %}'+
-                                 
-                        '</select>'+
-                      '</div>'+
-                      '<div id="test_{{alias}}_g'+index+'"></div>'+
-                      '<br />'+
-
-                    '</div>'+
-                '{% endfor %}'+
-        
-                
-                '{% with needed="needed_" primd="primd_" primh="primh_" test="test_"%}'+ 
-                '{% for name,dataset,filter in datasets %}'+
-                
-                '<div class="panel panel-default" id="{{name}}_table_g'+index+'">'+
-                
-                  '<span class="help" style="color:red;text-indent : 1em ;" name="{{needed}}{{name}}">*The primary histology selection part of {{name}} cannot be empty.<br /></span>'+
-                  '<div class="panel-heading">{{name}}:</div>'+
-                  '<div class="panel-body">'+
-                    '<p>Please select the primary site or primary histology you want.</p>'+
-                    '<select multiple="multiple" id="{{primd}}{{name}}_g'+index+'" name="{{primd}}{{name}}_g'+index+'">'+
-                    '{% for prim,hist in dataset %}'+
-                    '<optgroup label="{{prim}}" id="optgroup">'+
-                            '{% for h in hist %}'+
-                            '<option value="{{prim}}/{{ h }}">{{ h }}</option>'+
-                            '{% endfor %}'+
-                    '</optgroup>'+     
-                    '{% endfor %}'+
-                             
-                    '</select>'+
-                  
-                    '<div id="{{test}}{{name}}_g'+index+'"></div>'+
-                    '</br>'+
-                    '<div name="filter_primd_g'+index+'">'+
-                    '<p>Additional filter:(default is "All Selected")</p>'+
-                            '<select multiple="multiple" id="filter_{{name}}_g'+index+'" name="filter_{{name}}_g'+index+'">'+
-                                '{% for item,choice in filter %}'+
-                                '<optgroup label="{{item}}" id="optgroup">'+
-                                        '{% for h in choice %}'+
-                                        '<option value="{{item}}/{{ h }}">{{ h }}</option>'+
-                                        '{% endfor %}'+
-                                '</optgroup>'+     
-                                '{% endfor %}'+
-                                     
-                            '</select>'+
-                      
-                    '</div>'+
-                    '</br>'+
-                  '</div>'+
-                '</div>'+
-                '{% endfor %}'+
-                '{% endwith %}'+
-                
-            '</div>'
-               
-
-            );
-            var $head = $('h3[id^="gname"]:last');
-            $head.text("Group "+index+":");
-            var name={{same_name}};
-            l=name.length;
+            document.getElementById("select_platform_more"+index).setAttribute('name', 'select_platform_g'+index);
+            document.getElementById("select_platform_more"+index).id="select_platform_g"+index;
+            document.getElementById("select_more"+index).setAttribute('name', 'select_g'+index);
+            document.getElementById("select_more"+index).id="select_g"+index;
+            document.getElementById("select_a_more"+index).id="select_a_g"+index;
+            document.getElementById("sanger_more"+index).setAttribute('name', 'dataset_g'+index);
+            document.getElementById("sanger_more"+index).id="sanger_g"+index;
+            document.getElementById("select_plus2_more"+index).id="select_plus2_g"+index;
+            document.getElementById("nci_more"+index).setAttribute('name', 'dataset_g'+index);
+            document.getElementById("nci_more"+index).id="nci_g"+index;
+            document.getElementById("ccle_more"+index).setAttribute('name', 'dataset_g'+index);
+            document.getElementById("ccle_more"+index).id="ccle_g"+index;
+            document.getElementById("Roth_more"+index).setAttribute('name', 'dataset_g'+index);
+            document.getElementById("Roth_more"+index).id="Roth_g"+index;
+            document.getElementById("expO_more"+index).setAttribute('name', 'dataset_g'+index);
+            document.getElementById("expO_more"+index).id="expO_g"+index;
+            document.getElementsByName("filter_primd_more"+index)[0].setAttribute('name',"filter_primd_g"+index);
+            tt=document.getElementsByName("needed_more"+index)
+            for(i = 0;i < tt.length; i++)
+            {
+                tt[i].setAttribute('name',"needed"+index);
+            }
+           
+            var celldatasets={{same_name}};
+            l=celldatasets.length;  //because we have two clinical datasets
             for(var j=0;j<l;j++)
             {
-                $("select[id*='_"+name[j]+"_g"+index+"']").multipleSelect({
-                filter: true,
-                multiple: true,
-                width: '100%'
-                });
-                $("select[name='filter_"+name[j]+"_g"+index+"']").multipleSelect("checkAll");
-            }
+                    
+                    document.getElementById(celldatasets[j]+"_table_more"+index).id=celldatasets[j]+"_table_g"+index;  
+                    document.getElementById("test_"+celldatasets[j]+"_more"+index).id="test_"+celldatasets[j]+"_g"+index;
+                    if(j<=2)
+                    {
+                        document.getElementById("select_"+celldatasets[j]+"_more"+index).setAttribute('name', "select_"+celldatasets[j]+"_g"+index);
+                        document.getElementById("select_"+celldatasets[j]+"_more"+index).id="select_"+celldatasets[j]+"_g"+index;
+                    }
+                    else
+                    {
+                        document.getElementById("primd_"+celldatasets[j]+"_more"+index).setAttribute('name', "primd_"+celldatasets[j]+"_g"+index);
+                        document.getElementById("primd_"+celldatasets[j]+"_more"+index).id="primd_"+celldatasets[j]+"_g"+index;
+                        document.getElementById("filter_"+celldatasets[j]+"_more"+index).setAttribute('name', "filter_"+celldatasets[j]+"_g"+index);
+                        document.getElementById("filter_"+celldatasets[j]+"_more"+index).id="filter_"+celldatasets[j]+"_g"+index;
+                    
+                    }
+                    $("select[id*='_"+celldatasets[j]+"_g"+index+"']").multipleSelect({
+                    filter: true,
+                    multiple: true,
+                    width: '100%'
+                    });
+                    $("select[name='filter_"+celldatasets[j]+"_g"+index+"']").multipleSelect("checkAll");
+            } ;
+            
+            
+            //change this part
+            var $head = $('h3[id="gname'+index+'"]');
             
             if($("#U133A-id").is(':checked')){
             $("div[id='select_a_g"+index+"']").show();
@@ -576,6 +694,7 @@ $(document).on('click', '#add_group', function() {
             $("div[id*='_table_g"+index+"']").hide();
             
             };
+            
         });
     //});
 </script>

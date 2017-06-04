@@ -1,17 +1,39 @@
 {% extends 'base.html' %}
 
 {% block title %}Welcome{% endblock title %}
+{% block extra_css %}
+<style type="text/css">
+.jumbotron {
+    background-image: url("/static/background.png");
+    background-color: #17234E;
+    margin-bottom: 0;`enter code here`
+    min-height: 50%;
+    background-repeat: no-repeat;
+    background-position: center;
+    -webkit-background-size: cover;
+    background-size: cover;
+    color: white;
+    text-shadow: #444 0 1px 1px;
+}
 
+</style>
+{% endblock extra_css %}
 {% block content %}
 
-    <h1>Welcome to CellExpress!!</h1>
-    <h3>Cancer cell line database of microarray and clinical samples</h3>
-    <hr />
-    <p>This is a database for cell line information,
-    especially microarray information of cancer cell line.<br />
+<div class="jumbotron">
+  <h1>Welcome to CellExpress</h1>
+  <h3>Cancer cell line database of microarray and clinical samples</h3>
+  <hr />
+    <p>A gene expression database for cancer cell line and clinical samples.</p>
     Designed and maintained by
-    Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine</p>
+    Bioinformatics and Biostatistics Core,NTU Center of Genomic Medicine
     <br />
+  <!--<p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a></p>style="background:#0044BB" -->
+</div>
+    
+    
    
 
 {% endblock content %}
+
+</script>

@@ -196,13 +196,13 @@ def user_pca(request):
         quantile=list(np.load('ranking_u133a.npy'))
         probe_path=Path('../').resolve().joinpath('src','Affy_U133A_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
-        uni_probe=pd.unique(probe_list.PROBEID)
+        uni_probe=pd.unique(probe_list['Probe Set ID'])
         
     else:
         quantile=np.load('ranking_u133plus2.npy')
         probe_path=Path('../').resolve().joinpath('src','Affy_U133plus2_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
-        uni_probe=pd.unique(probe_list.PROBEID)
+        uni_probe=pd.unique(probe_list['Probe Set ID'])
         
     
     
@@ -541,6 +541,7 @@ def user_pca(request):
     
     #database dataset remove nan probes
     if(gene_flag==0):
+        uni=[]
         p_offset=list(ProbeID.objects.filter(platform__name__in=[pform],Probe_id__in=nans).values_list('offset',flat=True))
         for n in range(0,len(uni_probe)):
             if(n not in p_offset):
@@ -639,10 +640,13 @@ def user_pca(request):
             try:
                 if(request.POST['data_type']=='raw'):
                     r('y.loess<-loess(2**y~x,span=0.3)')
+                    r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
                 elif(request.POST['data_type']=='log2'):
                     r('y.loess<-loess(2**y~2**x,span=0.3)')
+                    r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,2**newx[,z])))')
                 else:
                     r('y.loess<-loess(2**y~10**x,span=0.3)')
+                    r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,10**newx[,z])))')
             except RRuntimeError:
                 error_reason='Match too less genes. Check your gene symbols again. We use NCBI standard gene symbol.'
                 return render_to_response('pca_error.html',RequestContext(request,
@@ -650,7 +654,7 @@ def user_pca(request):
                 'error_reason':mark_safe(json.dumps(error_reason)),
                 }))
             
-            r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
+            #r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
                 
             data=r('newx')
             #print(data[:10])
@@ -660,8 +664,9 @@ def user_pca(request):
         val=val[~np.isnan(val).any(axis=1)]
         val=np.transpose(val)
     else:
-        #print("I am here!!!")
-        val=val[uni]
+
+        #val=np.array(val)
+        val=val[np.ix_(uni)]
         user_offset=len(val[0])
         
         if(gene_flag==1):
@@ -692,10 +697,13 @@ def user_pca(request):
             try:
                 if(request.POST['data_type']=='raw'):
                     r('y.loess<-loess(2**y~x,span=0.3)')
+                    r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
                 elif(request.POST['data_type']=='log2'):
                     r('y.loess<-loess(2**y~2**x,span=0.3)')
+                    r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,2**newx[,z])))')
                 else:
                     r('y.loess<-loess(2**y~10**x,span=0.3)')
+                    r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,10**newx[,z])))')
             except RRuntimeError:
                 error_reason='Match too less genes. Check your gene symbols again. We use NCBI standard gene symbol.'
                 return render_to_response('pca_error.html',RequestContext(request,
@@ -703,7 +711,7 @@ def user_pca(request):
                 'error_reason':mark_safe(json.dumps(error_reason)),
                 }))
 
-            r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
+            #r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,newx[,z])))')
                 
             data=r('newx')
             #print(data[:10])
