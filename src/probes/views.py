@@ -196,13 +196,13 @@ def user_pca(request):
         quantile=list(np.load('ranking_u133a.npy'))
         probe_path=Path('../').resolve().joinpath('src','Affy_U133A_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
-        uni_probe=pd.unique(probe_list['Probe Set ID'])
+        uni_probe=pd.unique(probe_list['PROBEID'])
         
     else:
         quantile=np.load('ranking_u133plus2.npy')
         probe_path=Path('../').resolve().joinpath('src','Affy_U133plus2_probe_info.csv')
         probe_list = pd.read_csv(probe_path.as_posix())
-        uni_probe=pd.unique(probe_list['Probe Set ID'])
+        uni_probe=pd.unique(probe_list['PROBEID'])
         
     
     
