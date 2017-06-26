@@ -1,6 +1,9 @@
-# Carkinos Project
+# CellExpress
 
-Django refactor for Carkinos project.
+The website is freely available at http://cellexpress.cgm.ntu.edu.tw/  
+CellExpress is a microarray-based cell line and clinical sample gene expression analysis online system.
+The system was written in Python with Django framework, and contains data from Affymetrix U133A and Affy-metrix U133Plus2.0 platforms. 
+CellExpress is under the Carkinos project in Bioinformatics and Biostatistics Core, NTU Center of Genomic Medicine.
 
 
 ## Getting Started
@@ -9,15 +12,18 @@ Django refactor for Carkinos project.
 
 - Git
 - Python 3.4+
+- Django 1.9
+- R
 
 #### Binary datasets
-
+All microarrays obtained from the same platform were normalized using the quantile algorithm.The control probes were removed.
 Carkinos Project ships several processed datasets including:
 
 - CCLE (GSE36133)
 - NCI60 (GSE32474)
 - Sanger (GSE68950)
 - expO (GSE2109)
+- Roth (GSE7307)
 
 The normalized expression data are stored in Numpy binary format, which are generally too large to fit in the GitHub git repository. Make sure you have them first.
 
