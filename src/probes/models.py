@@ -70,8 +70,6 @@ class Clinical_sample(models.Model):
 class CellLine(models.Model):
 
     name = models.CharField(max_length=20)
-    organ = models.CharField(max_length=50, default='N/A')
-    disease = models.CharField(max_length=100, default='N/A')
     primary_site = models.CharField(max_length=50)
     primary_hist = models.CharField(max_length=100)
     
