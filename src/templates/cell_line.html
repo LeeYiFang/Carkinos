@@ -18,6 +18,8 @@
             <thead>
                 <tr>
                     <th>Cell Line name</th>
+                    <th>NIH organ</th>
+                    <th>NIH disease</th>
                     <th>Primary site</th>
                     <th>Primary histology</th>
                     <th>Dataset</th>
@@ -29,6 +31,8 @@
                 {% for l,data in val_pairs %}
                     <tr>
                         <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.organ }}</td>
+                        <td>{{ l.cell_line_id.disease }}</td>
                         <td>{{ l.cell_line_id.primary_site }}</td>
                         <td>{{ l.cell_line_id.primary_hist }}</td>
                         <!--<td>

@@ -17,14 +17,14 @@
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
-            Affymatrix U133A platform
+            Affymetrix U133A platform
         </label>
     </div>
     
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="PLUS2" id="PLUS2-id" >
-            Affymatrix U133plus2 platform
+            Affymetrix U133plus2 platform
         </label>
     </div>
     
@@ -115,7 +115,7 @@
 </br>
 <h3>Step3 - Define Groups:</h3>
 <p>Two groups will use student t-test to evaluate the result.</p>
-<p>For more than two groups, we will use one-way-ANOVA</p>
+<p>For more than two groups, we will use one-way-ANOVA.</p>
 <p>The following input of the groups should be based on the platform you select in Step3.</p>
 <p style="color:blue;">Notice: To prevent statistical error, please at least input 3 cell lines in each group.</p>
 {% for i in "12" %}
@@ -334,7 +334,7 @@
 <button type="button" class="btn btn-info" id="add_group">Add Group</button>
 <button type="button" class="btn btn-info" id="delete_group">Delete Group</button>
 
-
+<br />
 <br />
 <button class="btn btn-default" type="submit" id="submit">Submit</button>
 </div>

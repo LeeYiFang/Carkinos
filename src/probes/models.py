@@ -66,10 +66,12 @@ class Clinical_sample(models.Model):
         return '%s of %s of %s of %s' % (self.name, self.primary_site, self.primary_hist,self.dataset_id)
 
         
-#empty is 'nan'
+#primary empty is 'nan', organ/disease empty is 'N/A'
 class CellLine(models.Model):
 
     name = models.CharField(max_length=20)
+    organ = models.CharField(max_length=50, default='N/A')
+    disease = models.CharField(max_length=100, default='N/A')
     primary_site = models.CharField(max_length=50)
     primary_hist = models.CharField(max_length=100)
     

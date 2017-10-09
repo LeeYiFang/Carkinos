@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 
-{% block title %}Gene Expression Profiling Analysis{% endblock title %}
+{% block title %}User Data Analysis{% endblock title %}
 
 
 {% block content %}
-<h1>Gene Expression Profiling Analysis</h1>
+<h1>User Data Analysis</h1>
 </br>
 <form action="{% url 'user_pca' %}" method="post" target="_blank" enctype="multipart/form-data">{% csrf_token %}
 <style type="text/css">  
@@ -13,16 +13,17 @@
 <h3>Step1 - Select the PCA display method:</h3>
 <div class="radio">
         <label>
-            <input type="radio" name="show_type" value="d_sample" id="d_sample" >
-            Dots:one dot represents one sample(one cell line may include several samples)
-        </label>
-</div>
-<div class="radio">
-        <label>
             <input type="radio" name="show_type" value="d_center" id="d_center" checked>
             Dots:one dot represents one cell line
         </label>
 </div>
+<div class="radio">
+        <label>
+            <input type="radio" name="show_type" value="d_sample" id="d_sample" >
+            Dots:one dot represents one sample(one cell line may include several samples)
+        </label>
+</div>
+
 </br>
 <h3>Step2 - Choose microarray platform: </h3>
 <div id="platform_type">
@@ -64,7 +65,7 @@
 
 <h3>Step3 - Upload file</h3>
 <p>Please upload your own data.</p>
-<p>The samples you upload with be red in the result PCA plot.</p>
+<p>The samples you upload with be colored red in the result PCA plot.</p>
 <h3>User Group1:Red</h3>
 <p style="color:blue;">Notice:only accept .csv file now</p>
 <input type="file" name="user_file" size="chars" required="required"></input>
@@ -78,11 +79,11 @@
 </br>
 </br>
 
-<h3>Step4 - Select Compare Data:</h3>
-<p>Each group will have different colors.</p>
+<h3>Step4 - Select Database Sample:</h3>
+<p>Each group will have different color.</p>
 <p>Press "Add group" to add more group and "Delete group" to delete the last group below.</p>
 <p style="color:blue;">You can at most have 3 groups.</p>  
-<p style="color:blue;">You need to have at least 4 cell lines or clinical samples in groups.</p>
+<p style="color:blue;">You need to have at least 4 cell lines or clinical samples totally.</p>
 <div  id="group1">
 
     <h3>Dataset Group 1: Yellow</h3>
@@ -292,7 +293,7 @@
 <button type="button" class="btn btn-info" id="delete_group">Delete Group</button>
 
 </br>
-
+</br>
 <button class="btn btn-default" type="submit" id="submit">Submit</button>
 
 

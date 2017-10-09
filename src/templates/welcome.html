@@ -4,7 +4,7 @@
 {% block extra_css %}
 <style type="text/css">
 .jumbotron {
-    background-image: url("{{STATIC_URL}}background.png");
+    
     background-color: #17234E;
     margin-bottom: 0;`enter code here`
     min-height: 50%;
@@ -19,8 +19,8 @@
 </style>
 {% endblock extra_css %}
 {% block content %}
-
-<div class="jumbotron">
+{% load static %}
+<div class="jumbotron" style="background-image: url('/static/background.png');">
   <h1>Welcome to CellExpress</h1>
   <h3>Cancer cell line database of microarray and clinical samples</h3>
   <hr />

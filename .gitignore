@@ -160,3 +160,4 @@ src/sanger_cell_line_proj.npy
 src/static/heatmap/
 *.npy
 *.ipynb
+*.ipynb

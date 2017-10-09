@@ -34,14 +34,14 @@
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="U133A" id="U133A-id" checked>
-            Affymatrix U133A platform
+            Affymetrix U133A platform
         </label>
     </div>
     
     <div class="radio">
         <label>
             <input type="radio" name="data_platform" value="PLUS2" id="PLUS2-id" >
-            Affymatrix U133plus2 platform
+            Affymetrix U133plus2 platform
         </label>
     </div>
     
@@ -53,8 +53,8 @@
 <p>Each group will have different color.</p>
 <p>Press "Add group" to add more group, and press "Delete group" to delete the last group.</p>
 <p style="color:blue;">Notice: You can have at most 5 groups.</p>
-<p style="color:blue;">Notice: You have to at least input or select 4 cell line in groups.</p>
-<p style="color:blue;">Notice: If you input the same cell line in different groups, it will has the color of the first group you input it.</p>
+<p style="color:blue;">Notice: You have to at least input or select 4 cell lines totally.</p>
+<p style="color:blue;">Notice: If you input the same cell line in different groups, it will have the color of the prior one.</p>
 <div  id="group1">    
     
         <h3>Group 1: Red</h3>
@@ -267,6 +267,7 @@
 </br>
 <button type="button" class="btn btn-info" id="add_group">Add Group</button>
 <button type="button" class="btn btn-info" id="delete_group">Delete Group</button>
+</br>
 </br>
 <button class="btn btn-default" type="submit" id="submit">Submit</button>
 

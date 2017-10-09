@@ -11,10 +11,11 @@
         <label class="radio-inline">
             <input type="radio" name="gtype" value="symbol" checked>Gene symbol
         </label>
+         <!--
         <label class="radio-inline">
             <input type="radio" name="gtype" value="entrez">Entrez Gene ID
         </label>
-        <!--
+       
         <label class="radio-inline">
             <input type="radio" name="gtype" value="entrez">GenBank accession
         </label>
@@ -110,6 +111,8 @@
                 <thead>
                 <tr>
                     <th>Cell Line name</th>
+                    <th>NIH organ</th>
+                    <th>NIH disease</th>
                     <th>Primary site</th>
                     <th>Primary histology</th>
                     <th>dataset</th>
@@ -120,6 +123,8 @@
                     {# Add display:none to increase HTML DOM loading #}
                     <tr name="{{l.cell_line_id.name}}" class="class_{{alias}}" style="display:none">
                         <td>{{ l.cell_line_id.name }}</td>
+                        <td>{{ l.cell_line_id.organ }}</td>
+                        <td>{{ l.cell_line_id.disease }}</td>
                         <td>{{ l.cell_line_id.primary_site }}</td>
                         <td>{{ l.cell_line_id.primary_hist }}</td>
                         <td>{{name}}</td>
@@ -136,7 +141,7 @@
         <div class="radio">
             <label>
                 <input type="radio" name="normalize" value="RPL41" >
-                CV: minimum coefficient of variance(gene:RPL41)
+                CV: minimum coefficient of variation(gene:RPL41)
             </label>
         </div>
         <div class="radio">
