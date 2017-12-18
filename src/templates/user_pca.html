@@ -35,7 +35,7 @@
         {% for index,output_cell in user_out_group %}
             <!--<div class="row">
                 <div class="col-md-offset-1 col-md-10">-->
-                    <h2>PCA Results: {{index}} Distance</h2>
+                    <h2 id='{{index}}'></h2>
                  
                     <table id="example_user" class="display">
                         <thead>
@@ -76,7 +76,7 @@
             {% for index,output_cell in out_group %}
             <!--<div class="row">
                 <div class="col-md-offset-1 col-md-10">-->
-                    <h2>PCA Results: {{index}} Distance</h2>
+                    <h2 id='{{index}}'></h2>
                  
                     <table id="example_dataset" class="display">
                         <thead>
@@ -134,14 +134,31 @@
 <script>
  $(document).ready(function() {
  
- $('table[id^="example"]').DataTable({
+    $('table[id^="example"]').DataTable({
         destroy: true,
         dom: 'lfrtBip',
         buttons: [
             'csv'
         ]
     } );
-  
+    
+    {% autoescape off %}
+        var group={{ugroup}};
+    {% endautoescape %}
+    for(var i = 0;i < group.length; i++)
+    {
+        var $head = $('h2[id="User Group'+(i+1)+'"]');
+        $head.text("PCA Results: "+group[i]+" Distance");
+    };
+    {% autoescape off %}
+        var group={{dgroup}};
+    {% endautoescape %}
+    for(var i = 0;i < group.length; i++)
+    {
+        var $head = $('h2[id="Dataset Group'+(i+1)+'"]');
+        $head.text("PCA Results: "+group[i]+" Distance");
+    };
+    
  } );
 </script>
 <script>
@@ -162,7 +179,7 @@ var trace5 = {
     opacity: 0.9
   },
   text: {{name5}},
-  name: 'Dataset Group3',
+  name: '{{dgroup.2}}',
   type: 'scatter3d'
 };
 var trace4 = {
@@ -181,7 +198,7 @@ var trace4 = {
     opacity: 0.9
   },
   text: {{name4}},
-  name: 'Dataset Group2',
+  name: '{{dgroup.1}}',
   type: 'scatter3d'
 };
 var trace3 = {
@@ -200,7 +217,7 @@ var trace3 = {
     opacity: 0.9
   },
   text: {{name3}},
-  name: 'Dataset Group1',
+  name: '{{dgroup.0}}',
   type: 'scatter3d'
 };
 var trace2 = {
@@ -219,7 +236,7 @@ var trace2 = {
     opacity: 0.9
   },
   text:{{name2}},  
-  name: 'User Group2',
+  name: '{{ugroup.1}}',  //user group2
   type: 'scatter3d'
 };
 var trace1 = {
@@ -238,7 +255,7 @@ var trace1 = {
     opacity: 0.9
   },
   text: {{name1}},  //fix to name1 later
-  name: 'User Group1',
+  name: '{{ugroup.0}}',
   showlegend: true,
   type: 'scatter3d'
 };

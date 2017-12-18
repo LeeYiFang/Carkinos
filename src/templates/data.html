@@ -28,7 +28,6 @@ tfoot input {
             <th>Primary histology</th>
             <th>Probe_id</th>
             <th>Gene_symbol</th>
-            <th>Entrez_id</th>
             <th>Gene_name</th>
             <th>value</th>
             <th>ranking</th>
@@ -44,7 +43,6 @@ tfoot input {
             <th>Primary histology</th>
             <th>Probe_id</th>
             <th>Gene_symbol</th>
-            <th>Entrez_id</th>
             <th>Gene_name</th>
             <th>value</th>
             <th>ranking</th>
@@ -62,7 +60,6 @@ tfoot input {
 			<td>{{ c.cell_line_id.primary_hist }}</td>
 			<td>{{ p.Probe_id }}</td>
 			<td>{{ p.Gene_symbol }}</td>
-			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
 			<td>{{ val|floatformat:4 }}</td>
             {% for i in rank%}
@@ -83,7 +80,6 @@ tfoot input {
 			<td>{{ c.cell_line_id.primary_hist }}</td>
 			<td>{{ p.Probe_id }}</td>
 			<td>{{ p.Gene_symbol }}</td>
-			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
 			<td>{{ val|floatformat:4 }}</td>
             {% for i in rank%}
@@ -103,7 +99,6 @@ tfoot input {
 			<td>{{ c.cell_line_id.primary_hist }}</td>
 			<td>{{ p.Probe_id }}</td>
 			<td>{{ p.Gene_symbol }}</td>
-			<td>{{ p.Entrez_id }}</td>
 			<td>{{ p.Gene_name }}</td>
 			<td>{{ val|floatformat:4 }}</td>
             {% for i in rank%}

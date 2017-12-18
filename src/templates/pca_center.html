@@ -35,7 +35,7 @@
         {% for index,output_cell in out_group %}
         <!--<div class="row">
             <div class="col-md-offset-1 col-md-10">-->
-                <h2>PCA Results:Group {{index}} Distance</h2>
+                <h2 id='g{{index}}'></h2>
              
                 <table id="example" class="display">
                     <thead>
@@ -95,14 +95,21 @@ $(document).ready(function() {
 <script>
  $(document).ready(function() {
  
- $('table[id="example"]').DataTable({
+    $('table[id="example"]').DataTable({
         destroy: true,
         dom: 'lfrtBip',
         buttons: [
             'csv'
         ]
     } );
-  
+    {% autoescape off %}
+    var group={{udgroup}};
+    {% endautoescape %}
+    for(var i = 0;i < group.length; i++)
+    {
+        var $head = $('h2[id="g'+(i+1)+'"]');
+        $head.text("PCA Results: "+group[i]+" Distance");
+    };
  } );
 </script>
 <script>
@@ -123,7 +130,7 @@ var trace5 = {
     opacity: 0.9
   },
   text: {{name5}},
-  name: 'Group5',
+  name: '{{udgroup.4}}',
   type: 'scatter3d'
 };
 var trace4 = {
@@ -142,7 +149,7 @@ var trace4 = {
     opacity: 0.9
   },
   text: {{name4}},
-  name: 'Group4',
+  name: '{{udgroup.3}}',
   type: 'scatter3d'
 };
 var trace3 = {
@@ -161,7 +168,7 @@ var trace3 = {
     opacity: 0.9
   },
   text: {{name3}},
-  name: 'Group3',
+  name: '{{udgroup.2}}',
   type: 'scatter3d'
 };
 var trace2 = {
@@ -180,7 +187,7 @@ var trace2 = {
     opacity: 0.9
   },
   text:{{name2}},  
-  name: 'Group2',
+  name: '{{udgroup.1}}',
   type: 'scatter3d'
 };
 var trace1 = {
@@ -199,7 +206,7 @@ var trace1 = {
     opacity: 0.9
   },
   text: {{name1}},  //fix to name1 later
-  name: 'Group1',
+  name: '{{udgroup.0}}',
   showlegend: true,
   type: 'scatter3d'
 };

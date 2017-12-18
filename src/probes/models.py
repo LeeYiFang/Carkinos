@@ -60,7 +60,7 @@ class Clinical_sample(models.Model):
     stageT=models.CharField(max_length=10,default='UNKNOWN')
     stageN=models.CharField(max_length=10,default='UNKNOWN')
     stageM=models.CharField(max_length=10,default='UNKNOWN')
-    metastatic=models.BooleanField(default=False)
+    metastatic=models.CharField(max_length=5, default='NA')
     
     def __str__(self):
         return '%s of %s of %s of %s' % (self.name, self.primary_site, self.primary_hist,self.dataset_id)

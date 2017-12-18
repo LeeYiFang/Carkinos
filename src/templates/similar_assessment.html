@@ -50,14 +50,16 @@
 
 
 <h3>Step3 - Define Groups:</h3>
-<p>Each group will have different color.</p>
-<p>Press "Add group" to add more group, and press "Delete group" to delete the last group.</p>
-<p style="color:blue;">Notice: You can have at most 5 groups.</p>
-<p style="color:blue;">Notice: You have to at least input or select 4 cell lines totally.</p>
-<p style="color:blue;">Notice: If you input the same cell line in different groups, it will have the color of the prior one.</p>
+<p>Each group will have a different color.</p>
+<p>Press "Add group" to add another group, and press "Delete group" to delete the last group.</p>
+<p style="color:blue;">Notice: A maximum of 5 groups is available.</p>
+<p style="color:blue;">Notice: At least 4 cell lines must be selected.</p>
+<p style="color:blue;">Notice: If a cell line is selected in more than one group, it will be displayed in the color of the first group in which it was selected.</p>
 <div  id="group1">    
     
         <h3>Group 1: Red</h3>
+        <p>Change your group name below (or leave as is to use the default value):</p>
+        <input type="text" name="group_name1" value="Group1"><br />
         <div name="select_platform_g1" id="select_platform_g1">
             <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
             
@@ -158,6 +160,8 @@
     <div  id="more{{i}}">   
         
             <h3 id="gname{{i}}">Group {{i}}: Red</h3>
+            <p>Change your group name below (or leave as is to use the default value):</p>
+            <input type="text" name="group_name{{i}}" value="Group{{i}}"><br />
             <div name="select_platform_more{{i}}" id="select_platform_more{{i}}">
                 <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
                 

@@ -27,6 +27,20 @@
             Affymetrix U133plus2 platform
         </label>
     </div>
+	
+	<div class="radio">
+        <label>
+            <input type="radio" name="data_platform" value="mix_quantile" id="mix_quantile" >
+            Affymetrix U133A and U133plus2 mixed (Quantile)
+        </label>
+    </div>
+	
+	<div class="radio">
+        <label>
+            <input type="radio" name="data_platform" value="mix_ratio" id="mix_ratio" >
+            Affymetrix U133A and U133plus2 mixed (Normalized with GAPDH)
+        </label>
+    </div>
     
 </div>
 
@@ -91,7 +105,7 @@
         </label>    
     </div>
     <div id="keys">
-        <p style="color:blue;text-indent : 2em ;">Choose type of keywords (gene name or platform identifier):</p>
+        <p style="color:blue;text-indent : 2em ;">Choose the type of keywords (gene name or platform identifier):</p>
             
             <label style="text-indent : 4em ;">
                 <input type="radio" name="gtype" value="symbol" checked>Gene symbol
@@ -99,8 +113,8 @@
             </label>
             
 
-        <p style="color:blue;text-indent : 2em ;">Input more than 1 keywords:</p>
-            <p style="text-indent : 4em ;">Please separate keywords with space or new line.</p><!--grammar problem,need fix later-->
+        <p style="color:blue;text-indent : 2em ;">Input more than 1 keyword:</p>
+            <p style="text-indent : 4em ;">Please separate keywords with a space or a new line.</p><!--grammar problem,need fix later-->
             <p style="text-indent : 4em ;">Example(probe id):1007_s_at 1053_at</p>
             <style type="text/css" style="text-indent : 2em ;">  
                         .help {display: none}
@@ -114,13 +128,12 @@
     </div>
 </br>
 <h3>Step3 - Define Groups:</h3>
-<p>Two groups will use student t-test to evaluate the result.</p>
-<p>For more than two groups, we will use one-way-ANOVA.</p>
+<p>Two groups will use Student's t-test to evaluate the result.</p>
+<p>For more than two groups, we will use one-way ANOVA.</p>
 <p>The following input of the groups should be based on the platform you select in Step3.</p>
-<p style="color:blue;">Notice: To prevent statistical error, please at least input 3 cell lines in each group.</p>
+<p style="color:blue;">Notice: To prevent a statistical error, please at least input 3 cell lines in each group.</p>
 {% for i in "12" %}
-    <div  id="group{{i}}">
-    
+    <div  id="group{{i}}">    
     
         <h3>Group {{i}}:</h3>
         <div name="select_platform_g{{i}}" id="select_platform_g{{i}}">
@@ -129,7 +142,7 @@
             
             <div id="select_a_g{{i}}">
                 <span class="help" style="color:red;" name="needed{{i}}">*Please check at least one dataset<br /></span>
-                <p>Cell line datasets:</p>
+                <p>Cell line datasets (U133A):</p>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g{{i}}" id="sanger_g{{i}}" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>
             </div>
         
@@ -137,7 +150,7 @@
         
             <div id="select_plus2_g{{i}}">
                 <span class="help" style="color:red;" name="needed{{i}}">*Please check at least one dataset<br /></span>
-                <p>Cell line datasets:</p>
+                <p>Cell line datasets (U133plus2):</p>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g{{i}}" id="nci_g{{i}}" value="NCI60">NCI60</label>
                 <label class="checkbox-inline"><input type="checkbox" name="dataset_g{{i}}" id="ccle_g{{i}}" value="GSE36133">CCLE(GSE36133)</label>
                 
@@ -233,7 +246,7 @@
                 
                 <div id="select_a_more{{i}}">
                     <span class="help" style="color:red;" name="needed_more{{i}}">*Please check at least one dataset<br /></span>
-                    <p>Cell line datasets:</p>
+                    <p>Cell line datasets (U133A):</p>
                     <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="sanger_more{{i}}" value="Sanger Cell Line Project">Sanger Cell Line Project(SCLP)</label>
                 </div>
             
@@ -241,7 +254,7 @@
             
                 <div id="select_plus2_more{{i}}">
                     <span class="help" style="color:red;" name="needed_more{{i}}">*Please check at least one dataset<br /></span>
-                    <p>Cell line datasets:</p>
+                    <p>Cell line datasets (U133plus2):</p>
                     <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="nci_more{{i}}" value="NCI60">NCI60</label>
                     <label class="checkbox-inline"><input type="checkbox" name="dataset_more{{i}}" id="ccle_more{{i}}" value="GSE36133">CCLE(GSE36133)</label>
                     
@@ -500,7 +513,7 @@ $("input[name='data_platform']").change(function(){
             $("div[id*='_table_g']").hide();
             
             
-        }
+        };
         if($("#PLUS2-id").is(':checked')){
             $("div[id^='select_a_g']").hide();
             $("div[id^='select_plus2_g']").show();
@@ -514,7 +527,36 @@ $("input[name='data_platform']").change(function(){
             $("select").multipleSelect("setSelects", []);
             $("select[name^='filter']").multipleSelect("checkAll");
             $("div[id*='_table_g']").hide();
-        }
+        };
+		if($("#mix_quantile").is(':checked')){
+            $("div[id^='select_a_g']").show();
+            $("div[id^='select_plus2_g']").show();
+            var name={{same_name}}; 
+            l=name.length;
+            for(var j=0;j<l;j++)
+            {
+                $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+            };
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
+            $("select[name^='filter']").multipleSelect("checkAll");
+            $("div[id*='_table_g']").hide();
+        };
+		if($("#mix_ratio").is(':checked')){
+            $("div[id^='select_a_g']").show();
+            $("div[id^='select_plus2_g']").show();
+            var name={{same_name}}; 
+            l=name.length;
+            for(var j=0;j<l;j++)
+            {
+                $("input[id^='"+name[j]+"_g']").removeAttr('checked');
+            };
+            $("select option").removeProp('selected').removeAttr('selected');
+            $("select").multipleSelect("setSelects", []);
+            $("select[name^='filter']").multipleSelect("checkAll");
+            $("div[id*='_table_g']").hide();
+        };
+		
     });
 $(document).on('change',"input[name^='dataset_g']",function(){    //優化?
         //alert("changed!!");
@@ -676,7 +718,7 @@ $(document).on('click', '#add_group', function() {
                     width: '100%'
                     });
                     $("select[name='filter_"+celldatasets[j]+"_g"+index+"']").multipleSelect("checkAll");
-            } ;
+            };
             
             
             //change this part
@@ -690,6 +732,18 @@ $(document).on('click', '#add_group', function() {
             };
             if($("#PLUS2-id").is(':checked')){
             $("div[id='select_a_g"+index+"']").hide();
+            $("div[id='select_plus2_g"+index+"']").show();            
+            $("div[id*='_table_g"+index+"']").hide();
+            
+            };
+			if($("#mix_quantile").is(':checked')){
+            $("div[id='select_a_g"+index+"']").show();
+            $("div[id='select_plus2_g"+index+"']").show();            
+            $("div[id*='_table_g"+index+"']").hide();
+            
+            };
+			if($("#mix_ratio").is(':checked')){
+            $("div[id='select_a_g"+index+"']").show();
             $("div[id='select_plus2_g"+index+"']").show();            
             $("div[id*='_table_g"+index+"']").hide();
             

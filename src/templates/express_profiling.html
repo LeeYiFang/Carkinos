@@ -65,9 +65,11 @@
 
 <h3>Step3 - Upload file</h3>
 <p>Please upload your own data.</p>
-<p>The samples you upload with be colored red in the result PCA plot.</p>
+<p>The samples you upload with be colored red in the resulting PCA plot.</p>
 <h3>User Group1:Red</h3>
-<p style="color:blue;">Notice:only accept .csv file now</p>
+<p style="color:blue;">Notice: Only accept csv files are supported</p>
+<p>Change your group name below (or leave as is to use the default value):</p>
+<input type="text" name="ugroup_name1" value="User_Group1"><br />
 <input type="file" name="user_file" size="chars" required="required"></input>
 
 <div id="upload_div"></div>
@@ -80,13 +82,15 @@
 </br>
 
 <h3>Step4 - Select Database Sample:</h3>
-<p>Each group will have different color.</p>
-<p>Press "Add group" to add more group and "Delete group" to delete the last group below.</p>
-<p style="color:blue;">You can at most have 3 groups.</p>  
-<p style="color:blue;">You need to have at least 4 cell lines or clinical samples totally.</p>
+<p>Each group will have a different color.</p>
+<p>Press "Add group" to add another group and "Delete group" to delete the last group below.</p>
+<p style="color:blue;">A maximum of 3 groups is available</p>  
+<p style="color:blue;">At least 4 cell lines or clinical samples must be selected</p>
 <div  id="group1">
 
     <h3>Dataset Group 1: Yellow</h3>
+    <p>Change your group name below (or leave as is to use the default value):</p>
+    <input type="text" name="group_name1" value="Group1"><br />
         <div name="select_platform_g1" id="select_platform_g1">
             <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
             
@@ -186,6 +190,8 @@
     <div  id="more{{i}}">   
         
             <h3 id="gname{{i}}">Dataset Group {{i}}: Red</h3>
+            <p>Change your group name below (or leave as is to use the default value):</p>
+            <input type="text" name="group_name{{i}}" value="Group{{i}}"><br />
             <div name="select_platform_more{{i}}" id="select_platform_more{{i}}">
                 <p>Please select the datasets and related cell lines you want in each of the datasets.</p>
                 
@@ -618,6 +624,8 @@ $(document).on('click', '#user_add', function() {
             $("#upload_div").append(
                 '<div id="upload_user'+index+'">'+
                 '<h3 id="user_group'+index+'">User Group 2: Blue</h3>'+
+                '<p>Change your group name below (or leave as is to use the default value):</p>'+
+                '<input type="text" name="ugroup_name'+index+'" value="User_Group'+index+'"><br />'+
                 '<input type="file" name="user_file" size="chars" required="required"></input>'+
                 '</div>'
             );

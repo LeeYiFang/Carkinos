@@ -11,7 +11,7 @@ from pathlib import Path
 import sklearn
 from sklearn.decomposition import PCA
 from scipy import stats
-
+import os
 import matplotlib as mpl
 mpl.use('agg')
 import matplotlib.pyplot as plt
@@ -238,6 +238,7 @@ def user_pca(request):
     clline=list(Dataset.objects.all().values_list('name',flat=True))
     
     all_exist_dataset=[]
+    
     for i in range(1,group_counter+1):
         dname='dataset_g'+str(i)
         all_exist_dataset=all_exist_dataset+request.POST.getlist(dname)
@@ -320,10 +321,13 @@ def user_pca(request):
                     elif 'stageM/' in t:
                         M.append(t[7:])
                     elif 'metastatic/' in t:
+                        metas.append(t[11:])
+                        '''
                         if t[11:]=='False':
                             metas.append(0)
                         else:
                             metas.append(1)
+                        '''
                     else:  #"age/"
                         age.append(t[4:])
                 #print(len(prims))
@@ -375,6 +379,18 @@ def user_pca(request):
     user_counter=len(text)
     if(gene_flag==1):
         user_counter=1
+    
+    ugroup=[]
+    for i in range(user_counter):
+        ugroup.append(request.POST['ugroup_name'+str(i+1)])
+        if(ugroup[-1]==''):
+            ugroup[-1]='User_Group'+str(i+1)
+    dgroup=[]        
+    for i in range(1,group_counter+1):
+        dgroup.append(request.POST['group_name'+str(i)])
+        if(dgroup[-1]==''):
+            dgroup[-1]='Dataset_Group'+str(i)
+    
     user_dict={} #{user group number:user 2d array}
     samples=0
     nans=[] #to store the probe name that has nan 
@@ -647,7 +663,7 @@ def user_pca(request):
                 else:
                     r('y.loess<-loess(2**y~10**x,span=0.3)')
                     r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,10**newx[,z])))')
-            except RRuntimeError:
+            except:
                 error_reason='Match too less genes. Check your gene symbols again. We use NCBI standard gene symbol.'
                 return render_to_response('pca_error.html',RequestContext(request,
                 {
@@ -704,7 +720,7 @@ def user_pca(request):
                 else:
                     r('y.loess<-loess(2**y~10**x,span=0.3)')
                     r('for(z in c(1:ncol(newx))) newx[,z]=log2(as.matrix(predict(y.loess,10**newx[,z])))')
-            except RRuntimeError:
+            except:
                 error_reason='Match too less genes. Check your gene symbols again. We use NCBI standard gene symbol.'
                 return render_to_response('pca_error.html',RequestContext(request,
                 {
@@ -1198,14 +1214,15 @@ def user_pca(request):
         assP=Path('../').resolve().joinpath('src','assets','csv',"dataset_"+sid)
         assuserP=Path('../').resolve().joinpath('src','assets','csv',"user_"+sid)
         #print("start writing files")
-        with open(str(P), "w", newline='') as f:
+        with open(str(assP), "w", newline='') as f:
             writer = csv.writer(f)
             for index,output_cell in out_group:
-                writer.writerows([[index]])
+                writer.writerows([[dgroup[int(index[-1])-1]]])
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
         #print("end writing first file")
+        '''
         with open(str(assP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in out_group:
@@ -1213,15 +1230,17 @@ def user_pca(request):
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
+        '''
         #print("end writing 2 file")
         with open(str(assuserP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in user_out_group:
-                writer.writerows([[index]])
+                writer.writerows([[ugroup[int(index[-1])-1]]])
                 writer.writerows([user_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
         #print("end writing 3 file")
+        '''
         with open(str(userP), "w", newline='') as f:
             writer = csv.writer(f)
             for index,output_cell in user_out_group:
@@ -1229,6 +1248,7 @@ def user_pca(request):
                 writer.writerows([user_header])
                 for cell_line,b in output_cell:
                     writer.writerows(b)
+        '''
         #print("end writing 4 file")
         data_file_name="dataset_"+sid
         user_file_name="user_"+sid
@@ -1238,6 +1258,8 @@ def user_pca(request):
         user_file_name=0
     return render_to_response(return_html,RequestContext(request,
     {
+    'ugroup':ugroup,
+    'dgroup':dgroup,
     'min':min,'max':max,
     'big_flag':big_flag,
     'out_group':out_group,'user_out_group':user_out_group,
@@ -1299,9 +1321,19 @@ def heatmap(request):
     probe_out=[]
     sample_out=[]
     not_found=[]
+    quantile_flag=0
+    ratio_flag=0
+    indata=[]
+    
     #get probe from different platform
-    pform=request.POST['data_platform']
-    stop_end=101  
+    pform=request.POST.get('data_platform','U133A')
+    if(pform=="mix_quantile"):
+        pform="U133A"
+        quantile_flag=1
+    if(pform=="mix_ratio"):
+        pform="U133A"
+        ratio_flag=1
+    stop_end=601  
     return_page_flag=0
     user_probe_flag=0
     if(request.POST['user_type']=="all"):
@@ -1331,14 +1363,14 @@ def heatmap(request):
             user_probe_flag=1
             all_probe=ProbeID.objects.filter(platform__name=pform,Probe_id__in=indata).order_by('offset')
             probe_offset=list(all_probe.values_list('offset',flat=True))
-            pro_number=10000
+            pro_number=float('+inf')
             not_found=list(set(set(indata) - set(all_probe.values_list('Probe_id',flat=True))))
             all_probe=list(all_probe)
             
         else:
             probe_offset=[]
             return_page_flag=1
-            pro_number=10000
+            pro_number=float('+inf')
             if(pform=="U133A"):
                 probe_path=Path('../').resolve().joinpath('src','uni_u133a.txt')
                 gene_list = pd.read_csv(probe_path.as_posix())
@@ -1431,9 +1463,23 @@ def heatmap(request):
                     opened_name.append(dn)
                     if(return_page_flag==1):
                         pth=Path('../').resolve().joinpath('src','gene_'+Dataset.objects.get(name=dn).data_path)
+                        if(quantile_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_gene_'+Dataset.objects.get(name=dn).data_path)
+                        elif(ratio_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_gene_'+Dataset.objects.get(name=dn).data_path)
+                            gap=[Gene.objects.filter(platform__name=pform,symbol="GAPDH")[0].offset]
                     else:
                         pth=Path('../').resolve().joinpath('src',Dataset.objects.get(name=dn).data_path)
+                        if(quantile_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_'+Dataset.objects.get(name=dn).data_path)
+                        elif(ratio_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_'+Dataset.objects.get(name=dn).data_path)
+                            gap=list(ProbeID.objects.filter(platform__name=pform).filter(Gene_symbol="GAPDH").order_by('id').values_list('offset',flat=True))
+                            
                     raw_val=np.load(pth.as_posix(),mmap_mode='r')
+                    if(ratio_flag==1):
+                        norm=raw_val[np.ix_(gap)]
+                        raw_val=np.subtract(raw_val,np.mean(norm,axis=0, dtype=np.float64,keepdims=True))
                     opened_val.append(raw_val)
                     temp=raw_val[np.ix_(probe_offset,list(goffset))]
                     if (len(a_data)!=0 ) and (len(temp)!=0):
@@ -1481,10 +1527,13 @@ def heatmap(request):
                     elif 'stageM/' in t:
                         M.append(t[7:])
                     elif 'metastatic/' in t:
+                        metas.append(t[11:])
+                        '''
                         if t[11:]=='False':
                             metas.append(0)
                         else:
                             metas.append(1)
+                        '''
                     else:  #"age/"
                         age.append(t[4:])
                 cgoffset=[]
@@ -1508,9 +1557,22 @@ def heatmap(request):
                     opened_name.append(dn)
                     if(return_page_flag==1):
                         pth=Path('../').resolve().joinpath('src','gene_'+Clinical_Dataset.objects.get(name=dn).data_path)
+                        if(quantile_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_gene_'+Clinical_Dataset.objects.get(name=dn).data_path)
+                        elif(ratio_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_gene_'+Clinical_Dataset.objects.get(name=dn).data_path)
+                            gap=[Gene.objects.filter(platform__name=pform,symbol="GAPDH")[0].offset]
                     else:
                         pth=Path('../').resolve().joinpath('src',Clinical_Dataset.objects.get(name=dn).data_path)
+                        if(quantile_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_'+Clinical_Dataset.objects.get(name=dn).data_path)
+                        elif(ratio_flag==1):
+                            pth=Path('../').resolve().joinpath('src','mix_'+Clinical_Dataset.objects.get(name=dn).data_path)
+                            gap=list(ProbeID.objects.filter(platform__name=pform).filter(Gene_symbol="GAPDH").order_by('id').values_list('offset',flat=True))
                     raw_val=np.load(pth.as_posix(),mmap_mode='r')
+                    if(ratio_flag==1):
+                        norm=raw_val[np.ix_(gap)]
+                        raw_val=np.subtract(raw_val,np.mean(norm,axis=0, dtype=np.float64,keepdims=True))
                     opened_val.append(raw_val)
                     temp=raw_val[np.ix_(probe_offset,list(cgoffset))]
                     #print(temp)
@@ -1562,11 +1624,11 @@ def heatmap(request):
     
     cell_probe_val=[]
     for w in sortkey: 
-        ##print(presult[w],":",w.Probe_id)
+        #print(presult[w],":",w)
         
         if (presult[w]<pro_number):
             cell_probe_val.append([w,presult[w]])
-            
+            print(cell_probe_val)
             express_mean=np.mean(np.array(express[w]))
             expression.append(list((np.array(express[w]))-express_mean))
             if(return_page_flag==1):
@@ -1611,10 +1673,14 @@ def heatmap(request):
             }
     
     my_cmap = LinearSegmentedColormap('my_colormap',cdict,256)
+    #test.to_csv('heatmap_text.csv')
     try:
-        g = sns.clustermap(test,cmap=my_cmap)
-    
-    except ValueError:
+        #g = sns.clustermap(test,cmap=my_cmap)
+        if(len(probe_out)<=300):
+            g = sns.clustermap(test,cmap=my_cmap,xticklabels=list(test.columns),yticklabels=(test.index),figsize=(19.20,48.60))
+        else:
+            g = sns.clustermap(test,cmap=my_cmap,xticklabels=list(test.columns),yticklabels=(test.index),figsize=(30.00,100.00))
+    except:
         if((return_page_flag==1) and (probe_out==[])):
             probe_out=indata  #probe_out is the rows of heatmap
         return render_to_response('noprobe.html',RequestContext(request,
@@ -1624,7 +1690,7 @@ def heatmap(request):
         'probe_out':probe_out,
         'not_found':not_found
         }))
-    
+    '''
     plt.setp(g.ax_heatmap.get_yticklabels(), rotation=0)
     if counter>=stop_end:
         plt.setp(g.ax_heatmap.yaxis.get_majorticklabels(), fontsize=4)
@@ -1634,17 +1700,16 @@ def heatmap(request):
     
     
     plt.setp(g.ax_heatmap.get_xticklabels(), rotation=270,ha='center')
-    
+    '''
     sid=str(uuid.uuid1())+".png"
     #print(sid)
     P=Path('../').resolve().joinpath('src','static','image',sid)
     assP=Path('../').resolve().joinpath('src','assets','image',sid)
-    g.savefig(str(P))
-    g.savefig(str(assP))
-    #g.savefig("heatmap_for_paper_600.svg")
-    #test.to_csv('er_whole_gene.txt',sep='\t')
+    #g.savefig(str(P))
+    #plt.figure(figsize=(1920/my_dpi, 2160/my_dpi), dpi=100)
+    #plt.savefig(str(assP), dpi=my_dpi*10)
+    g.savefig(str(assP),bbox_inches='tight')
     file_name=sid
-    
     return render_to_response('heatmap.html',RequestContext(request,
     {
     'user_probe_flag':user_probe_flag,
@@ -1678,7 +1743,8 @@ def pca(request):
         else:
             group_counter=group_counter-1
             break
-
+    
+    udgroup=[]
     s_group_dict={}  #store sample
     group_name=[]
     offset_group_dict={} #store offset
@@ -1688,6 +1754,10 @@ def pca(request):
     
     all_exist_dataset=[]
     for i in range(1,group_counter+1):
+        udgroup.append(request.POST['group_name'+str(i)])
+        #print(udgroup)
+        if(udgroup[-1]==''):
+            udgroup[-1]='Group'+str(i)
         dname='dataset_g'+str(i)
         all_exist_dataset=all_exist_dataset+request.POST.getlist(dname)
     all_exist_dataset=list(set(all_exist_dataset))
@@ -1769,10 +1839,13 @@ def pca(request):
                     elif 'stageM/' in t:
                         M.append(t[7:])
                     elif 'metastatic/' in t:
+                        metas.append(t[11:])
+                        '''
                         if t[11:]=='False':
                             metas.append(0)
                         else:
                             metas.append(1)
+                        '''
                     else:  #"age/"
                         age.append(t[4:])
                 for x in range(0,len(prims)):
@@ -2126,10 +2199,10 @@ def pca(request):
                 ,'Dataset','Paired Cell Line name/Clinical Sample','Primary Site','Primary Histology','Dataset','Distance']
         P=Path('../').resolve().joinpath('src','static','csv',sid)
         assP=Path('../').resolve().joinpath('src','assets','csv',sid)
-        with open(str(P), "w", newline='') as f:
+        with open(str(assP), "w", newline='') as f:
             writer = csv.writer(f)
             for index,output_cell in out_group:
-                writer.writerows([["Group_"+str(index)]])
+                writer.writerows([[udgroup[index-1]]])
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     temp_b=[]
@@ -2143,10 +2216,11 @@ def pca(request):
                             ,paired_cell.name,paired_cell.primary_site,paired_cell.primary_hist,paired_dataset,dis])
                     writer.writerows(temp_b)
         #print('write first file done')
+        '''
         with open(str(assP), "w", newline='') as ff:
             writer = csv.writer(ff)
             for index,output_cell in out_group:
-                writer.writerows([["Group_"+str(index)]])
+                writer.writerows([[udgroup[index-1]]])
                 writer.writerows([dataset_header])
                 for cell_line,b in output_cell:
                     temp_b=[]
@@ -2159,6 +2233,7 @@ def pca(request):
                             temp_b.append([group_cell.name,group_cell.primary_site,group_cell.primary_hist,group_dataset
                             ,paired_cell.name,paired_cell.primary_site,paired_cell.primary_hist,paired_dataset,dis])
                     writer.writerows(temp_b)
+        '''
         #print('write second file done')
         data_file_name=sid
     else:
@@ -2166,6 +2241,7 @@ def pca(request):
         data_file_name=0
     return render_to_response(return_html,RequestContext(request,
     {
+    'udgroup':udgroup,
     'min':min,'max':max,
     'out_group':out_group,
     'propotion':propotion,
@@ -2327,10 +2403,13 @@ def clinical_search(request):
             elif 'stageM/' in i:
                 M.append(i[7:])
             elif 'metastatic/' in i:
+                metas.append(i[11:])
+                '''
                 if i[11:]=='False':
                     metas.append(0)
                 else:
                     metas.append(1)
+                '''
             else:  #"age/"
                 age.append(i[4:])
                                 
@@ -2369,10 +2448,13 @@ def clinical_search(request):
                 elif 'stageM/' in i:
                     M.append(i[7:])
                 elif 'metastatic/' in i:
+                    metas.append(i[11:])
+                    '''
                     if i[11:]=='False':
                         metas.append(0)
                     else:
                         metas.append(1)
+                    '''
                 else:  #"age/"
                     age.append(i[4:])
         for i in range(0,len(prims)):
@@ -2431,7 +2513,7 @@ def data(request):
     CCcell=[]
     ps_id='0'
     pn_id='0'
-    if request.POST['cell_line_method'] == 'text':
+    if request.POST.get('cell_line_method','text') == 'text':
         if request.POST['cellline'] =='':
             return HttpResponse("<p>please make sure to enter cell line name in Step3.</p>" )
         c = request.POST['cellline']

@@ -16,14 +16,30 @@
 <h1>Gene Signature Explore: Heatmap Result</h1>
 </br>
 {% load static %}
-<img src="{{STATIC_URL}}image/{{file_name}}">
+<img src="{{STATIC_URL}}image/{{file_name}}" width="90%">
 
 </br>
+</br>
+
+<div>
+<p>This download link does not support Safari and Opera.</p>
+<p>If you are using the browsers listed above, save the heatmap with the pop-up menu from right click.</p>
+<a class="btn btn-info" href="{{STATIC_URL}}image/{{file_name}}" download="heatmap" role="button">
+  Download Heatmap
+</a>
+<br />
+<br />
+</div>
 {% if return_page_flag %}
+<p>If you choose the "ratio" option in platform selection, the GAPDH will not be displayed.</p>
 <p>"SCLP" is short for Sanger Cell Line Project</p>
-<p>Genes not found in the platform you selected:</p>
+<p>"Use all the genes" option info:</p>
+<p style="text-indent : 4em ;">The heatmap will show the most significant 300 genes that match the p-value criteria.</p>
+<p style="text-indent : 4em ;">If it does not have 300 genes, the heatmap will just show all the genes that match the p-value criteria.</p>
+<p>"Input specific probes or genes" option info:</p> 
+<p style="text-indent : 4em ;">Genes not found in the platform you selected:</p>
 {% for g in not_found %}
-    <p>{{g}}</p>
+    <p style="text-indent : 4em ;">{{g}}</p>
 {% endfor %}
 <table id="example" class="display">
     <thead>
@@ -46,7 +62,7 @@
 		<tr>
             <td></td>
 			<td>{{ p }}</td>
-			<td>{{ val|floatformat:5 }}</td>
+			<td>{{ val|stringformat:"E"}}</td>
 		</tr>
 		{% endfor %}
     </tbody>
@@ -61,8 +77,8 @@
         {% endfor%}
 </p>
 {% else %}
-<p>The heatmap will show the most significant 100 probes with p-value < {{pro_number}}.</p> 
-<p>If it does not have 100 probes, the heatmap will just show all the probes with p-value < {{pro_number}}.</p>
+<p>The heatmap will show the most significant 300 probes with p-value < {{pro_number}}.</p> 
+<p>If it does not have 300 probes, the heatmap will just show all the probes with p-value < {{pro_number}}.</p>
 <p>"SCLP" is short for Sanger Cell Line Project</p>
 {% endif %}
 <table id="example" class="display">
@@ -89,7 +105,7 @@
             <td></td>
 			<td>{{ p.Probe_id }}</td>
 			<td>{{ p.Gene_symbol }}</td>
-			<td>{{ val|floatformat:5 }}</td>
+			<td>{{ val|stringformat:"E" }}</td>
 		</tr>
 		{% endfor %}
     </tbody>
@@ -120,7 +136,7 @@ src="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1
         "columnDefs": [ {
             "searchable": false,
             "orderable": false,
-            "targets": 0
+            "targets": 0  
         } ],
         "order": [[ 1, 'asc' ]]
     } );
@@ -137,7 +153,8 @@ src="https://cdn.datatables.net/s/dt/jszip-2.5.0,pdfmake-0.1.18,dt-1.10.10,b-1.1
             'csv'
         ]
     } );
-        
+
  } );
+ 
 </script>
 {% endblock %}

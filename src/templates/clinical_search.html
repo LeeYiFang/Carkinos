@@ -85,7 +85,6 @@ div.tab_container .tab_content h2 {
                             <th>Primary histology</th>
                             <th>Probe_id</th>
                             <th>Gene_symbol</th>
-                            <th>Entrez_id</th>
                             <th>Gene_name</th>
                             <th>value</th>
                             <th>ranking</th>
@@ -101,7 +100,6 @@ div.tab_container .tab_content h2 {
                             <th>Primary histology</th>
                             <th>Probe_id</th>
                             <th>Gene_symbol</th>
-                            <th>Entrez_id</th>
                             <th>Gene_name</th>
                             <th>value</th>
                             <th>ranking</th>
@@ -119,7 +117,6 @@ div.tab_container .tab_content h2 {
                             <td>{{ c.primary_hist }}</td>                    
                             <td>{{ p.Probe_id }}</td>
                             <td>{{ p.Gene_symbol }}</td>
-                            <td>{{ p.Entrez_id }}</td>
                             <td>{{ p.Gene_name }}</td>
                             <td>{{ val|floatformat:4 }}</td>
                             {% for i in rank%}
@@ -147,7 +144,7 @@ div.tab_container .tab_content h2 {
                             <th>Primary histology</th>
                             <th>Age</th>
                             <th>Gender</th>
-                            <th>Ethnic</th>
+                            <th>Ethnicity</th>
                             <th>T</th>
                             <th>N</th>
                             <th>M</th>
@@ -166,7 +163,7 @@ div.tab_container .tab_content h2 {
                             <th>Primary histology</th>
                             <th>Age</th>
                             <th>Gender</th>
-                            <th>Ethnic</th>
+                            <th>Ethnicity</th>
                             <th>T</th>
                             <th>N</th>
                             <th>M</th>
@@ -192,7 +189,7 @@ div.tab_container .tab_content h2 {
                             <td>{{ c.stageM }}</td>
                             <td>{{ c.stage }}</td>
                             <td>{{ c.grade }}</td>
-                            <td>{{ c.metastatic }}</td>
+                            <td>{{ c.metastatic|default_if_none:"NA" }}</td>
                             
                         </tr>
                         {% endfor %}
