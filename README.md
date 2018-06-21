@@ -82,7 +82,7 @@ Run the development server
 
 
 
-Please contact s89066[at]gmail[dot]com to let me now if there is any question.
+Please contact s89066[at]gmail[dot]com to let me now if you have any questions.
 
 [django-environ]: http://django-environ.readthedocs.org/en/latest/
 [Django Secret Key]: http://www.miniwebtool.com/django-secret-key-generator/
