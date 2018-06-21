@@ -82,12 +82,7 @@ Run the development server
 
 
 
-## Build Binary Datasets
-
-**NOTE: Binary datasets match the records in SQLite database, make sure they are in sync.**
-
-Please contact s89066[at]gmail[dot]com to let me now if you need to get the binary data in CellExpress.  
-For large files, we will provide FTP for you:)
+Please contact s89066[at]gmail[dot]com to let me now if there is any question.
 
 [django-environ]: http://django-environ.readthedocs.org/en/latest/
 [Django Secret Key]: http://www.miniwebtool.com/django-secret-key-generator/
